@@ -1614,12 +1614,12 @@ describe("SecurityVulnerabilityFixes", () => {
   });
 
   // -------------------------------------------------------------------------
-  // VULN-TS-2: Attestation precondition is dead code
+  // VULN-TS-2: Attestation is now fully implemented (WCP §5.10)
   // -------------------------------------------------------------------------
 
-  test("VULN-TS-2: rule with deny_if_no_attestation_in_prod=true + requireWorkerAttestation=true → DENY_ATTESTATION_NOT_IMPLEMENTED", () => {
-    // When both the rule precondition AND the hall config are set, the router
-    // must deny rather than silently skip the unimplemented attestation check.
+  test("VULN-TS-2: requireWorkerAttestation=true with no callbacks → DENY_ATTESTATION_UNCONFIGURED", () => {
+    // When requireWorkerAttestation=true but no hash callbacks are provided,
+    // the router must deny with DENY_ATTESTATION_UNCONFIGURED (not silently bypass).
     const rules = loadRulesFromDoc(ATTESTATION_RULES_DOC);
     const registry = registryWithWorker();
     registry.addControlsPresent(["ctrl.obs.audit-log-append-only"]);
@@ -1631,11 +1631,12 @@ describe("SecurityVulnerabilityFixes", () => {
       registryControlsPresent: registry.controlsPresent(),
       registryWorkerAvailable: (id) => registry.workerAvailable(id),
       hallConfig: { requireWorkerAttestation: true },
+      // No registryGetWorkerHash or registryGetCurrentWorkerHash provided
     });
     expect(dec.denied).toBe(true);
     expect(
       (dec.deny_reason_if_denied as Record<string, unknown>)["code"]
-    ).toBe("DENY_ATTESTATION_NOT_IMPLEMENTED");
+    ).toBe("DENY_ATTESTATION_UNCONFIGURED");
   });
 
   test("VULN-TS-2: deny_if_no_attestation_in_prod=true with requireWorkerAttestation=false (default) does NOT deny", () => {
@@ -2218,5 +2219,215 @@ describe("Registry attestation (WCP §5.10)", () => {
     reg.registerAttestation("wrk.test.worker", workerFile);
     unlinkSync(workerFile);
     expect(reg.computeCurrentHash("wrk.test.worker")).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Router attestation enforcement (WCP §5.10)
+// ---------------------------------------------------------------------------
+
+// Shared rule doc for attestation enforcement tests
+const ATTEST_ENFORCE_RULES_DOC = {
+  rules: [
+    {
+      rule_id: "rr_attest_enforce_001",
+      match: { capability_id: "cap.hello.greet" },
+      decision: {
+        candidate_workers_ranked: [
+          { worker_species_id: "wrk.hello.greeter", score_hint: 1.0 },
+        ],
+        required_controls_suggested: ["ctrl.obs.audit-log-append-only"],
+        escalation: { policy_gate: false },
+        preconditions: {},
+      },
+    },
+  ],
+};
+
+describe("Router attestation enforcement (WCP §5.10)", () => {
+  // 1. requireWorkerAttestation: false (default) → dispatches without callbacks
+  test("attestation not required (default) → DISPATCHED, worker_attestation_checked is falsy", () => {
+    const rules = loadRulesFromDoc(ATTEST_ENFORCE_RULES_DOC);
+    const registry = registryWithWorker();
+    registry.addControlsPresent(["ctrl.obs.audit-log-append-only"]);
+
+    const i = inp();
+    const dec = makeDecision({
+      inp: i,
+      rules,
+      registryControlsPresent: registry.controlsPresent(),
+      registryWorkerAvailable: (id) => registry.workerAvailable(id),
+      // No hallConfig → requireWorkerAttestation defaults to false
+    });
+    expect(dec.denied).toBe(false);
+    expect(dec.worker_attestation_checked).toBeFalsy();
+  });
+
+  // 2. requireWorkerAttestation: true + matching hashes → DISPATCHED, checked=true, valid=true
+  test("matching hashes → DISPATCHED, worker_attestation_checked=true, worker_attestation_valid=true", () => {
+    const rules = loadRulesFromDoc(ATTEST_ENFORCE_RULES_DOC);
+    const registry = registryWithWorker();
+    registry.addControlsPresent(["ctrl.obs.audit-log-append-only"]);
+
+    const goodHash = "a".repeat(64);
+    const i = inp();
+    const dec = makeDecision({
+      inp: i,
+      rules,
+      registryControlsPresent: registry.controlsPresent(),
+      registryWorkerAvailable: (id) => registry.workerAvailable(id),
+      hallConfig: { requireWorkerAttestation: true },
+      registryGetWorkerHash: (_speciesId) => goodHash,
+      registryGetCurrentWorkerHash: (_speciesId) => goodHash,
+    });
+    expect(dec.denied).toBe(false);
+    expect(dec.selected_worker_species_id).toBe("wrk.hello.greeter");
+    expect(dec.worker_attestation_checked).toBe(true);
+    expect(dec.worker_attestation_valid).toBe(true);
+  });
+
+  // 3. Hash mismatch → DENY_WORKER_TAMPERED, worker_attestation_valid=false
+  test("hash mismatch → DENY_WORKER_TAMPERED, worker_attestation_valid=false", () => {
+    const rules = loadRulesFromDoc(ATTEST_ENFORCE_RULES_DOC);
+    const registry = registryWithWorker();
+    registry.addControlsPresent(["ctrl.obs.audit-log-append-only"]);
+
+    const i = inp();
+    const dec = makeDecision({
+      inp: i,
+      rules,
+      registryControlsPresent: registry.controlsPresent(),
+      registryWorkerAvailable: (id) => registry.workerAvailable(id),
+      hallConfig: { requireWorkerAttestation: true },
+      registryGetWorkerHash: (_speciesId) => "a".repeat(64),
+      registryGetCurrentWorkerHash: (_speciesId) => "b".repeat(64),
+    });
+    expect(dec.denied).toBe(true);
+    expect(
+      (dec.deny_reason_if_denied as Record<string, unknown>)["code"]
+    ).toBe("DENY_WORKER_TAMPERED");
+    expect(dec.worker_attestation_valid).toBe(false);
+    expect(dec.worker_attestation_checked).toBe(true);
+    // F4: hash values must NOT appear in the deny message
+    const msg = (dec.deny_reason_if_denied as Record<string, unknown>)["message"] as string;
+    expect(msg).not.toContain("a".repeat(64));
+    expect(msg).not.toContain("b".repeat(64));
+  });
+
+  // 4. Missing callbacks → DENY_ATTESTATION_UNCONFIGURED
+  test("requireWorkerAttestation=true with no callbacks → DENY_ATTESTATION_UNCONFIGURED", () => {
+    const rules = loadRulesFromDoc(ATTEST_ENFORCE_RULES_DOC);
+    const registry = registryWithWorker();
+    registry.addControlsPresent(["ctrl.obs.audit-log-append-only"]);
+
+    const i = inp();
+    const dec = makeDecision({
+      inp: i,
+      rules,
+      registryControlsPresent: registry.controlsPresent(),
+      registryWorkerAvailable: (id) => registry.workerAvailable(id),
+      hallConfig: { requireWorkerAttestation: true },
+      // No callbacks provided
+    });
+    expect(dec.denied).toBe(true);
+    expect(
+      (dec.deny_reason_if_denied as Record<string, unknown>)["code"]
+    ).toBe("DENY_ATTESTATION_UNCONFIGURED");
+  });
+
+  // 5. No registered hash → DENY_WORKER_ATTESTATION_MISSING
+  test("registryGetWorkerHash returns null → DENY_WORKER_ATTESTATION_MISSING", () => {
+    const rules = loadRulesFromDoc(ATTEST_ENFORCE_RULES_DOC);
+    const registry = registryWithWorker();
+    registry.addControlsPresent(["ctrl.obs.audit-log-append-only"]);
+
+    const i = inp();
+    const dec = makeDecision({
+      inp: i,
+      rules,
+      registryControlsPresent: registry.controlsPresent(),
+      registryWorkerAvailable: (id) => registry.workerAvailable(id),
+      hallConfig: { requireWorkerAttestation: true },
+      registryGetWorkerHash: (_speciesId) => null,
+      registryGetCurrentWorkerHash: (_speciesId) => "a".repeat(64),
+    });
+    expect(dec.denied).toBe(true);
+    expect(
+      (dec.deny_reason_if_denied as Record<string, unknown>)["code"]
+    ).toBe("DENY_WORKER_ATTESTATION_MISSING");
+  });
+
+  // 6. Current hash unavailable → DENY_WORKER_HASH_UNAVAILABLE
+  test("registryGetCurrentWorkerHash returns null → DENY_WORKER_HASH_UNAVAILABLE", () => {
+    const rules = loadRulesFromDoc(ATTEST_ENFORCE_RULES_DOC);
+    const registry = registryWithWorker();
+    registry.addControlsPresent(["ctrl.obs.audit-log-append-only"]);
+
+    const i = inp();
+    const dec = makeDecision({
+      inp: i,
+      rules,
+      registryControlsPresent: registry.controlsPresent(),
+      registryWorkerAvailable: (id) => registry.workerAvailable(id),
+      hallConfig: { requireWorkerAttestation: true },
+      registryGetWorkerHash: (_speciesId) => "a".repeat(64),
+      registryGetCurrentWorkerHash: (_speciesId) => null,
+    });
+    expect(dec.denied).toBe(true);
+    expect(
+      (dec.deny_reason_if_denied as Record<string, unknown>)["code"]
+    ).toBe("DENY_WORKER_HASH_UNAVAILABLE");
+  });
+
+  // 7. Callback throws → treated as null → DENY_WORKER_HASH_UNAVAILABLE
+  test("registryGetCurrentWorkerHash throws → treated as null → DENY_WORKER_HASH_UNAVAILABLE", () => {
+    const rules = loadRulesFromDoc(ATTEST_ENFORCE_RULES_DOC);
+    const registry = registryWithWorker();
+    registry.addControlsPresent(["ctrl.obs.audit-log-append-only"]);
+
+    const i = inp();
+    let dec: ReturnType<typeof makeDecision>;
+    expect(() => {
+      dec = makeDecision({
+        inp: i,
+        rules,
+        registryControlsPresent: registry.controlsPresent(),
+        registryWorkerAvailable: (id) => registry.workerAvailable(id),
+        hallConfig: { requireWorkerAttestation: true },
+        registryGetWorkerHash: (_speciesId) => "a".repeat(64),
+        registryGetCurrentWorkerHash: (_speciesId) => {
+          throw new Error("disk read failed");
+        },
+      });
+    }).not.toThrow();
+    expect(dec!.denied).toBe(true);
+    expect(
+      (dec!.deny_reason_if_denied as Record<string, unknown>)["code"]
+    ).toBe("DENY_WORKER_HASH_UNAVAILABLE");
+  });
+
+  // 8. requireWorkerAttestation=true but no worker selected → no attestation check
+  test("requireWorkerAttestation=true but no worker available → denied for no worker, not attestation", () => {
+    const rules = loadRulesFromDoc(ATTEST_ENFORCE_RULES_DOC);
+    const registry = new Registry();
+    // No workers enrolled — registryWorkerAvailable returns false for everything
+    registry.addControlsPresent(["ctrl.obs.audit-log-append-only"]);
+
+    const i = inp();
+    const dec = makeDecision({
+      inp: i,
+      rules,
+      registryControlsPresent: registry.controlsPresent(),
+      registryWorkerAvailable: (_id) => false,
+      hallConfig: { requireWorkerAttestation: true },
+      registryGetWorkerHash: (_speciesId) => "a".repeat(64),
+      registryGetCurrentWorkerHash: (_speciesId) => "a".repeat(64),
+    });
+    expect(dec.denied).toBe(true);
+    expect(
+      (dec.deny_reason_if_denied as Record<string, unknown>)["code"]
+    ).toBe("DENY_NO_AVAILABLE_WORKER");
+    // Attestation was not attempted — no worker was selected
+    expect(dec.worker_attestation_checked).toBeFalsy();
   });
 });
