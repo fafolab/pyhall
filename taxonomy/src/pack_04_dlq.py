@@ -157,7 +157,6 @@ ENTITIES = [
         'pack_id': 'pack.04',
         'name': 'Max Replay Attempts',
         'description': 'Policy control: maximum number of times a DLQ message may be replayed before permanent discard.',
-        'risk_tier': 'low',
         'tags': ['dlq', 'policy', 'control'],
         'wcp_namespace': 'reserved',
         'enforcement_point': 'worker',

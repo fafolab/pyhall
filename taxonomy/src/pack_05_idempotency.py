@@ -137,7 +137,6 @@ ENTITIES = [
         'pack_id': 'pack.05',
         'name': 'Idempotency Key TTL',
         'description': 'Policy control: time-to-live in seconds for idempotency keys in the dedup store.',
-        'risk_tier': 'low',
         'tags': ['idempotency', 'policy', 'ttl'],
         'wcp_namespace': 'reserved',
         'enforcement_point': 'worker',

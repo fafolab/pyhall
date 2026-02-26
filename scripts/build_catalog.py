@@ -8,6 +8,7 @@ Fails with exit code 1 if any entity violates spec rules.
 Usage: python scripts/build_catalog.py
 Output: sdk/python/pyhall/taxonomy/catalog.json (and 3 other sync locations)
 """
+import datetime
 import json
 import re
 import sys
@@ -62,6 +63,8 @@ REQUIRED_BY_TYPE: dict[str, set[str]] = {
 
 def validate_id(entity_id: str) -> list[str]:
     errors = []
+    if len(entity_id) > 64:
+        errors.append(f"  ID '{entity_id}' exceeds 64-character max (spec §3.2): {len(entity_id)} chars")
     if not VALID_ID_RE.match(entity_id):
         errors.append(f"  ID '{entity_id}' fails format check (spec §3.2): must be 2-4 dot-separated lowercase segments (a-z, 0-9, hyphens only — no underscores)")
     if VERSION_SUFFIX_RE.search(entity_id):
@@ -88,7 +91,11 @@ def load_sources() -> tuple[list[dict], list[dict]]:
     entities = []
     for src_file in sorted(src_dir.glob("pack_*.py")):
         namespace = {}
-        exec(src_file.read_text(), namespace)
+        try:
+            exec(src_file.read_text(), namespace)
+        except SyntaxError as exc:
+            print(f"SYNTAX ERROR in {src_file.name}: {exc}", file=sys.stderr)
+            sys.exit(1)
         packs.extend(namespace.get("PACKS", []))
         entities.extend(namespace.get("ENTITIES", []))
     return packs, entities
@@ -117,7 +124,7 @@ def main():
             "total_entities": len(entities),
             "packs": len(packs),
             "generated_from": "taxonomy/src/pack_*.py",
-            "built": __import__("datetime").date.today().isoformat(),
+            "built": datetime.date.today().isoformat(),
         },
         "packs": packs,
         "entities": entities,

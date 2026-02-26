@@ -1133,7 +1133,6 @@
       "pack_id": "pack.04",
       "name": "Max Replay Attempts",
       "description": "Policy control: maximum number of times a DLQ message may be replayed before permanent discard.",
-      "risk_tier": "low",
       "tags": [
         "dlq",
         "policy",
@@ -1318,7 +1317,6 @@
       "pack_id": "pack.05",
       "name": "Idempotency Key TTL",
       "description": "Policy control: time-to-live in seconds for idempotency keys in the dedup store.",
-      "risk_tier": "low",
       "tags": [
         "idempotency",
         "policy",
