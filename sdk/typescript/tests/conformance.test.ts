@@ -171,9 +171,9 @@ function getExpectedDenyCode(vector: ConformanceVector): string | null | undefin
 
 describe("WCP Cross-SDK Conformance Vectors (PATCH-XSDK-001)", () => {
   // Sanity: vector file is loadable and complete
-  test("vector file has all 12 required IDs", () => {
+  test("vector file has all 13 required IDs", () => {
     const ids = new Set(ALL_VECTORS.map((v) => v.id));
-    for (let i = 1; i <= 12; i++) {
+    for (let i = 1; i <= 13; i++) {
       const expected = `CV-${String(i).padStart(3, "0")}`;
       expect(ids.has(expected)).toBe(true);
     }
@@ -292,7 +292,7 @@ describe("CV-013: Worker attestation (WCP §5.10)", () => {
     const base: RouteInput = {
       capability_id: "cap.test.cv013",
       env: "dev",
-      data_label: "INTERNAL",
+      data_label: "PUBLIC",
       tenant_risk: "low",
       qos_class: "P2",
       tenant_id: "test.tenant",

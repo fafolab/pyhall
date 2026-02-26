@@ -244,13 +244,13 @@ func buildRouterOpts(vector conformanceVector) RouterOptions {
 func TestConformanceVectors(t *testing.T) {
 	vectors := loadVectors(t)
 
-	// Sanity: all 12 required IDs must be present
+	// Sanity: all 13 required IDs must be present
 	t.Run("vector_file_has_required_ids", func(t *testing.T) {
 		ids := make(map[string]bool)
 		for _, v := range vectors {
 			ids[v.ID] = true
 		}
-		for i := 1; i <= 12; i++ {
+		for i := 1; i <= 13; i++ {
 			id := ""
 			if i < 10 {
 				id = "CV-00" + string(rune('0'+i))
@@ -449,8 +449,10 @@ func TestCV013WorkerAttestation(t *testing.T) {
 	if !dec2.WorkerAttestationChecked {
 		t.Error("CV-013 Step 5: expected WorkerAttestationChecked=true")
 	}
-	if dec2.WorkerAttestationValid == nil || *dec2.WorkerAttestationValid {
-		t.Error("CV-013 Step 5: expected WorkerAttestationValid=false")
+	if dec2.WorkerAttestationValid == nil {
+		t.Error("CV-013 Step 4: WorkerAttestationValid is nil — router did not set it on DENY_WORKER_TAMPERED path")
+	} else if *dec2.WorkerAttestationValid {
+		t.Error("CV-013 Step 4: expected WorkerAttestationValid=false, got true")
 	}
 	// Step 6 / F4: hash values must NOT appear in the deny payload
 	if _, ok := dec2.DenyReasonIfDenied["registered_hash"]; ok {

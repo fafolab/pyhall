@@ -228,10 +228,10 @@ def test_conformance_vector(vector: Dict[str, Any]) -> None:
 # ---------------------------------------------------------------------------
 
 def test_vector_file_has_required_ids() -> None:
-    """All 12 required vector IDs must be present in the file."""
+    """All 13 required vector IDs must be present in the file."""
     vectors = _load_vectors()
     ids = {v["id"] for v in vectors}
-    required = {f"CV-{i:03d}" for i in range(1, 13)}
+    required = {f"CV-{i:03d}" for i in range(1, 14)}
     missing = required - ids
     assert not missing, f"Missing required conformance vector IDs: {missing}"
 
