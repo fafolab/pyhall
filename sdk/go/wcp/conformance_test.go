@@ -116,9 +116,11 @@ func loadVectors(t *testing.T) []conformanceVector {
 }
 
 // isSkipped returns true if the vector should be skipped for this SDK.
+// Vectors with skip_sdks=["all"] are procedural multi-step tests implemented
+// as standalone test functions — they are excluded from the parametric loop.
 func isSkipped(v conformanceVector) bool {
 	for _, sdk := range v.SkipSDKs {
-		if sdk == sdkName {
+		if sdk == sdkName || sdk == "all" {
 			return true
 		}
 	}
@@ -357,5 +359,104 @@ func cvID(n int) string {
 		return "CV-0" + string(rune('0'+n/10)) + string(rune('0'+n%10))
 	default:
 		return "CV-???"
+	}
+}
+
+// ---------------------------------------------------------------------------
+// CV-013: Worker attestation — standalone procedural test (WCP §5.10)
+// ---------------------------------------------------------------------------
+
+// TestCV013WorkerAttestation is the Go implementation of CV-013.
+//
+// Release-blocking cross-SDK conformance vector. Tests the tamper detection
+// path mandated by WCP §5.10:
+//
+//  1. Enroll worker with attestation registered (SHA-256 of source file).
+//  2. Dispatch capability → verify WorkerAttestationValid=true, Denied=false.
+//  3. Mutate the worker source file (change content).
+//  4. Dispatch again → verify Denied=true, code=DENY_WORKER_TAMPERED.
+//  5. Verify evidence receipt: WorkerAttestationChecked=true, Valid=false.
+//  6. F4: hash values must NOT appear in the deny payload.
+func TestCV013WorkerAttestation(t *testing.T) {
+	// Step 1: create a temp worker file.
+	tmpDir := t.TempDir()
+	workerFile := filepath.Join(tmpDir, "worker.py")
+	if err := os.WriteFile(workerFile, []byte("def run(): pass\n"), 0644); err != nil {
+		t.Fatalf("CV-013: failed to create worker file: %v", err)
+	}
+
+	reg := NewRegistry()
+	if err := reg.Enroll(WorkerRegistryRecord{
+		WorkerID:            "org.test.cv013",
+		WorkerSpeciesID:     "wrk.test.cv013",
+		Capabilities:        []string{"cap.test.cv013"},
+		RequiredControls:    []string{"ctrl.obs.audit-log-append-only"},
+		CurrentlyImplements: []string{"ctrl.obs.audit-log-append-only"},
+		AllowedEnvironments: []string{"dev"},
+	}); err != nil {
+		t.Fatalf("CV-013: enroll failed: %v", err)
+	}
+
+	if _, err := reg.RegisterAttestation("wrk.test.cv013", workerFile); err != nil {
+		t.Fatalf("CV-013: RegisterAttestation failed: %v", err)
+	}
+
+	inp := RouteInput{
+		CapabilityID:  "cap.test.cv013",
+		Env:           EnvDev,
+		DataLabel:     DataLabelPublic,
+		TenantRisk:    TenantRiskLow,
+		QoSClass:      QoSP2,
+		TenantID:      "test.tenant",
+		CorrelationID: "cv013",
+	}
+
+	opts := RouterOptions{
+		RequireWorkerAttestation: true,
+		GetWorkerHash:            reg.GetWorkerHash,
+		GetCurrentWorkerHash:     reg.ComputeCurrentHash,
+		WorkerAvailability:       AlwaysAvailable,
+	}
+
+	// Step 2: intact file → DISPATCHED
+	dec1 := MakeDecision(inp, reg, opts)
+	if dec1.Denied {
+		t.Fatalf("CV-013 Step 2: expected DISPATCHED, got Denied with reason: %v", dec1.DenyReasonIfDenied)
+	}
+	if !dec1.WorkerAttestationChecked {
+		t.Error("CV-013 Step 2: expected WorkerAttestationChecked=true")
+	}
+	if dec1.WorkerAttestationValid == nil || !*dec1.WorkerAttestationValid {
+		t.Error("CV-013 Step 2: expected WorkerAttestationValid=true")
+	}
+
+	// Step 3: tamper — overwrite worker file content.
+	if err := os.WriteFile(workerFile, []byte("def run(): exfiltrate()\n"), 0644); err != nil {
+		t.Fatalf("CV-013: failed to tamper worker file: %v", err)
+	}
+
+	// Step 4: tampered file → DENY_WORKER_TAMPERED
+	dec2 := MakeDecision(inp, reg, opts)
+	if !dec2.Denied {
+		t.Fatal("CV-013 Step 4: expected DENY_WORKER_TAMPERED after file mutation, got DISPATCHED")
+	}
+	code, _ := dec2.DenyReasonIfDenied["code"].(string)
+	if code != "DENY_WORKER_TAMPERED" {
+		t.Errorf("CV-013 Step 4: expected deny code DENY_WORKER_TAMPERED, got %q (full reason: %v)",
+			code, dec2.DenyReasonIfDenied)
+	}
+	// Step 5: verify evidence receipt fields
+	if !dec2.WorkerAttestationChecked {
+		t.Error("CV-013 Step 5: expected WorkerAttestationChecked=true")
+	}
+	if dec2.WorkerAttestationValid == nil || *dec2.WorkerAttestationValid {
+		t.Error("CV-013 Step 5: expected WorkerAttestationValid=false")
+	}
+	// Step 6 / F4: hash values must NOT appear in the deny payload
+	if _, ok := dec2.DenyReasonIfDenied["registered_hash"]; ok {
+		t.Error("CV-013 F4 violation: registered_hash must not appear in deny payload")
+	}
+	if _, ok := dec2.DenyReasonIfDenied["current_hash"]; ok {
+		t.Error("CV-013 F4 violation: current_hash must not appear in deny payload")
 	}
 }
