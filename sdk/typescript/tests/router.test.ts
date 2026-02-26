@@ -12,6 +12,9 @@
  *   - Dry-run mode
  */
 
+import { writeFileSync, mkdtempSync, unlinkSync } from "fs";
+import { join } from "path";
+import { tmpdir } from "os";
 import { makeDecision } from "../src/router.js";
 import { Registry } from "../src/registry.js";
 import { PolicyGate } from "../src/policyGate.js";
@@ -2162,10 +2165,6 @@ describe("ShadowRuleDetection", () => {
 // ---------------------------------------------------------------------------
 // Registry attestation (WCP §5.10)
 // ---------------------------------------------------------------------------
-
-import { writeFileSync, mkdtempSync, unlinkSync } from "fs";
-import { join } from "path";
-import { tmpdir } from "os";
 
 describe("Registry attestation (WCP §5.10)", () => {
   it("registerAttestation returns SHA-256 hex of file content", () => {
