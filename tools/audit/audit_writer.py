@@ -5,7 +5,8 @@ import sqlite3
 from datetime import datetime, UTC
 from pathlib import Path
 
-DB_PATH = Path(__file__).parent.parent.parent.parent / "pyhall_audit.db"
+_GIT_ROOT = Path(__file__).parent.parent.parent   # tools/audit/ -> tools/ -> git/
+DB_PATH = _GIT_ROOT.parent / "pyhall_audit.db"    # git/ -> pyhall/pyhall_audit.db
 
 
 def _get_previous_hash(conn: sqlite3.Connection) -> str:

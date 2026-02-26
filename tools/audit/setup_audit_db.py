@@ -4,12 +4,17 @@ setup_audit_db.py — Initialize pyhall_audit.db with hash-chained tables.
 Run once: python tools/audit/setup_audit_db.py
 DB location: /mnt/fafolab/dev/pyhall/pyhall_audit.db (never in git)
 """
-import hashlib
 import sqlite3
-from datetime import datetime, UTC
 from pathlib import Path
 
-DB_PATH = Path(__file__).parent.parent.parent.parent / "pyhall_audit.db"
+_GIT_ROOT = Path(__file__).parent.parent.parent   # tools/audit/ -> tools/ -> git/
+DB_PATH = _GIT_ROOT.parent / "pyhall_audit.db"    # git/ -> pyhall/pyhall_audit.db
+
+# Safety: assert the DB is NOT inside the git working tree (design doc §3: "never in git")
+assert _GIT_ROOT not in DB_PATH.parents, (
+    f"DB_PATH resolved inside git tree: {DB_PATH}. "
+    "If this file was moved, update _GIT_ROOT to point at the git root."
+)
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS attestation_log (

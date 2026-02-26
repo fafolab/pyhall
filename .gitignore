@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+
+# TypeScript / Node
+node_modules/
+dist/
+*.js.map
+
+# Go
+*.test
+vendor/
+
+# Audit DB (lives at pyhall/pyhall_audit.db, never in git)
+../pyhall_audit.db
+pyhall_audit.db
+
+# Secrets / local config
+.env
+*.key
+*.pem
+secrets.*
+
+# Editor
+.idea/
+.vscode/
+*.swp
+*.swo
