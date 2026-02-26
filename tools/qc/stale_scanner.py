@@ -2,7 +2,6 @@
 cap.qc.stale.scan — Scan the monorepo for unused/stale files.
 Outputs archive candidates with rationale.
 """
-import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).parent.parent.parent

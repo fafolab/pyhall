@@ -32,7 +32,7 @@ def run(ctx, request):
     }
 
     report_path = ROOT.parent / "release" / "qa-reports" / f"release-gate-{datetime.now(UTC).strftime('%Y%m%d-%H%M%S')}.json"
+    report["report_path"] = str(report_path)
     report_path.parent.mkdir(parents=True, exist_ok=True)
     report_path.write_text(json.dumps(report, indent=2))
-    report["report_path"] = str(report_path)
     return report

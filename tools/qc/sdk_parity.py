@@ -59,12 +59,11 @@ def run(ctx, request):
 
     # worker_attestation_checked in all three models
     model_checks = [
-        (ROOT / "sdk/python/pyhall/router.py", "worker_attestation_checked"),
-        (ROOT / "sdk/typescript/src/models.ts", "worker_attestation_checked"),
-        (ROOT / "sdk/go/wcp/models.go", "WorkerAttestationChecked"),
+        ("python",     ROOT / "sdk/python/pyhall/router.py",    "worker_attestation_checked"),
+        ("typescript", ROOT / "sdk/typescript/src/models.ts",   "worker_attestation_checked"),
+        ("go",         ROOT / "sdk/go/wcp/models.go",           "WorkerAttestationChecked"),
     ]
-    for path, field in model_checks:
-        sdk = path.parts[-3] if "sdk" in path.parts else "unknown"
+    for sdk, path, field in model_checks:
         if not _file_contains(path, re.escape(field)):
             findings.append({"severity": "error", "sdk": sdk, "detail": f"Missing field: {field}"})
 
