@@ -7,6 +7,10 @@ from pathlib import Path
 
 _GIT_ROOT = Path(__file__).parent.parent.parent   # tools/audit/ -> tools/ -> git/
 DB_PATH = _GIT_ROOT.parent / "pyhall_audit.db"    # git/ -> pyhall/pyhall_audit.db
+assert _GIT_ROOT not in DB_PATH.parents, (
+    f"DB_PATH resolved inside git tree: {DB_PATH}. "
+    "If this file was moved, update _GIT_ROOT to point at the git root."
+)
 
 
 def _get_previous_hash(conn: sqlite3.Connection) -> str:

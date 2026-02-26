@@ -48,12 +48,11 @@ def run(ctx, request):
 
     # CV-013 in all three test suites
     cv013_checks = [
-        (ROOT / "sdk/python/tests/test_conformance.py", "cv013|CV.013"),
-        (ROOT / "sdk/typescript/tests/conformance.test.ts", "CV-013|cv013"),
-        (ROOT / "sdk/go/wcp/conformance_test.go", "CV013|CV-013"),
+        ("python",     ROOT / "sdk/python/tests/test_conformance.py",   "cv013|CV.013"),
+        ("typescript", ROOT / "sdk/typescript/tests/conformance.test.ts", "CV-013|cv013"),
+        ("go",         ROOT / "sdk/go/wcp/conformance_test.go",          "CV013|CV-013"),
     ]
-    for path, pattern in cv013_checks:
-        sdk = path.parts[-3] if "sdk" in path.parts else "unknown"
+    for sdk, path, pattern in cv013_checks:
         if not _file_contains(path, pattern):
             findings.append({"severity": "error", "sdk": sdk, "detail": f"CV-013 not in conformance test suite"})
 
