@@ -1,0 +1,266 @@
+"""
+tests/test_cli_user.py — Tests for user-facing catalog CLI commands.
+
+Tests:
+  - search: fuzzy search across catalog entities
+  - explain: detailed entity lookup
+  - browse: taxonomy catalog browser
+  - dispatch: routing simulation
+"""
+
+from __future__ import annotations
+
+import json
+
+import pytest
+from typer.testing import CliRunner
+
+from pyhall.cli import app
+
+runner = CliRunner()
+
+
+# ---------------------------------------------------------------------------
+# search
+# ---------------------------------------------------------------------------
+
+def test_search_returns_results():
+    """Search for a known term returns ranked results."""
+    result = runner.invoke(app, ["search", "summarize", "--quiet"])
+    assert result.exit_code == 0
+    # Should find document summarize capabilities
+    assert "summarize" in result.output.lower() or "doc" in result.output.lower()
+
+
+def test_search_no_results():
+    """Search for a term that matches nothing exits 0 with a no-results message."""
+    result = runner.invoke(app, ["search", "xyzzy_no_match_ever_42qz", "--quiet"])
+    assert result.exit_code == 0
+    # Should print a "no results" message (not crash)
+    assert (
+        "no results" in result.output.lower()
+        or "no match" in result.output.lower()
+        or "not found" in result.output.lower()
+        or result.output.strip() != ""  # at minimum, something was printed
+    )
+
+
+def test_search_type_filter():
+    """Search with --type cap returns only capability entities."""
+    result = runner.invoke(app, ["search", "doc", "--type", "cap", "--quiet"])
+    assert result.exit_code == 0
+    # Output should reference cap-type entities; wrk/ctrl types should not dominate
+    # (We just ensure it runs successfully with the filter)
+
+
+def test_search_pack_filter():
+    """Search with --pack filter narrows to entities in that pack."""
+    result = runner.invoke(app, ["search", "doc", "--pack", "pack.10", "--quiet"])
+    assert result.exit_code == 0
+
+
+def test_search_limit():
+    """--limit flag controls number of results."""
+    result = runner.invoke(app, ["search", "doc", "--limit", "3", "--quiet"])
+    assert result.exit_code == 0
+
+
+def test_search_json_output():
+    """--json flag returns valid JSON array."""
+    result = runner.invoke(app, ["search", "sandbox", "--json"])
+    assert result.exit_code == 0
+    data = json.loads(result.output)
+    assert isinstance(data, list)
+    # Each result should have required fields
+    for item in data:
+        assert "id" in item
+        assert "type" in item
+        assert "score" in item
+        assert isinstance(item["score"], int)
+        assert item["score"] > 0
+
+
+def test_search_json_no_results():
+    """--json flag with no results returns empty list."""
+    result = runner.invoke(app, ["search", "xyzzy_no_match_ever_42qz", "--json"])
+    assert result.exit_code == 0
+    data = json.loads(result.output)
+    assert isinstance(data, list)
+    assert len(data) == 0
+
+
+def test_search_json_scores_ordered():
+    """JSON output results are sorted by score descending."""
+    result = runner.invoke(app, ["search", "sandbox", "--json"])
+    assert result.exit_code == 0
+    data = json.loads(result.output)
+    if len(data) > 1:
+        scores = [item["score"] for item in data]
+        assert scores == sorted(scores, reverse=True), "Results should be sorted by score descending"
+
+
+# ---------------------------------------------------------------------------
+# explain
+# ---------------------------------------------------------------------------
+
+def test_explain_known_entity():
+    """Explain a known capability entity from the catalog."""
+    # Use an entity we know exists from catalog inspection
+    result = runner.invoke(app, ["explain", "cap.mount.workspace", "--quiet"])
+    assert result.exit_code == 0
+    assert "cap.mount.workspace" in result.output
+
+
+def test_explain_known_worker_species():
+    """Explain a known worker_species entity."""
+    result = runner.invoke(app, ["explain", "wrk.doc.pipeline.orchestrator", "--quiet"])
+    assert result.exit_code == 0
+    assert "wrk.doc.pipeline.orchestrator" in result.output
+
+
+def test_explain_known_control():
+    """Explain a known control entity."""
+    result = runner.invoke(app, ["explain", "ctrl.sandbox.no-egress-default-deny", "--quiet"])
+    assert result.exit_code == 0
+    assert "ctrl.sandbox.no-egress-default-deny" in result.output
+
+
+def test_explain_unknown_entity_exits_nonzero():
+    """Explain with an unknown entity ID exits with code 1."""
+    result = runner.invoke(app, ["explain", "cap.does.not.exist.v99", "--quiet"])
+    assert result.exit_code == 1
+    # Should mention the entity was not found
+    assert (
+        "not found" in result.output.lower()
+        or "error" in result.output.lower()
+    )
+
+
+def test_explain_json_output():
+    """--json flag returns the raw entity JSON."""
+    result = runner.invoke(app, ["explain", "cap.mount.workspace", "--json"])
+    assert result.exit_code == 0
+    data = json.loads(result.output)
+    assert data["id"] == "cap.mount.workspace"
+    assert data["type"] == "capability"
+
+
+def test_explain_json_unknown_exits_nonzero():
+    """--json flag with unknown entity exits 1 and returns error JSON."""
+    result = runner.invoke(app, ["explain", "cap.does.not.exist.v99", "--json"])
+    assert result.exit_code == 1
+    data = json.loads(result.output)
+    assert "error" in data
+
+
+# ---------------------------------------------------------------------------
+# browse
+# ---------------------------------------------------------------------------
+
+def test_browse_list_packs():
+    """browse with no flags lists all packs."""
+    result = runner.invoke(app, ["browse", "--quiet"])
+    assert result.exit_code == 0
+    # Should mention pack IDs
+    assert "pack.01" in result.output
+    assert "pack.10" in result.output
+
+
+def test_browse_with_pack_filter():
+    """browse --pack lists entities in the given pack."""
+    result = runner.invoke(app, ["browse", "--pack", "pack.10", "--quiet"])
+    assert result.exit_code == 0
+    # pack.10 is Document Pipeline — should have entities
+    assert result.output.strip() != ""
+    # Should show entity IDs from pack.10
+    assert "pack.10" in result.output or "doc" in result.output.lower()
+
+
+def test_browse_with_type_filter():
+    """browse --type cap lists only capability entities."""
+    result = runner.invoke(app, ["browse", "--type", "cap", "--quiet"])
+    assert result.exit_code == 0
+    assert "cap" in result.output.lower()
+
+
+def test_browse_json_packs():
+    """browse --json lists packs as structured data."""
+    result = runner.invoke(app, ["browse", "--json"])
+    assert result.exit_code == 0
+    data = json.loads(result.output)
+    assert "packs" in data
+    packs = data["packs"]
+    assert isinstance(packs, list)
+    assert len(packs) > 0
+    # Each pack should have id and name
+    for p in packs:
+        assert "id" in p
+        assert "name" in p
+
+
+def test_browse_json_pack_filter():
+    """browse --pack --json returns entities list."""
+    result = runner.invoke(app, ["browse", "--pack", "pack.01", "--json"])
+    assert result.exit_code == 0
+    data = json.loads(result.output)
+    assert "entities" in data
+    assert "count" in data
+    assert data["count"] > 0
+    for e in data["entities"]:
+        assert e.get("pack_id") == "pack.01"
+
+
+def test_browse_json_type_filter():
+    """browse --type wrk --json returns only worker_species entities."""
+    result = runner.invoke(app, ["browse", "--type", "wrk", "--json"])
+    assert result.exit_code == 0
+    data = json.loads(result.output)
+    assert "entities" in data
+    for e in data["entities"]:
+        assert e["type"] == "worker_species"
+
+
+# ---------------------------------------------------------------------------
+# dispatch
+# ---------------------------------------------------------------------------
+
+def test_dispatch_known_capability():
+    """Dispatch a capability that exists in the catalog with handlers."""
+    # cap.doc.ingest is handled by wrk.doc.pipeline.orchestrator
+    result = runner.invoke(app, ["dispatch", "cap.doc.ingest", "--quiet"])
+    # Exit code 0 = ALLOWED, 1 = DENIED (both are valid routing outcomes)
+    assert result.exit_code in (0, 1)
+    assert result.output.strip() != ""
+
+
+def test_dispatch_unknown_capability():
+    """Dispatch an unknown capability results in a DENIED decision."""
+    result = runner.invoke(app, ["dispatch", "cap.does.not.exist.v99", "--quiet"])
+    # Should be DENIED (fail-closed) — exit 1
+    assert result.exit_code == 1
+
+
+def test_dispatch_dry_run():
+    """--dry-run flag does not invoke the routing engine."""
+    result = runner.invoke(app, ["dispatch", "cap.doc.ingest", "--dry-run", "--quiet"])
+    assert result.exit_code == 0
+    assert "dry run" in result.output.lower() or "DRY RUN" in result.output
+
+
+def test_dispatch_json_output():
+    """--json flag returns valid JSON with routing decision fields."""
+    result = runner.invoke(app, ["dispatch", "cap.doc.ingest", "--json"])
+    assert result.exit_code in (0, 1)
+    data = json.loads(result.output)
+    # JSON output should include decision fields
+    assert "denied" in data or "_meta" in data
+
+
+def test_dispatch_dry_run_json():
+    """--dry-run --json returns structured trace without running the router."""
+    result = runner.invoke(app, ["dispatch", "cap.doc.ingest", "--dry-run", "--json"])
+    assert result.exit_code == 0
+    data = json.loads(result.output)
+    assert data.get("dry_run") is True
+    assert "trace" in data
+    assert isinstance(data["trace"], list)

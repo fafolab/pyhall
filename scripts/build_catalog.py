@@ -21,18 +21,63 @@ CATALOG_PATHS = [
     ROOT / "web/playground/data/catalog.json",
 ]
 
-# WCP spec §3.2: 2-4 dot-separated segments, lowercase a-z/digits/hyphens/underscores only.
+# WCP spec §3.2: 2-4 dot-separated segments, lowercase a-z/digits/hyphens only (no underscores).
 # §3.4: No version numbers in IDs (no .v1, .v2, etc.).
-VALID_ID_RE = re.compile(r'^[a-z][a-z0-9\-_]*(\.[a-z][a-z0-9\-_]*){1,3}$')
+VALID_ID_RE = re.compile(r'^[a-z][a-z0-9\-]*(\.[a-z][a-z0-9\-]*){1,3}$')
 VERSION_SUFFIX_RE = re.compile(r'\.[vV]\d+')
+
+# Required fields per entity type (spec §3.2/§4.x)
+REQUIRED_BY_TYPE: dict[str, set[str]] = {
+    "capability": {
+        "id", "type", "pack_id", "name", "description", "risk_tier",
+        "blast_radius_hint", "typical_controls", "idempotency", "determinism",
+        "tags", "wcp_namespace",
+    },
+    "worker_species": {
+        "id", "type", "pack_id", "name", "description", "risk_tier",
+        "serves_capabilities", "blast_radius_hint", "required_controls",
+        "idempotency", "determinism", "tags", "wcp_namespace",
+    },
+    "worker": {
+        "id", "type", "pack_id", "name", "description", "risk_tier",
+        "serves_capabilities", "blast_radius_hint", "required_controls",
+        "idempotency", "determinism", "tags", "wcp_namespace",
+    },
+    "control": {
+        "id", "type", "pack_id", "name", "description",
+        "enforcement_point", "required_for_risk_tiers", "tags", "wcp_namespace",
+    },
+    "profile": {
+        "id", "type", "pack_id", "name", "description",
+        "controls_required", "recommended_for_risk_tiers", "tags", "wcp_namespace",
+    },
+    "event": {
+        "id", "type", "pack_id", "name", "description", "mandatory", "tags", "wcp_namespace",
+    },
+    "policy": {
+        "id", "type", "pack_id", "name", "description", "controls_required", "tags", "wcp_namespace",
+    },
+}
 
 
 def validate_id(entity_id: str) -> list[str]:
     errors = []
     if not VALID_ID_RE.match(entity_id):
-        errors.append(f"  ID '{entity_id}' fails format check (spec §3.2): must be 2-4 dot-separated lowercase segments (a-z, 0-9, hyphens, underscores)")
+        errors.append(f"  ID '{entity_id}' fails format check (spec §3.2): must be 2-4 dot-separated lowercase segments (a-z, 0-9, hyphens only — no underscores)")
     if VERSION_SUFFIX_RE.search(entity_id):
         errors.append(f"  ID '{entity_id}' contains version suffix (spec §3.4): remove .v1, .v2, etc.")
+    return errors
+
+
+def validate_required_fields(entity: dict) -> list[str]:
+    """Validate that entity has all required fields for its type."""
+    errors = []
+    t = entity.get("type", "?")
+    required = REQUIRED_BY_TYPE.get(t)
+    if required:
+        for field in sorted(required):
+            if field not in entity:
+                errors.append(f"  {entity.get('id', '?')} (type={t}) missing required field: {field}")
     return errors
 
 
@@ -54,6 +99,10 @@ def main():
     errors = []
     for entity in entities:
         errors.extend(validate_id(entity["id"]))
+
+    # Per-type required field validation
+    for entity in entities:
+        errors.extend(validate_required_fields(entity))
 
     if errors:
         print(f"CATALOG BUILD FAILED — {len(errors)} spec violations:\n")

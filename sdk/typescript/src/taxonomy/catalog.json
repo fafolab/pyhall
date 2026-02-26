@@ -165,8 +165,8 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.sandbox.workspace_mounts_only",
-        "ctrl.sandbox.readonly_rootfs"
+        "ctrl.sandbox.workspace-mounts-only",
+        "ctrl.sandbox.readonly-rootfs"
       ],
       "idempotency": "full",
       "determinism": "deterministic"
@@ -192,8 +192,8 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.sandbox.no_egress_default_deny",
-        "ctrl.sandbox.path_allowlists"
+        "ctrl.sandbox.no-egress-default-deny",
+        "ctrl.sandbox.path-allowlists"
       ],
       "idempotency": "partial",
       "determinism": "non-deterministic"
@@ -218,7 +218,7 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.sandbox.no_egress_default_deny"
+        "ctrl.sandbox.no-egress-default-deny"
       ],
       "idempotency": "full",
       "determinism": "deterministic"
@@ -243,7 +243,7 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.sandbox.readonly_rootfs"
+        "ctrl.sandbox.readonly-rootfs"
       ],
       "idempotency": "full",
       "determinism": "deterministic"
@@ -268,8 +268,8 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.sandbox.workspace_mounts_only",
-        "ctrl.sandbox.path_allowlists"
+        "ctrl.sandbox.workspace-mounts-only",
+        "ctrl.sandbox.path-allowlists"
       ],
       "idempotency": "partial",
       "determinism": "deterministic"
@@ -294,9 +294,9 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.sandbox.no_privileged_containers",
-        "ctrl.sandbox.resource_limits_strict",
-        "ctrl.sandbox.syscall_filtering"
+        "ctrl.sandbox.no-privileged-containers",
+        "ctrl.sandbox.resource-limits-strict",
+        "ctrl.sandbox.syscall-filtering"
       ],
       "idempotency": "partial",
       "determinism": "captured"
@@ -321,14 +321,14 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.sandbox.resource_limits_strict",
-        "ctrl.sandbox.no_egress_default_deny"
+        "ctrl.sandbox.resource-limits-strict",
+        "ctrl.sandbox.no-egress-default-deny"
       ],
       "idempotency": "partial",
       "determinism": "captured"
     },
     {
-      "id": "ctrl.sandbox.no_egress_default_deny",
+      "id": "ctrl.sandbox.no-egress-default-deny",
       "type": "control",
       "pack_id": "pack.01",
       "name": "No Egress Default Deny",
@@ -343,10 +343,11 @@
         "medium",
         "high",
         "critical"
-      ]
+      ],
+      "wcp_namespace": "reserved"
     },
     {
-      "id": "ctrl.sandbox.readonly_rootfs",
+      "id": "ctrl.sandbox.readonly-rootfs",
       "type": "control",
       "pack_id": "pack.01",
       "name": "Read-Only Root Filesystem",
@@ -360,10 +361,11 @@
         "medium",
         "high",
         "critical"
-      ]
+      ],
+      "wcp_namespace": "reserved"
     },
     {
-      "id": "ctrl.sandbox.workspace_mounts_only",
+      "id": "ctrl.sandbox.workspace-mounts-only",
       "type": "control",
       "pack_id": "pack.01",
       "name": "Workspace Mounts Only",
@@ -377,10 +379,11 @@
         "medium",
         "high",
         "critical"
-      ]
+      ],
+      "wcp_namespace": "reserved"
     },
     {
-      "id": "ctrl.sandbox.resource_limits_strict",
+      "id": "ctrl.sandbox.resource-limits-strict",
       "type": "control",
       "pack_id": "pack.01",
       "name": "Strict Resource Limits",
@@ -395,10 +398,11 @@
         "medium",
         "high",
         "critical"
-      ]
+      ],
+      "wcp_namespace": "reserved"
     },
     {
-      "id": "ctrl.sandbox.syscall_filtering",
+      "id": "ctrl.sandbox.syscall-filtering",
       "type": "control",
       "pack_id": "pack.01",
       "name": "Syscall Filtering",
@@ -411,10 +415,11 @@
       "required_for_risk_tiers": [
         "high",
         "critical"
-      ]
+      ],
+      "wcp_namespace": "reserved"
     },
     {
-      "id": "ctrl.sandbox.no_privileged_containers",
+      "id": "ctrl.sandbox.no-privileged-containers",
       "type": "control",
       "pack_id": "pack.01",
       "name": "No Privileged Containers",
@@ -429,10 +434,11 @@
         "medium",
         "high",
         "critical"
-      ]
+      ],
+      "wcp_namespace": "reserved"
     },
     {
-      "id": "ctrl.sandbox.secrets_denied_by_default",
+      "id": "ctrl.sandbox.secrets-denied-by-default",
       "type": "control",
       "pack_id": "pack.01",
       "name": "Secrets Denied by Default",
@@ -448,10 +454,11 @@
         "medium",
         "high",
         "critical"
-      ]
+      ],
+      "wcp_namespace": "reserved"
     },
     {
-      "id": "ctrl.sandbox.flight_recorder",
+      "id": "ctrl.sandbox.flight-recorder",
       "type": "control",
       "pack_id": "pack.01",
       "name": "Flight Recorder",
@@ -466,10 +473,11 @@
         "medium",
         "high",
         "critical"
-      ]
+      ],
+      "wcp_namespace": "reserved"
     },
     {
-      "id": "ctrl.sandbox.path_allowlists",
+      "id": "ctrl.sandbox.path-allowlists",
       "type": "control",
       "pack_id": "pack.01",
       "name": "Path Allowlists",
@@ -484,10 +492,11 @@
         "medium",
         "high",
         "critical"
-      ]
+      ],
+      "wcp_namespace": "reserved"
     },
     {
-      "id": "prof.sandbox.no_egress",
+      "id": "prof.sandbox.no-egress",
       "type": "profile",
       "pack_id": "pack.01",
       "name": "No-Egress Sandbox Profile",
@@ -497,19 +506,20 @@
         "network"
       ],
       "controls_required": [
-        "ctrl.sandbox.no_egress_default_deny",
-        "ctrl.sandbox.workspace_mounts_only",
-        "ctrl.sandbox.readonly_rootfs",
-        "ctrl.sandbox.secrets_denied_by_default"
+        "ctrl.sandbox.no-egress-default-deny",
+        "ctrl.sandbox.workspace-mounts-only",
+        "ctrl.sandbox.readonly-rootfs",
+        "ctrl.sandbox.secrets-denied-by-default"
       ],
       "recommended_for_risk_tiers": [
         "medium",
         "high",
         "critical"
-      ]
+      ],
+      "wcp_namespace": "reserved"
     },
     {
-      "id": "prof.sandbox.vm_strict",
+      "id": "prof.sandbox.vm-strict",
       "type": "profile",
       "pack_id": "pack.01",
       "name": "VM-Strict Sandbox Profile",
@@ -519,18 +529,19 @@
         "security"
       ],
       "controls_required": [
-        "ctrl.sandbox.no_egress_default_deny",
-        "ctrl.sandbox.resource_limits_strict",
-        "ctrl.sandbox.secrets_denied_by_default",
-        "ctrl.sandbox.flight_recorder"
+        "ctrl.sandbox.no-egress-default-deny",
+        "ctrl.sandbox.resource-limits-strict",
+        "ctrl.sandbox.secrets-denied-by-default",
+        "ctrl.sandbox.flight-recorder"
       ],
       "recommended_for_risk_tiers": [
         "high",
         "critical"
-      ]
+      ],
+      "wcp_namespace": "reserved"
     },
     {
-      "id": "prof.sandbox.allowlisted_egress",
+      "id": "prof.sandbox.allowlisted-egress",
       "type": "profile",
       "pack_id": "pack.01",
       "name": "Allowlisted Egress Sandbox Profile",
@@ -541,15 +552,16 @@
         "egress"
       ],
       "controls_required": [
-        "ctrl.sandbox.path_allowlists",
-        "ctrl.sandbox.workspace_mounts_only",
-        "ctrl.sandbox.no_privileged_containers",
-        "ctrl.sandbox.flight_recorder"
+        "ctrl.sandbox.path-allowlists",
+        "ctrl.sandbox.workspace-mounts-only",
+        "ctrl.sandbox.no-privileged-containers",
+        "ctrl.sandbox.flight-recorder"
       ],
       "recommended_for_risk_tiers": [
         "medium",
         "high"
-      ]
+      ],
+      "wcp_namespace": "reserved"
     },
     {
       "id": "cap.identity.workload",
@@ -572,7 +584,7 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.sandbox.secrets_denied_by_default"
+        "ctrl.sandbox.secrets-denied-by-default"
       ],
       "idempotency": "full",
       "determinism": "deterministic"
@@ -598,8 +610,8 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.sandbox.secrets_denied_by_default",
-        "ctrl.obs.audit_log_append_only"
+        "ctrl.sandbox.secrets-denied-by-default",
+        "ctrl.obs.audit-log-append-only"
       ],
       "idempotency": "full",
       "determinism": "deterministic"
@@ -625,8 +637,8 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.sandbox.secrets_denied_by_default",
-        "ctrl.obs.audit_log_append_only"
+        "ctrl.sandbox.secrets-denied-by-default",
+        "ctrl.obs.audit-log-append-only"
       ],
       "idempotency": "partial",
       "determinism": "deterministic"
@@ -652,8 +664,8 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.obs.audit_log_append_only",
-        "ctrl.sandbox.secrets_denied_by_default"
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.sandbox.secrets-denied-by-default"
       ],
       "idempotency": "partial",
       "determinism": "deterministic"
@@ -679,13 +691,13 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.obs.audit_log_append_only"
+        "ctrl.obs.audit-log-append-only"
       ],
       "idempotency": "full",
       "determinism": "deterministic"
     },
     {
-      "id": "cap.side_effect.write_external",
+      "id": "cap.side-effect.write-external",
       "type": "capability",
       "pack_id": "pack.03",
       "name": "Write External Side Effect",
@@ -705,8 +717,8 @@
         "reversibility": "partially-reversible"
       },
       "typical_controls": [
-        "ctrl.obs.audit_log_append_only",
-        "ctrl.obs.structured_logging"
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.obs.structured-logging"
       ],
       "idempotency": "partial",
       "determinism": "captured"
@@ -732,7 +744,7 @@
         "reversibility": "irreversible"
       },
       "typical_controls": [
-        "ctrl.obs.audit_log_append_only"
+        "ctrl.obs.audit-log-append-only"
       ],
       "idempotency": "partial",
       "determinism": "deterministic"
@@ -758,8 +770,8 @@
         "reversibility": "partially-reversible"
       },
       "typical_controls": [
-        "ctrl.obs.structured_logging",
-        "ctrl.obs.run_metadata_store"
+        "ctrl.obs.structured-logging",
+        "ctrl.obs.run-metadata-store"
       ],
       "idempotency": "partial",
       "determinism": "captured"
@@ -785,13 +797,13 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.obs.structured_logging"
+        "ctrl.obs.structured-logging"
       ],
       "idempotency": "full",
       "determinism": "deterministic"
     },
     {
-      "id": "ctrl.obs.structured_logging",
+      "id": "ctrl.obs.structured-logging",
       "type": "control",
       "pack_id": "pack.03",
       "name": "Structured Logging",
@@ -806,10 +818,11 @@
         "medium",
         "high",
         "critical"
-      ]
+      ],
+      "wcp_namespace": "reserved"
     },
     {
-      "id": "ctrl.obs.metrics_core",
+      "id": "ctrl.obs.metrics-core",
       "type": "control",
       "pack_id": "pack.03",
       "name": "Core Metrics",
@@ -823,10 +836,11 @@
         "medium",
         "high",
         "critical"
-      ]
+      ],
+      "wcp_namespace": "reserved"
     },
     {
-      "id": "ctrl.obs.tracing_distributed",
+      "id": "ctrl.obs.tracing-distributed",
       "type": "control",
       "pack_id": "pack.03",
       "name": "Distributed Tracing",
@@ -840,10 +854,11 @@
         "medium",
         "high",
         "critical"
-      ]
+      ],
+      "wcp_namespace": "reserved"
     },
     {
-      "id": "ctrl.obs.audit_log_append_only",
+      "id": "ctrl.obs.audit-log-append-only",
       "type": "control",
       "pack_id": "pack.03",
       "name": "Append-Only Audit Log",
@@ -858,10 +873,11 @@
         "medium",
         "high",
         "critical"
-      ]
+      ],
+      "wcp_namespace": "reserved"
     },
     {
-      "id": "ctrl.obs.run_metadata_store",
+      "id": "ctrl.obs.run-metadata-store",
       "type": "control",
       "pack_id": "pack.03",
       "name": "Run Metadata Store",
@@ -875,10 +891,11 @@
         "medium",
         "high",
         "critical"
-      ]
+      ],
+      "wcp_namespace": "reserved"
     },
     {
-      "id": "ctrl.obs.slo_alerting",
+      "id": "ctrl.obs.slo-alerting",
       "type": "control",
       "pack_id": "pack.03",
       "name": "SLO Alerting",
@@ -893,10 +910,11 @@
         "medium",
         "high",
         "critical"
-      ]
+      ],
+      "wcp_namespace": "reserved"
     },
     {
-      "id": "ctrl.obs.flight_recorder_bundle",
+      "id": "ctrl.obs.flight-recorder-bundle",
       "type": "control",
       "pack_id": "pack.03",
       "name": "Flight Recorder Bundle",
@@ -910,7 +928,8 @@
       "required_for_risk_tiers": [
         "high",
         "critical"
-      ]
+      ],
+      "wcp_namespace": "reserved"
     },
     {
       "id": "cap.dlq.inspect",
@@ -933,7 +952,7 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.obs.structured_logging"
+        "ctrl.obs.structured-logging"
       ],
       "idempotency": "full",
       "determinism": "deterministic"
@@ -959,8 +978,8 @@
         "reversibility": "partially-reversible"
       },
       "typical_controls": [
-        "ctrl.dlq.max_replay_attempts",
-        "ctrl.obs.structured_logging"
+        "ctrl.dlq.max-replay-attempts",
+        "ctrl.obs.structured-logging"
       ],
       "idempotency": "partial",
       "determinism": "captured"
@@ -986,14 +1005,14 @@
         "reversibility": "irreversible"
       },
       "typical_controls": [
-        "ctrl.obs.audit_log_append_only",
-        "ctrl.dlq.max_replay_attempts"
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.dlq.max-replay-attempts"
       ],
       "idempotency": "full",
       "determinism": "deterministic"
     },
     {
-      "id": "cap.repair.reconcile_state",
+      "id": "cap.repair.reconcile-state",
       "type": "capability",
       "pack_id": "pack.04",
       "name": "Reconcile Broken State",
@@ -1013,14 +1032,14 @@
         "reversibility": "partially-reversible"
       },
       "typical_controls": [
-        "ctrl.obs.audit_log_append_only",
-        "ctrl.obs.structured_logging"
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.obs.structured-logging"
       ],
       "idempotency": "full",
       "determinism": "deterministic"
     },
     {
-      "id": "cap.repair.compensate_transaction",
+      "id": "cap.repair.compensate-transaction",
       "type": "capability",
       "pack_id": "pack.04",
       "name": "Execute Compensating Transaction",
@@ -1040,15 +1059,15 @@
         "reversibility": "partially-reversible"
       },
       "typical_controls": [
-        "ctrl.obs.audit_log_append_only",
-        "ctrl.obs.tracing_distributed"
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.obs.tracing-distributed"
       ],
       "idempotency": "full",
       "determinism": "deterministic"
     },
     {
       "id": "wrk.dlq.janitor",
-      "type": "worker",
+      "type": "worker_species",
       "pack_id": "pack.04",
       "name": "DLQ Janitor Worker",
       "description": "Periodic worker that inspects, classifies, and routes DLQ messages \u2014 retry, escalate, or purge.",
@@ -1072,15 +1091,15 @@
         "reversibility": "partially-reversible"
       },
       "required_controls": [
-        "ctrl.obs.structured_logging",
-        "ctrl.dlq.max_replay_attempts"
+        "ctrl.obs.structured-logging",
+        "ctrl.dlq.max-replay-attempts"
       ],
       "idempotency": "partial",
       "determinism": "deterministic"
     },
     {
-      "id": "wrk.repair.state_reconciler",
-      "type": "worker",
+      "id": "wrk.repair.state-reconciler",
+      "type": "worker_species",
       "pack_id": "pack.04",
       "name": "State Reconciler Worker",
       "description": "Scans entity state periodically, detects drift from authoritative source, and triggers repair.",
@@ -1092,7 +1111,7 @@
       ],
       "wcp_namespace": "reserved",
       "serves_capabilities": [
-        "cap.repair.reconcile_state"
+        "cap.repair.reconcile-state"
       ],
       "blast_radius_hint": {
         "data": 2,
@@ -1102,14 +1121,14 @@
         "reversibility": "partially-reversible"
       },
       "required_controls": [
-        "ctrl.obs.structured_logging",
-        "ctrl.obs.audit_log_append_only"
+        "ctrl.obs.structured-logging",
+        "ctrl.obs.audit-log-append-only"
       ],
       "idempotency": "full",
       "determinism": "deterministic"
     },
     {
-      "id": "ctrl.dlq.max_replay_attempts",
+      "id": "ctrl.dlq.max-replay-attempts",
       "type": "control",
       "pack_id": "pack.04",
       "name": "Max Replay Attempts",
@@ -1130,7 +1149,7 @@
       ]
     },
     {
-      "id": "cap.idempotency.check_key",
+      "id": "cap.idempotency.check-key",
       "type": "capability",
       "pack_id": "pack.05",
       "name": "Check Idempotency Key",
@@ -1149,13 +1168,13 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.idempotency.key_ttl_seconds"
+        "ctrl.idempotency.key-ttl-seconds"
       ],
       "idempotency": "full",
       "determinism": "deterministic"
     },
     {
-      "id": "cap.idempotency.register_key",
+      "id": "cap.idempotency.register-key",
       "type": "capability",
       "pack_id": "pack.05",
       "name": "Register Idempotency Key",
@@ -1174,13 +1193,13 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.idempotency.key_ttl_seconds"
+        "ctrl.idempotency.key-ttl-seconds"
       ],
       "idempotency": "full",
       "determinism": "deterministic"
     },
     {
-      "id": "cap.idempotency.expire_key",
+      "id": "cap.idempotency.expire-key",
       "type": "capability",
       "pack_id": "pack.05",
       "name": "Expire Idempotency Key",
@@ -1200,13 +1219,13 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.idempotency.key_ttl_seconds"
+        "ctrl.idempotency.key-ttl-seconds"
       ],
       "idempotency": "full",
       "determinism": "deterministic"
     },
     {
-      "id": "cap.idempotency.atomic_write",
+      "id": "cap.idempotency.atomic-write",
       "type": "capability",
       "pack_id": "pack.05",
       "name": "Atomic Idempotent Write",
@@ -1226,15 +1245,15 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.idempotency.key_ttl_seconds",
-        "ctrl.obs.structured_logging"
+        "ctrl.idempotency.key-ttl-seconds",
+        "ctrl.obs.structured-logging"
       ],
       "idempotency": "full",
       "determinism": "deterministic"
     },
     {
       "id": "wrk.idempotency.guard",
-      "type": "worker",
+      "type": "worker_species",
       "pack_id": "pack.05",
       "name": "Idempotency Guard Worker",
       "description": "Middleware worker that intercepts job submissions, checks/registers idempotency keys, and short-circuits duplicates.",
@@ -1246,9 +1265,9 @@
       ],
       "wcp_namespace": "reserved",
       "serves_capabilities": [
-        "cap.idempotency.check_key",
-        "cap.idempotency.register_key",
-        "cap.idempotency.atomic_write"
+        "cap.idempotency.check-key",
+        "cap.idempotency.register-key",
+        "cap.idempotency.atomic-write"
       ],
       "blast_radius_hint": {
         "data": 0,
@@ -1258,15 +1277,15 @@
         "reversibility": "reversible"
       },
       "required_controls": [
-        "ctrl.idempotency.key_ttl_seconds",
-        "ctrl.obs.structured_logging"
+        "ctrl.idempotency.key-ttl-seconds",
+        "ctrl.obs.structured-logging"
       ],
       "idempotency": "full",
       "determinism": "deterministic"
     },
     {
-      "id": "wrk.idempotency.dedup_sweeper",
-      "type": "worker",
+      "id": "wrk.idempotency.dedup-sweeper",
+      "type": "worker_species",
       "pack_id": "pack.05",
       "name": "Dedup Sweeper Worker",
       "description": "Periodic worker that removes expired idempotency keys from the store to control storage growth.",
@@ -1278,7 +1297,7 @@
       ],
       "wcp_namespace": "reserved",
       "serves_capabilities": [
-        "cap.idempotency.expire_key"
+        "cap.idempotency.expire-key"
       ],
       "blast_radius_hint": {
         "data": 0,
@@ -1288,13 +1307,13 @@
         "reversibility": "reversible"
       },
       "required_controls": [
-        "ctrl.idempotency.key_ttl_seconds"
+        "ctrl.idempotency.key-ttl-seconds"
       ],
       "idempotency": "full",
       "determinism": "deterministic"
     },
     {
-      "id": "ctrl.idempotency.key_ttl_seconds",
+      "id": "ctrl.idempotency.key-ttl-seconds",
       "type": "control",
       "pack_id": "pack.05",
       "name": "Idempotency Key TTL",
@@ -1315,7 +1334,7 @@
       ]
     },
     {
-      "id": "cap.cost.track_token_usage",
+      "id": "cap.cost.track-token-usage",
       "type": "capability",
       "pack_id": "pack.06",
       "name": "Track Token Usage",
@@ -1335,14 +1354,14 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.cost.monthly_token_budget",
-        "ctrl.obs.metrics_core"
+        "ctrl.cost.monthly-token-budget",
+        "ctrl.obs.metrics-core"
       ],
       "idempotency": "partial",
       "determinism": "deterministic"
     },
     {
-      "id": "cap.cost.check_budget",
+      "id": "cap.cost.check-budget",
       "type": "capability",
       "pack_id": "pack.06",
       "name": "Check Cost Budget",
@@ -1362,13 +1381,13 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.cost.monthly_token_budget"
+        "ctrl.cost.monthly-token-budget"
       ],
       "idempotency": "full",
       "determinism": "deterministic"
     },
     {
-      "id": "cap.cost.enforce_cap",
+      "id": "cap.cost.enforce-cap",
       "type": "capability",
       "pack_id": "pack.06",
       "name": "Enforce Spend Cap",
@@ -1388,14 +1407,14 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.cost.monthly_token_budget",
-        "ctrl.obs.structured_logging"
+        "ctrl.cost.monthly-token-budget",
+        "ctrl.obs.structured-logging"
       ],
       "idempotency": "full",
       "determinism": "deterministic"
     },
     {
-      "id": "cap.cost.estimate_job",
+      "id": "cap.cost.estimate-job",
       "type": "capability",
       "pack_id": "pack.06",
       "name": "Estimate Job Cost",
@@ -1415,13 +1434,13 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.cost.monthly_token_budget"
+        "ctrl.cost.monthly-token-budget"
       ],
       "idempotency": "full",
       "determinism": "deterministic"
     },
     {
-      "id": "cap.cost.generate_report",
+      "id": "cap.cost.generate-report",
       "type": "capability",
       "pack_id": "pack.06",
       "name": "Generate Cost Report",
@@ -1441,14 +1460,14 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.obs.structured_logging"
+        "ctrl.obs.structured-logging"
       ],
       "idempotency": "full",
       "determinism": "deterministic"
     },
     {
-      "id": "wrk.cost.budget_enforcer",
-      "type": "worker",
+      "id": "wrk.cost.budget-enforcer",
+      "type": "worker_species",
       "pack_id": "pack.06",
       "name": "Budget Enforcer Worker",
       "description": "Policy gate worker that intercepts dispatches and denies jobs when cost budgets would be exceeded.",
@@ -1460,8 +1479,8 @@
       ],
       "wcp_namespace": "reserved",
       "serves_capabilities": [
-        "cap.cost.check_budget",
-        "cap.cost.enforce_cap"
+        "cap.cost.check-budget",
+        "cap.cost.enforce-cap"
       ],
       "blast_radius_hint": {
         "data": 0,
@@ -1471,15 +1490,15 @@
         "reversibility": "reversible"
       },
       "required_controls": [
-        "ctrl.cost.monthly_token_budget",
-        "ctrl.obs.structured_logging"
+        "ctrl.cost.monthly-token-budget",
+        "ctrl.obs.structured-logging"
       ],
       "idempotency": "full",
       "determinism": "deterministic"
     },
     {
-      "id": "wrk.cost.usage_aggregator",
-      "type": "worker",
+      "id": "wrk.cost.usage-aggregator",
+      "type": "worker_species",
       "pack_id": "pack.06",
       "name": "Usage Aggregator Worker",
       "description": "Collects token/compute usage events from workers and aggregates into the billing data store.",
@@ -1491,8 +1510,8 @@
       ],
       "wcp_namespace": "reserved",
       "serves_capabilities": [
-        "cap.cost.track_token_usage",
-        "cap.cost.generate_report"
+        "cap.cost.track-token-usage",
+        "cap.cost.generate-report"
       ],
       "blast_radius_hint": {
         "data": 0,
@@ -1502,14 +1521,14 @@
         "reversibility": "reversible"
       },
       "required_controls": [
-        "ctrl.obs.metrics_core",
-        "ctrl.obs.structured_logging"
+        "ctrl.obs.metrics-core",
+        "ctrl.obs.structured-logging"
       ],
       "idempotency": "partial",
       "determinism": "deterministic"
     },
     {
-      "id": "ctrl.cost.monthly_token_budget",
+      "id": "ctrl.cost.monthly-token-budget",
       "type": "control",
       "pack_id": "pack.06",
       "name": "Monthly Token Budget",
@@ -1549,14 +1568,14 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.obs.structured_logging",
-        "ctrl.obs.audit_log_append_only"
+        "ctrl.obs.structured-logging",
+        "ctrl.obs.audit-log-append-only"
       ],
       "idempotency": "full",
       "determinism": "deterministic"
     },
     {
-      "id": "cap.data.route.by_sensitivity",
+      "id": "cap.data.route.by-sensitivity",
       "type": "capability",
       "pack_id": "pack.07",
       "name": "Route Data by Sensitivity",
@@ -1576,8 +1595,8 @@
         "reversibility": "partially-reversible"
       },
       "typical_controls": [
-        "ctrl.obs.audit_log_append_only",
-        "ctrl.sandbox.no_egress_default_deny"
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.sandbox.no-egress-default-deny"
       ],
       "idempotency": "full",
       "determinism": "deterministic"
@@ -1604,8 +1623,8 @@
         "reversibility": "irreversible"
       },
       "typical_controls": [
-        "ctrl.obs.audit_log_append_only",
-        "ctrl.obs.structured_logging"
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.obs.structured-logging"
       ],
       "idempotency": "full",
       "determinism": "deterministic"
@@ -1631,8 +1650,8 @@
         "reversibility": "irreversible"
       },
       "typical_controls": [
-        "ctrl.obs.audit_log_append_only",
-        "ctrl.sandbox.workspace_mounts_only"
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.sandbox.workspace-mounts-only"
       ],
       "idempotency": "full",
       "determinism": "deterministic"
@@ -1658,8 +1677,8 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.obs.structured_logging",
-        "ctrl.obs.metrics_core"
+        "ctrl.obs.structured-logging",
+        "ctrl.obs.metrics-core"
       ],
       "idempotency": "partial",
       "determinism": "captured"
@@ -1685,8 +1704,8 @@
         "reversibility": "partially-reversible"
       },
       "typical_controls": [
-        "ctrl.obs.structured_logging",
-        "ctrl.obs.tracing_distributed"
+        "ctrl.obs.structured-logging",
+        "ctrl.obs.tracing-distributed"
       ],
       "idempotency": "partial",
       "determinism": "captured"
@@ -1712,8 +1731,8 @@
         "reversibility": "partially-reversible"
       },
       "typical_controls": [
-        "ctrl.obs.audit_log_append_only",
-        "ctrl.obs.tracing_distributed"
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.obs.tracing-distributed"
       ],
       "idempotency": "partial",
       "determinism": "captured"
@@ -1739,14 +1758,14 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.obs.structured_logging",
-        "ctrl.obs.metrics_core"
+        "ctrl.obs.structured-logging",
+        "ctrl.obs.metrics-core"
       ],
       "idempotency": "full",
       "determinism": "deterministic"
     },
     {
-      "id": "cap.deploy.canary_shift",
+      "id": "cap.deploy.canary-shift",
       "type": "capability",
       "pack_id": "pack.09",
       "name": "Shift Canary Traffic",
@@ -1766,8 +1785,8 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.deploy.canary_error_threshold",
-        "ctrl.obs.metrics_core"
+        "ctrl.deploy.canary-error-threshold",
+        "ctrl.obs.metrics-core"
       ],
       "idempotency": "partial",
       "determinism": "deterministic"
@@ -1793,14 +1812,14 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.obs.audit_log_append_only",
-        "ctrl.deploy.canary_error_threshold"
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.deploy.canary-error-threshold"
       ],
       "idempotency": "full",
       "determinism": "deterministic"
     },
     {
-      "id": "cap.deploy.promote_canary",
+      "id": "cap.deploy.promote-canary",
       "type": "capability",
       "pack_id": "pack.09",
       "name": "Promote Canary to Stable",
@@ -1820,14 +1839,14 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.deploy.canary_error_threshold",
-        "ctrl.obs.metrics_core"
+        "ctrl.deploy.canary-error-threshold",
+        "ctrl.obs.metrics-core"
       ],
       "idempotency": "full",
       "determinism": "deterministic"
     },
     {
-      "id": "cap.deploy.drain_worker",
+      "id": "cap.deploy.drain-worker",
       "type": "capability",
       "pack_id": "pack.09",
       "name": "Drain Worker",
@@ -1847,14 +1866,14 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.obs.structured_logging",
-        "ctrl.obs.metrics_core"
+        "ctrl.obs.structured-logging",
+        "ctrl.obs.metrics-core"
       ],
       "idempotency": "full",
       "determinism": "deterministic"
     },
     {
-      "id": "cap.deploy.feature_flag",
+      "id": "cap.deploy.feature-flag",
       "type": "capability",
       "pack_id": "pack.09",
       "name": "Toggle Feature Flag",
@@ -1874,15 +1893,15 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.obs.audit_log_append_only",
-        "ctrl.obs.structured_logging"
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.obs.structured-logging"
       ],
       "idempotency": "full",
       "determinism": "deterministic"
     },
     {
-      "id": "wrk.deploy.canary_controller",
-      "type": "worker",
+      "id": "wrk.deploy.canary-controller",
+      "type": "worker_species",
       "pack_id": "pack.09",
       "name": "Canary Controller Worker",
       "description": "Manages canary deployments \u2014 traffic splitting, health evaluation, auto-promote or auto-rollback.",
@@ -1894,8 +1913,8 @@
       ],
       "wcp_namespace": "reserved",
       "serves_capabilities": [
-        "cap.deploy.canary_shift",
-        "cap.deploy.promote_canary"
+        "cap.deploy.canary-shift",
+        "cap.deploy.promote-canary"
       ],
       "blast_radius_hint": {
         "data": 1,
@@ -1905,16 +1924,16 @@
         "reversibility": "reversible"
       },
       "required_controls": [
-        "ctrl.deploy.canary_error_threshold",
-        "ctrl.obs.metrics_core",
-        "ctrl.obs.audit_log_append_only"
+        "ctrl.deploy.canary-error-threshold",
+        "ctrl.obs.metrics-core",
+        "ctrl.obs.audit-log-append-only"
       ],
       "idempotency": "partial",
       "determinism": "deterministic"
     },
     {
-      "id": "wrk.deploy.rollback_guard",
-      "type": "worker",
+      "id": "wrk.deploy.rollback-guard",
+      "type": "worker_species",
       "pack_id": "pack.09",
       "name": "Rollback Guard Worker",
       "description": "Monitors error rates and latency for new worker versions and triggers automatic rollback on threshold breach.",
@@ -1927,7 +1946,7 @@
       "wcp_namespace": "reserved",
       "serves_capabilities": [
         "cap.deploy.rollback",
-        "cap.deploy.drain_worker"
+        "cap.deploy.drain-worker"
       ],
       "blast_radius_hint": {
         "data": 0,
@@ -1937,14 +1956,14 @@
         "reversibility": "reversible"
       },
       "required_controls": [
-        "ctrl.deploy.canary_error_threshold",
-        "ctrl.obs.slo_alerting"
+        "ctrl.deploy.canary-error-threshold",
+        "ctrl.obs.slo-alerting"
       ],
       "idempotency": "full",
       "determinism": "deterministic"
     },
     {
-      "id": "ctrl.deploy.canary_error_threshold",
+      "id": "ctrl.deploy.canary-error-threshold",
       "type": "control",
       "pack_id": "pack.09",
       "name": "Canary Error Rate Threshold",
@@ -1984,8 +2003,8 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.obs.structured_logging",
-        "ctrl.obs.run_metadata_store"
+        "ctrl.obs.structured-logging",
+        "ctrl.obs.run-metadata-store"
       ],
       "idempotency": "partial",
       "determinism": "deterministic"
@@ -2011,8 +2030,8 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.obs.structured_logging",
-        "ctrl.obs.metrics_core"
+        "ctrl.obs.structured-logging",
+        "ctrl.obs.metrics-core"
       ],
       "idempotency": "partial",
       "determinism": "non-deterministic"
@@ -2038,7 +2057,7 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.obs.structured_logging"
+        "ctrl.obs.structured-logging"
       ],
       "idempotency": "full",
       "determinism": "captured"
@@ -2064,8 +2083,8 @@
         "reversibility": "irreversible"
       },
       "typical_controls": [
-        "ctrl.obs.audit_log_append_only",
-        "ctrl.sandbox.workspace_mounts_only"
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.sandbox.workspace-mounts-only"
       ],
       "idempotency": "full",
       "determinism": "deterministic"
@@ -2091,7 +2110,7 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.obs.structured_logging"
+        "ctrl.obs.structured-logging"
       ],
       "idempotency": "full",
       "determinism": "deterministic"
@@ -2117,14 +2136,14 @@
         "reversibility": "irreversible"
       },
       "typical_controls": [
-        "ctrl.obs.audit_log_append_only",
-        "ctrl.sandbox.secrets_denied_by_default"
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.sandbox.secrets-denied-by-default"
       ],
       "idempotency": "full",
       "determinism": "deterministic"
     },
     {
-      "id": "cap.doc.hash_artifact",
+      "id": "cap.doc.hash-artifact",
       "type": "capability",
       "pack_id": "pack.10",
       "name": "Hash Document Artifact",
@@ -2144,7 +2163,7 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.obs.run_metadata_store"
+        "ctrl.obs.run-metadata-store"
       ],
       "idempotency": "full",
       "determinism": "deterministic"
@@ -2161,9 +2180,9 @@
       "determinism": "captured-deterministic",
       "blast_score": null,
       "required_controls": [
-        "ctrl.obs.structured_logging",
-        "ctrl.obs.audit_log_append_only",
-        "ctrl.sandbox.flight_recorder"
+        "ctrl.obs.structured-logging",
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.sandbox.flight-recorder"
       ],
       "handles_capabilities": [
         "cap.doc.ingest",
@@ -2188,7 +2207,8 @@
         "time": 3,
         "reversibility": "partially-reversible"
       },
-      "idempotency": "partial"
+      "idempotency": "partial",
+      "wcp_namespace": "reserved"
     },
     {
       "id": "wrk.doc.ocr.worker",
@@ -2202,8 +2222,8 @@
       "determinism": "nondeterministic",
       "blast_score": null,
       "required_controls": [
-        "ctrl.obs.structured_logging",
-        "ctrl.obs.metrics_core"
+        "ctrl.obs.structured-logging",
+        "ctrl.obs.metrics-core"
       ],
       "handles_capabilities": [
         "cap.doc.ocr"
@@ -2223,7 +2243,8 @@
         "time": 2,
         "reversibility": "reversible"
       },
-      "idempotency": "partial"
+      "idempotency": "partial",
+      "wcp_namespace": "reserved"
     },
     {
       "id": "wrk.doc.redaction.worker",
@@ -2237,8 +2258,8 @@
       "determinism": "deterministic",
       "blast_score": null,
       "required_controls": [
-        "ctrl.obs.audit_log_append_only",
-        "ctrl.sandbox.workspace_mounts_only"
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.sandbox.workspace-mounts-only"
       ],
       "handles_capabilities": [
         "cap.doc.redact"
@@ -2257,7 +2278,8 @@
         "time": 2,
         "reversibility": "irreversible"
       },
-      "idempotency": "full"
+      "idempotency": "full",
+      "wcp_namespace": "reserved"
     },
     {
       "id": "wrk.doc.signing.worker",
@@ -2271,8 +2293,8 @@
       "determinism": "deterministic",
       "blast_score": null,
       "required_controls": [
-        "ctrl.obs.audit_log_append_only",
-        "ctrl.sandbox.secrets_denied_by_default"
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.sandbox.secrets-denied-by-default"
       ],
       "handles_capabilities": [
         "cap.doc.sign"
@@ -2284,7 +2306,7 @@
       ],
       "serves_capabilities": [
         "cap.doc.sign",
-        "cap.doc.hash_artifact"
+        "cap.doc.hash-artifact"
       ],
       "blast_radius_hint": {
         "data": 2,
@@ -2293,10 +2315,11 @@
         "time": 1,
         "reversibility": "irreversible"
       },
-      "idempotency": "full"
+      "idempotency": "full",
+      "wcp_namespace": "reserved"
     },
     {
-      "id": "prof.doc.untrusted_sandboxed",
+      "id": "prof.doc.untrusted-sandboxed",
       "type": "profile",
       "pack_id": "pack.10",
       "name": "Untrusted Sandboxed Document Profile",
@@ -2307,19 +2330,20 @@
         "security"
       ],
       "controls_required": [
-        "ctrl.sandbox.no_egress_default_deny",
-        "ctrl.sandbox.workspace_mounts_only",
-        "ctrl.sandbox.resource_limits_strict",
-        "ctrl.obs.structured_logging"
+        "ctrl.sandbox.no-egress-default-deny",
+        "ctrl.sandbox.workspace-mounts-only",
+        "ctrl.sandbox.resource-limits-strict",
+        "ctrl.obs.structured-logging"
       ],
       "recommended_for_risk_tiers": [
         "medium",
         "high",
         "critical"
-      ]
+      ],
+      "wcp_namespace": "reserved"
     },
     {
-      "id": "prof.doc.signed_highrisk",
+      "id": "prof.doc.signed-highrisk",
       "type": "profile",
       "pack_id": "pack.10",
       "name": "High-Risk Signed Document Profile",
@@ -2330,17 +2354,18 @@
         "security"
       ],
       "controls_required": [
-        "ctrl.obs.audit_log_append_only",
-        "ctrl.sandbox.secrets_denied_by_default",
-        "ctrl.obs.flight_recorder_bundle"
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.sandbox.secrets-denied-by-default",
+        "ctrl.obs.flight-recorder-bundle"
       ],
       "recommended_for_risk_tiers": [
         "high",
         "critical"
-      ]
+      ],
+      "wcp_namespace": "reserved"
     },
     {
-      "id": "prof.doc.restricted_redaction",
+      "id": "prof.doc.restricted-redaction",
       "type": "profile",
       "pack_id": "pack.10",
       "name": "Restricted Redaction Document Profile",
@@ -2351,17 +2376,18 @@
         "compliance"
       ],
       "controls_required": [
-        "ctrl.obs.audit_log_append_only",
-        "ctrl.sandbox.workspace_mounts_only",
-        "ctrl.obs.structured_logging"
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.sandbox.workspace-mounts-only",
+        "ctrl.obs.structured-logging"
       ],
       "recommended_for_risk_tiers": [
         "high",
         "critical"
-      ]
+      ],
+      "wcp_namespace": "reserved"
     },
     {
-      "id": "cap.notify.send_email",
+      "id": "cap.notify.send-email",
       "type": "capability",
       "pack_id": "pack.11",
       "name": "Send Email",
@@ -2381,14 +2407,14 @@
         "reversibility": "irreversible"
       },
       "typical_controls": [
-        "ctrl.obs.structured_logging",
-        "ctrl.obs.metrics_core"
+        "ctrl.obs.structured-logging",
+        "ctrl.obs.metrics-core"
       ],
       "idempotency": "partial",
       "determinism": "captured"
     },
     {
-      "id": "cap.notify.send_sms",
+      "id": "cap.notify.send-sms",
       "type": "capability",
       "pack_id": "pack.11",
       "name": "Send SMS",
@@ -2408,14 +2434,14 @@
         "reversibility": "irreversible"
       },
       "typical_controls": [
-        "ctrl.obs.structured_logging",
-        "ctrl.obs.metrics_core"
+        "ctrl.obs.structured-logging",
+        "ctrl.obs.metrics-core"
       ],
       "idempotency": "partial",
       "determinism": "captured"
     },
     {
-      "id": "cap.notify.send_push",
+      "id": "cap.notify.send-push",
       "type": "capability",
       "pack_id": "pack.11",
       "name": "Send Push Notification",
@@ -2435,13 +2461,13 @@
         "reversibility": "irreversible"
       },
       "typical_controls": [
-        "ctrl.obs.structured_logging"
+        "ctrl.obs.structured-logging"
       ],
       "idempotency": "partial",
       "determinism": "captured"
     },
     {
-      "id": "cap.notify.manage_suppression",
+      "id": "cap.notify.manage-suppression",
       "type": "capability",
       "pack_id": "pack.11",
       "name": "Manage Suppression Lists",
@@ -2461,8 +2487,8 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.obs.audit_log_append_only",
-        "ctrl.obs.structured_logging"
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.obs.structured-logging"
       ],
       "idempotency": "full",
       "determinism": "deterministic"
@@ -2479,8 +2505,8 @@
       "determinism": "captured-deterministic",
       "blast_score": null,
       "required_controls": [
-        "ctrl.obs.structured_logging",
-        "ctrl.obs.metrics_core"
+        "ctrl.obs.structured-logging",
+        "ctrl.obs.metrics-core"
       ],
       "handles_capabilities": [
         "cap.notify.send_email",
@@ -2492,9 +2518,9 @@
         "egress"
       ],
       "serves_capabilities": [
-        "cap.notify.send_email",
-        "cap.notify.send_sms",
-        "cap.notify.send_push"
+        "cap.notify.send-email",
+        "cap.notify.send-sms",
+        "cap.notify.send-push"
       ],
       "blast_radius_hint": {
         "data": 1,
@@ -2503,7 +2529,8 @@
         "time": 1,
         "reversibility": "irreversible"
       },
-      "idempotency": "partial"
+      "idempotency": "partial",
+      "wcp_namespace": "reserved"
     },
     {
       "id": "wrk.notify.webhook.ingest",
@@ -2517,7 +2544,7 @@
       "determinism": "deterministic",
       "blast_score": null,
       "required_controls": [
-        "ctrl.obs.structured_logging"
+        "ctrl.obs.structured-logging"
       ],
       "handles_capabilities": [
         "cap.notify.manage_suppression"
@@ -2527,7 +2554,7 @@
         "webhooks"
       ],
       "serves_capabilities": [
-        "cap.notify.manage_suppression"
+        "cap.notify.manage-suppression"
       ],
       "blast_radius_hint": {
         "data": 1,
@@ -2536,7 +2563,8 @@
         "time": 0,
         "reversibility": "reversible"
       },
-      "idempotency": "full"
+      "idempotency": "full",
+      "wcp_namespace": "reserved"
     },
     {
       "id": "prof.notify.standard",
@@ -2549,16 +2577,17 @@
         "standard"
       ],
       "controls_required": [
-        "ctrl.obs.structured_logging",
-        "ctrl.obs.metrics_core"
+        "ctrl.obs.structured-logging",
+        "ctrl.obs.metrics-core"
       ],
       "recommended_for_risk_tiers": [
         "low",
         "medium"
-      ]
+      ],
+      "wcp_namespace": "reserved"
     },
     {
-      "id": "prof.notify.compliance_strict",
+      "id": "prof.notify.compliance-strict",
       "type": "profile",
       "pack_id": "pack.11",
       "name": "Strict Compliance Notification Profile",
@@ -2569,14 +2598,15 @@
         "strict"
       ],
       "controls_required": [
-        "ctrl.obs.audit_log_append_only",
-        "ctrl.obs.structured_logging",
-        "ctrl.obs.metrics_core"
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.obs.structured-logging",
+        "ctrl.obs.metrics-core"
       ],
       "recommended_for_risk_tiers": [
         "high",
         "critical"
-      ]
+      ],
+      "wcp_namespace": "reserved"
     },
     {
       "id": "cap.scan.sast",
@@ -2599,8 +2629,8 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.sandbox.no_egress_default_deny",
-        "ctrl.obs.structured_logging"
+        "ctrl.sandbox.no-egress-default-deny",
+        "ctrl.obs.structured-logging"
       ],
       "idempotency": "full",
       "determinism": "deterministic"
@@ -2626,7 +2656,7 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.obs.structured_logging"
+        "ctrl.obs.structured-logging"
       ],
       "idempotency": "full",
       "determinism": "deterministic"
@@ -2652,7 +2682,7 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.obs.run_metadata_store"
+        "ctrl.obs.run-metadata-store"
       ],
       "idempotency": "full",
       "determinism": "deterministic"
@@ -2678,14 +2708,14 @@
         "reversibility": "partially-reversible"
       },
       "typical_controls": [
-        "ctrl.obs.structured_logging",
-        "ctrl.obs.audit_log_append_only"
+        "ctrl.obs.structured-logging",
+        "ctrl.obs.audit-log-append-only"
       ],
       "idempotency": "partial",
       "determinism": "non-deterministic"
     },
     {
-      "id": "cap.verify.artifact_integrity",
+      "id": "cap.verify.artifact-integrity",
       "type": "capability",
       "pack_id": "pack.12",
       "name": "Verify Artifact Integrity",
@@ -2705,7 +2735,7 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.obs.audit_log_append_only"
+        "ctrl.obs.audit-log-append-only"
       ],
       "idempotency": "full",
       "determinism": "deterministic"
@@ -2722,8 +2752,8 @@
       "determinism": "deterministic",
       "blast_score": null,
       "required_controls": [
-        "ctrl.obs.structured_logging",
-        "ctrl.sandbox.no_egress_default_deny"
+        "ctrl.obs.structured-logging",
+        "ctrl.sandbox.no-egress-default-deny"
       ],
       "handles_capabilities": [
         "cap.scan.sast"
@@ -2743,7 +2773,8 @@
         "time": 2,
         "reversibility": "reversible"
       },
-      "idempotency": "full"
+      "idempotency": "full",
+      "wcp_namespace": "reserved"
     },
     {
       "id": "wrk.sec.deps.scanner",
@@ -2757,7 +2788,7 @@
       "determinism": "deterministic",
       "blast_score": null,
       "required_controls": [
-        "ctrl.obs.structured_logging"
+        "ctrl.obs.structured-logging"
       ],
       "handles_capabilities": [
         "cap.scan.deps",
@@ -2779,7 +2810,8 @@
         "time": 1,
         "reversibility": "reversible"
       },
-      "idempotency": "full"
+      "idempotency": "full",
+      "wcp_namespace": "reserved"
     },
     {
       "id": "wrk.sec.artifact.verifier",
@@ -2793,7 +2825,7 @@
       "determinism": "deterministic",
       "blast_score": null,
       "required_controls": [
-        "ctrl.obs.audit_log_append_only"
+        "ctrl.obs.audit-log-append-only"
       ],
       "handles_capabilities": [
         "cap.verify.artifact_integrity"
@@ -2804,7 +2836,7 @@
         "signing"
       ],
       "serves_capabilities": [
-        "cap.verify.artifact_integrity"
+        "cap.verify.artifact-integrity"
       ],
       "blast_radius_hint": {
         "data": 0,
@@ -2813,10 +2845,11 @@
         "time": 0,
         "reversibility": "reversible"
       },
-      "idempotency": "full"
+      "idempotency": "full",
+      "wcp_namespace": "reserved"
     },
     {
-      "id": "prof.sec.ci_gated",
+      "id": "prof.sec.ci-gated",
       "type": "profile",
       "pack_id": "pack.12",
       "name": "CI-Gated Security Profile",
@@ -2827,17 +2860,18 @@
         "supply-chain"
       ],
       "controls_required": [
-        "ctrl.obs.structured_logging",
-        "ctrl.sandbox.no_egress_default_deny"
+        "ctrl.obs.structured-logging",
+        "ctrl.sandbox.no-egress-default-deny"
       ],
       "recommended_for_risk_tiers": [
         "medium",
         "high",
         "critical"
-      ]
+      ],
+      "wcp_namespace": "reserved"
     },
     {
-      "id": "prof.sec.artifact_strict",
+      "id": "prof.sec.artifact-strict",
       "type": "profile",
       "pack_id": "pack.12",
       "name": "Strict Artifact Security Profile",
@@ -2848,16 +2882,17 @@
         "supply-chain"
       ],
       "controls_required": [
-        "ctrl.obs.audit_log_append_only",
-        "ctrl.obs.structured_logging"
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.obs.structured-logging"
       ],
       "recommended_for_risk_tiers": [
         "high",
         "critical"
-      ]
+      ],
+      "wcp_namespace": "reserved"
     },
     {
-      "id": "cap.chaos.inject_latency",
+      "id": "cap.chaos.inject-latency",
       "type": "capability",
       "pack_id": "pack.13",
       "name": "Inject Latency",
@@ -2877,14 +2912,14 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.obs.slo_alerting",
-        "ctrl.obs.metrics_core"
+        "ctrl.obs.slo-alerting",
+        "ctrl.obs.metrics-core"
       ],
       "idempotency": "partial",
       "determinism": "non-deterministic"
     },
     {
-      "id": "cap.chaos.inject_errors",
+      "id": "cap.chaos.inject-errors",
       "type": "capability",
       "pack_id": "pack.13",
       "name": "Inject Errors",
@@ -2904,14 +2939,14 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.obs.slo_alerting",
-        "ctrl.obs.structured_logging"
+        "ctrl.obs.slo-alerting",
+        "ctrl.obs.structured-logging"
       ],
       "idempotency": "partial",
       "determinism": "non-deterministic"
     },
     {
-      "id": "cap.chaos.disable_dependency",
+      "id": "cap.chaos.disable-dependency",
       "type": "capability",
       "pack_id": "pack.13",
       "name": "Disable Dependency",
@@ -2931,14 +2966,14 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.obs.slo_alerting",
-        "ctrl.obs.metrics_core"
+        "ctrl.obs.slo-alerting",
+        "ctrl.obs.metrics-core"
       ],
       "idempotency": "partial",
       "determinism": "non-deterministic"
     },
     {
-      "id": "cap.chaos.poison_messages",
+      "id": "cap.chaos.poison-messages",
       "type": "capability",
       "pack_id": "pack.13",
       "name": "Poison Queue Messages",
@@ -2958,8 +2993,8 @@
         "reversibility": "partially-reversible"
       },
       "typical_controls": [
-        "ctrl.obs.audit_log_append_only",
-        "ctrl.obs.structured_logging"
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.obs.structured-logging"
       ],
       "idempotency": "partial",
       "determinism": "non-deterministic"
@@ -2976,8 +3011,8 @@
       "determinism": "nondeterministic",
       "blast_score": null,
       "required_controls": [
-        "ctrl.obs.structured_logging",
-        "ctrl.obs.slo_alerting"
+        "ctrl.obs.structured-logging",
+        "ctrl.obs.slo-alerting"
       ],
       "handles_capabilities": [
         "cap.chaos.inject_latency",
@@ -2989,9 +3024,9 @@
         "resilience"
       ],
       "serves_capabilities": [
-        "cap.chaos.inject_latency",
-        "cap.chaos.inject_errors",
-        "cap.chaos.poison_messages"
+        "cap.chaos.inject-latency",
+        "cap.chaos.inject-errors",
+        "cap.chaos.poison-messages"
       ],
       "blast_radius_hint": {
         "data": 2,
@@ -3000,7 +3035,8 @@
         "time": 3,
         "reversibility": "reversible"
       },
-      "idempotency": "none"
+      "idempotency": "none",
+      "wcp_namespace": "reserved"
     },
     {
       "id": "wrk.chaos.observer",
@@ -3014,8 +3050,8 @@
       "determinism": "nondeterministic",
       "blast_score": null,
       "required_controls": [
-        "ctrl.obs.metrics_core",
-        "ctrl.obs.slo_alerting"
+        "ctrl.obs.metrics-core",
+        "ctrl.obs.slo-alerting"
       ],
       "handles_capabilities": [],
       "tags": [
@@ -3030,10 +3066,11 @@
         "time": 1,
         "reversibility": "reversible"
       },
-      "idempotency": "partial"
+      "idempotency": "partial",
+      "wcp_namespace": "reserved"
     },
     {
-      "id": "prof.chaos.canary_scoped",
+      "id": "prof.chaos.canary-scoped",
       "type": "profile",
       "pack_id": "pack.13",
       "name": "Canary-Scoped Chaos Profile",
@@ -3044,17 +3081,18 @@
         "resilience"
       ],
       "controls_required": [
-        "ctrl.obs.slo_alerting",
-        "ctrl.obs.metrics_core",
-        "ctrl.obs.structured_logging"
+        "ctrl.obs.slo-alerting",
+        "ctrl.obs.metrics-core",
+        "ctrl.obs.structured-logging"
       ],
       "recommended_for_risk_tiers": [
         "medium",
         "high"
-      ]
+      ],
+      "wcp_namespace": "reserved"
     },
     {
-      "id": "cap.sched.set_priority",
+      "id": "cap.sched.set-priority",
       "type": "capability",
       "pack_id": "pack.14",
       "name": "Set Job Priority",
@@ -3074,7 +3112,7 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.obs.structured_logging"
+        "ctrl.obs.structured-logging"
       ],
       "idempotency": "full",
       "determinism": "deterministic"
@@ -3100,14 +3138,14 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.obs.structured_logging",
-        "ctrl.obs.metrics_core"
+        "ctrl.obs.structured-logging",
+        "ctrl.obs.metrics-core"
       ],
       "idempotency": "partial",
       "determinism": "deterministic"
     },
     {
-      "id": "cap.sched.reserve_capacity",
+      "id": "cap.sched.reserve-capacity",
       "type": "capability",
       "pack_id": "pack.14",
       "name": "Reserve Capacity",
@@ -3127,13 +3165,13 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.obs.structured_logging"
+        "ctrl.obs.structured-logging"
       ],
       "idempotency": "full",
       "determinism": "deterministic"
     },
     {
-      "id": "cap.sched.rate_limit_tenant",
+      "id": "cap.sched.rate-limit-tenant",
       "type": "capability",
       "pack_id": "pack.14",
       "name": "Rate Limit Tenant",
@@ -3153,8 +3191,8 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.obs.metrics_core",
-        "ctrl.obs.structured_logging"
+        "ctrl.obs.metrics-core",
+        "ctrl.obs.structured-logging"
       ],
       "idempotency": "full",
       "determinism": "deterministic"
@@ -3171,8 +3209,8 @@
       "determinism": "deterministic",
       "blast_score": null,
       "required_controls": [
-        "ctrl.obs.metrics_core",
-        "ctrl.obs.structured_logging"
+        "ctrl.obs.metrics-core",
+        "ctrl.obs.structured-logging"
       ],
       "handles_capabilities": [
         "cap.sched.set_priority",
@@ -3185,10 +3223,10 @@
         "qos"
       ],
       "serves_capabilities": [
-        "cap.sched.set_priority",
+        "cap.sched.set-priority",
         "cap.sched.preempt",
-        "cap.sched.reserve_capacity",
-        "cap.sched.rate_limit_tenant"
+        "cap.sched.reserve-capacity",
+        "cap.sched.rate-limit-tenant"
       ],
       "blast_radius_hint": {
         "data": 0,
@@ -3197,10 +3235,11 @@
         "time": 2,
         "reversibility": "reversible"
       },
-      "idempotency": "full"
+      "idempotency": "full",
+      "wcp_namespace": "reserved"
     },
     {
-      "id": "prof.sched.critical_protected",
+      "id": "prof.sched.critical-protected",
       "type": "profile",
       "pack_id": "pack.14",
       "name": "Critical Protected Scheduler Profile",
@@ -3211,14 +3250,15 @@
         "qos"
       ],
       "controls_required": [
-        "ctrl.obs.metrics_core",
-        "ctrl.obs.slo_alerting",
-        "ctrl.obs.structured_logging"
+        "ctrl.obs.metrics-core",
+        "ctrl.obs.slo-alerting",
+        "ctrl.obs.structured-logging"
       ],
       "recommended_for_risk_tiers": [
         "high",
         "critical"
-      ]
+      ],
+      "wcp_namespace": "reserved"
     },
     {
       "id": "cap.policy.evaluate",
@@ -3241,9 +3281,9 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.pol.policy_engine_runtime",
-        "ctrl.pol.default_deny",
-        "ctrl.pol.audit_policy_decisions"
+        "ctrl.pol.policy-engine-runtime",
+        "ctrl.pol.default-deny",
+        "ctrl.pol.audit-policy-decisions"
       ],
       "idempotency": "full",
       "determinism": "deterministic"
@@ -3269,8 +3309,8 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.pol.policy_versioning",
-        "ctrl.obs.audit_log_append_only"
+        "ctrl.pol.policy-versioning",
+        "ctrl.obs.audit-log-append-only"
       ],
       "idempotency": "partial",
       "determinism": "deterministic"
@@ -3296,14 +3336,14 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.pol.policy_versioning",
-        "ctrl.obs.audit_log_append_only"
+        "ctrl.pol.policy-versioning",
+        "ctrl.obs.audit-log-append-only"
       ],
       "idempotency": "partial",
       "determinism": "deterministic"
     },
     {
-      "id": "wrk.pol.policy_gate",
+      "id": "wrk.pol.policy-gate",
       "type": "worker_species",
       "pack_id": "pack.15",
       "name": "Policy Gate Worker",
@@ -3314,10 +3354,10 @@
       "determinism": "deterministic",
       "blast_score": null,
       "required_controls": [
-        "ctrl.pol.policy_engine_runtime",
-        "ctrl.pol.default_deny",
-        "ctrl.pol.audit_policy_decisions",
-        "ctrl.pol.policy_versioning"
+        "ctrl.pol.policy-engine-runtime",
+        "ctrl.pol.default-deny",
+        "ctrl.pol.audit-policy-decisions",
+        "ctrl.pol.policy-versioning"
       ],
       "handles_capabilities": [
         "cap.policy.evaluate"
@@ -3337,10 +3377,11 @@
         "time": 0,
         "reversibility": "reversible"
       },
-      "idempotency": "full"
+      "idempotency": "full",
+      "wcp_namespace": "reserved"
     },
     {
-      "id": "ctrl.pol.policy_engine_runtime",
+      "id": "ctrl.pol.policy-engine-runtime",
       "type": "control",
       "pack_id": "pack.15",
       "name": "Policy Engine Runtime",
@@ -3354,10 +3395,11 @@
         "medium",
         "high",
         "critical"
-      ]
+      ],
+      "wcp_namespace": "reserved"
     },
     {
-      "id": "ctrl.pol.default_deny",
+      "id": "ctrl.pol.default-deny",
       "type": "control",
       "pack_id": "pack.15",
       "name": "Default Deny",
@@ -3370,10 +3412,11 @@
       "required_for_risk_tiers": [
         "high",
         "critical"
-      ]
+      ],
+      "wcp_namespace": "reserved"
     },
     {
-      "id": "ctrl.pol.audit_policy_decisions",
+      "id": "ctrl.pol.audit-policy-decisions",
       "type": "control",
       "pack_id": "pack.15",
       "name": "Audit Policy Decisions",
@@ -3388,10 +3431,11 @@
         "medium",
         "high",
         "critical"
-      ]
+      ],
+      "wcp_namespace": "reserved"
     },
     {
-      "id": "ctrl.pol.policy_versioning",
+      "id": "ctrl.pol.policy-versioning",
       "type": "control",
       "pack_id": "pack.15",
       "name": "Policy Versioning",
@@ -3405,10 +3449,11 @@
         "medium",
         "high",
         "critical"
-      ]
+      ],
+      "wcp_namespace": "reserved"
     },
     {
-      "id": "prof.pol.default_deny_strict",
+      "id": "prof.pol.default-deny-strict",
       "type": "profile",
       "pack_id": "pack.15",
       "name": "Strict Default Deny Policy Profile",
@@ -3419,18 +3464,19 @@
         "governance"
       ],
       "controls_required": [
-        "ctrl.pol.policy_engine_runtime",
-        "ctrl.pol.default_deny",
-        "ctrl.pol.audit_policy_decisions",
-        "ctrl.pol.policy_versioning"
+        "ctrl.pol.policy-engine-runtime",
+        "ctrl.pol.default-deny",
+        "ctrl.pol.audit-policy-decisions",
+        "ctrl.pol.policy-versioning"
       ],
       "recommended_for_risk_tiers": [
         "high",
         "critical"
-      ]
+      ],
+      "wcp_namespace": "reserved"
     },
     {
-      "id": "cap.prov.sign_artifact",
+      "id": "cap.prov.sign-artifact",
       "type": "capability",
       "pack_id": "pack.16",
       "name": "Sign Artifact",
@@ -3450,14 +3496,14 @@
         "reversibility": "irreversible"
       },
       "typical_controls": [
-        "ctrl.obs.audit_log_append_only",
-        "ctrl.sandbox.secrets_denied_by_default"
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.sandbox.secrets-denied-by-default"
       ],
       "idempotency": "full",
       "determinism": "deterministic"
     },
     {
-      "id": "cap.prov.verify_signature",
+      "id": "cap.prov.verify-signature",
       "type": "capability",
       "pack_id": "pack.16",
       "name": "Verify Signature",
@@ -3477,13 +3523,13 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.obs.audit_log_append_only"
+        "ctrl.obs.audit-log-append-only"
       ],
       "idempotency": "full",
       "determinism": "deterministic"
     },
     {
-      "id": "cap.prov.issue_attestation",
+      "id": "cap.prov.issue-attestation",
       "type": "capability",
       "pack_id": "pack.16",
       "name": "Issue Attestation",
@@ -3503,14 +3549,14 @@
         "reversibility": "irreversible"
       },
       "typical_controls": [
-        "ctrl.obs.audit_log_append_only",
-        "ctrl.sandbox.secrets_denied_by_default"
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.sandbox.secrets-denied-by-default"
       ],
       "idempotency": "full",
       "determinism": "deterministic"
     },
     {
-      "id": "cap.prov.verify_attestation",
+      "id": "cap.prov.verify-attestation",
       "type": "capability",
       "pack_id": "pack.16",
       "name": "Verify Attestation",
@@ -3530,13 +3576,13 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.obs.audit_log_append_only"
+        "ctrl.obs.audit-log-append-only"
       ],
       "idempotency": "full",
       "determinism": "deterministic"
     },
     {
-      "id": "cap.prov.generate_provenance_chain",
+      "id": "cap.prov.generate-provenance-chain",
       "type": "capability",
       "pack_id": "pack.16",
       "name": "Generate Provenance Chain",
@@ -3556,8 +3602,8 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.obs.structured_logging",
-        "ctrl.obs.run_metadata_store"
+        "ctrl.obs.structured-logging",
+        "ctrl.obs.run-metadata-store"
       ],
       "idempotency": "full",
       "determinism": "deterministic"
@@ -3574,7 +3620,7 @@
       "determinism": "deterministic",
       "blast_score": null,
       "required_controls": [
-        "ctrl.obs.audit_log_append_only"
+        "ctrl.obs.audit-log-append-only"
       ],
       "handles_capabilities": [
         "cap.prov.sign_artifact"
@@ -3584,8 +3630,8 @@
         "signing"
       ],
       "serves_capabilities": [
-        "cap.prov.sign_artifact",
-        "cap.prov.issue_attestation"
+        "cap.prov.sign-artifact",
+        "cap.prov.issue-attestation"
       ],
       "blast_radius_hint": {
         "data": 1,
@@ -3594,7 +3640,8 @@
         "time": 1,
         "reversibility": "irreversible"
       },
-      "idempotency": "full"
+      "idempotency": "full",
+      "wcp_namespace": "reserved"
     },
     {
       "id": "wrk.prov.verifier",
@@ -3608,7 +3655,7 @@
       "determinism": "deterministic",
       "blast_score": null,
       "required_controls": [
-        "ctrl.obs.audit_log_append_only"
+        "ctrl.obs.audit-log-append-only"
       ],
       "handles_capabilities": [
         "cap.prov.verify_signature",
@@ -3619,8 +3666,8 @@
         "signing"
       ],
       "serves_capabilities": [
-        "cap.prov.verify_signature",
-        "cap.prov.verify_attestation"
+        "cap.prov.verify-signature",
+        "cap.prov.verify-attestation"
       ],
       "blast_radius_hint": {
         "data": 0,
@@ -3629,10 +3676,11 @@
         "time": 0,
         "reversibility": "reversible"
       },
-      "idempotency": "full"
+      "idempotency": "full",
+      "wcp_namespace": "reserved"
     },
     {
-      "id": "wrk.prov.provenance_assembler",
+      "id": "wrk.prov.provenance-assembler",
       "type": "worker_species",
       "pack_id": "pack.16",
       "name": "Provenance Assembler Worker",
@@ -3643,7 +3691,7 @@
       "determinism": "deterministic",
       "blast_score": null,
       "required_controls": [
-        "ctrl.obs.structured_logging"
+        "ctrl.obs.structured-logging"
       ],
       "handles_capabilities": [
         "cap.prov.generate_provenance_chain"
@@ -3653,7 +3701,7 @@
         "supply-chain"
       ],
       "serves_capabilities": [
-        "cap.prov.generate_provenance_chain"
+        "cap.prov.generate-provenance-chain"
       ],
       "blast_radius_hint": {
         "data": 1,
@@ -3662,10 +3710,11 @@
         "time": 2,
         "reversibility": "reversible"
       },
-      "idempotency": "full"
+      "idempotency": "full",
+      "wcp_namespace": "reserved"
     },
     {
-      "id": "prof.prov.prod_strict",
+      "id": "prof.prov.prod-strict",
       "type": "profile",
       "pack_id": "pack.16",
       "name": "Production Strict Provenance Profile",
@@ -3676,14 +3725,15 @@
         "supply-chain"
       ],
       "controls_required": [
-        "ctrl.obs.audit_log_append_only",
-        "ctrl.obs.structured_logging",
-        "ctrl.sandbox.secrets_denied_by_default"
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.obs.structured-logging",
+        "ctrl.sandbox.secrets-denied-by-default"
       ],
       "recommended_for_risk_tiers": [
         "high",
         "critical"
-      ]
+      ],
+      "wcp_namespace": "reserved"
     },
     {
       "id": "cap.ops.approve",
@@ -3706,13 +3756,13 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.obs.audit_log_append_only"
+        "ctrl.obs.audit-log-append-only"
       ],
       "idempotency": "partial",
       "determinism": "non-deterministic"
     },
     {
-      "id": "cap.ops.break_glass",
+      "id": "cap.ops.break-glass",
       "type": "capability",
       "pack_id": "pack.17",
       "name": "Break Glass",
@@ -3732,14 +3782,14 @@
         "reversibility": "partially-reversible"
       },
       "typical_controls": [
-        "ctrl.obs.audit_log_append_only",
-        "ctrl.obs.flight_recorder_bundle"
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.obs.flight-recorder-bundle"
       ],
       "idempotency": "partial",
       "determinism": "non-deterministic"
     },
     {
-      "id": "cap.ops.execute_runbook",
+      "id": "cap.ops.execute-runbook",
       "type": "capability",
       "pack_id": "pack.17",
       "name": "Execute Runbook",
@@ -3759,8 +3809,8 @@
         "reversibility": "partially-reversible"
       },
       "typical_controls": [
-        "ctrl.obs.audit_log_append_only",
-        "ctrl.obs.tracing_distributed"
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.obs.tracing-distributed"
       ],
       "idempotency": "partial",
       "determinism": "captured"
@@ -3786,7 +3836,7 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.obs.structured_logging"
+        "ctrl.obs.structured-logging"
       ],
       "idempotency": "full",
       "determinism": "non-deterministic"
@@ -3803,8 +3853,8 @@
       "determinism": "nondeterministic",
       "blast_score": null,
       "required_controls": [
-        "ctrl.obs.audit_log_append_only",
-        "ctrl.obs.slo_alerting"
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.obs.slo-alerting"
       ],
       "handles_capabilities": [
         "cap.ops.break_glass",
@@ -3816,8 +3866,8 @@
         "emergency"
       ],
       "serves_capabilities": [
-        "cap.ops.break_glass",
-        "cap.ops.execute_runbook"
+        "cap.ops.break-glass",
+        "cap.ops.execute-runbook"
       ],
       "blast_radius_hint": {
         "data": 4,
@@ -3826,7 +3876,8 @@
         "time": 3,
         "reversibility": "partially-reversible"
       },
-      "idempotency": "partial"
+      "idempotency": "partial",
+      "wcp_namespace": "reserved"
     },
     {
       "id": "wrk.ops.approval.coordinator",
@@ -3840,7 +3891,7 @@
       "determinism": "deterministic",
       "blast_score": null,
       "required_controls": [
-        "ctrl.obs.audit_log_append_only"
+        "ctrl.obs.audit-log-append-only"
       ],
       "handles_capabilities": [
         "cap.ops.approve"
@@ -3860,10 +3911,11 @@
         "time": 1,
         "reversibility": "reversible"
       },
-      "idempotency": "partial"
+      "idempotency": "partial",
+      "wcp_namespace": "reserved"
     },
     {
-      "id": "prof.ops.incident_mode",
+      "id": "prof.ops.incident-mode",
       "type": "profile",
       "pack_id": "pack.17",
       "name": "Incident Mode Ops Profile",
@@ -3874,17 +3926,18 @@
         "emergency"
       ],
       "controls_required": [
-        "ctrl.obs.audit_log_append_only",
-        "ctrl.obs.flight_recorder_bundle",
-        "ctrl.obs.slo_alerting"
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.obs.flight-recorder-bundle",
+        "ctrl.obs.slo-alerting"
       ],
       "recommended_for_risk_tiers": [
         "high",
         "critical"
-      ]
+      ],
+      "wcp_namespace": "reserved"
     },
     {
-      "id": "prof.ops.approval_strict",
+      "id": "prof.ops.approval-strict",
       "type": "profile",
       "pack_id": "pack.17",
       "name": "Strict Approval Ops Profile",
@@ -3895,16 +3948,17 @@
         "compliance"
       ],
       "controls_required": [
-        "ctrl.obs.audit_log_append_only",
-        "ctrl.pol.audit_policy_decisions"
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.pol.audit-policy-decisions"
       ],
       "recommended_for_risk_tiers": [
         "high",
         "critical"
-      ]
+      ],
+      "wcp_namespace": "reserved"
     },
     {
-      "id": "cap.fed.accept_external_identity",
+      "id": "cap.fed.accept-external-identity",
       "type": "capability",
       "pack_id": "pack.18",
       "name": "Accept External Identity",
@@ -3924,14 +3978,14 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.obs.audit_log_append_only",
-        "ctrl.obs.structured_logging"
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.obs.structured-logging"
       ],
       "idempotency": "full",
       "determinism": "deterministic"
     },
     {
-      "id": "cap.fed.exchange_tokens",
+      "id": "cap.fed.exchange-tokens",
       "type": "capability",
       "pack_id": "pack.18",
       "name": "Exchange Federation Tokens",
@@ -3951,13 +4005,13 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.obs.audit_log_append_only"
+        "ctrl.obs.audit-log-append-only"
       ],
       "idempotency": "partial",
       "determinism": "deterministic"
     },
     {
-      "id": "cap.fed.enforce_data_contract",
+      "id": "cap.fed.enforce-data-contract",
       "type": "capability",
       "pack_id": "pack.18",
       "name": "Enforce Data Contract",
@@ -3977,14 +4031,14 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.obs.audit_log_append_only",
-        "ctrl.obs.structured_logging"
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.obs.structured-logging"
       ],
       "idempotency": "full",
       "determinism": "deterministic"
     },
     {
-      "id": "cap.fed.isolate_guest_workers",
+      "id": "cap.fed.isolate-guest-workers",
       "type": "capability",
       "pack_id": "pack.18",
       "name": "Isolate Guest Workers",
@@ -4004,8 +4058,8 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.sandbox.no_egress_default_deny",
-        "ctrl.sandbox.workspace_mounts_only"
+        "ctrl.sandbox.no-egress-default-deny",
+        "ctrl.sandbox.workspace-mounts-only"
       ],
       "idempotency": "full",
       "determinism": "deterministic"
@@ -4022,8 +4076,8 @@
       "determinism": "deterministic",
       "blast_score": null,
       "required_controls": [
-        "ctrl.obs.audit_log_append_only",
-        "ctrl.obs.structured_logging"
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.obs.structured-logging"
       ],
       "handles_capabilities": [
         "cap.fed.accept_external_identity",
@@ -4034,9 +4088,9 @@
         "identity"
       ],
       "serves_capabilities": [
-        "cap.fed.accept_external_identity",
-        "cap.fed.exchange_tokens",
-        "cap.fed.enforce_data_contract"
+        "cap.fed.accept-external-identity",
+        "cap.fed.exchange-tokens",
+        "cap.fed.enforce-data-contract"
       ],
       "blast_radius_hint": {
         "data": 2,
@@ -4045,10 +4099,11 @@
         "time": 1,
         "reversibility": "reversible"
       },
-      "idempotency": "partial"
+      "idempotency": "partial",
+      "wcp_namespace": "reserved"
     },
     {
-      "id": "wrk.fed.guest_pool.worker",
+      "id": "wrk.fed.guest-pool.worker",
       "type": "worker_species",
       "pack_id": "pack.18",
       "name": "Guest Pool Worker",
@@ -4059,8 +4114,8 @@
       "determinism": "nondeterministic",
       "blast_score": null,
       "required_controls": [
-        "ctrl.sandbox.no_egress_default_deny",
-        "ctrl.sandbox.workspace_mounts_only"
+        "ctrl.sandbox.no-egress-default-deny",
+        "ctrl.sandbox.workspace-mounts-only"
       ],
       "handles_capabilities": [
         "cap.fed.isolate_guest_workers"
@@ -4070,7 +4125,7 @@
         "sandbox"
       ],
       "serves_capabilities": [
-        "cap.fed.isolate_guest_workers"
+        "cap.fed.isolate-guest-workers"
       ],
       "blast_radius_hint": {
         "data": 2,
@@ -4079,10 +4134,11 @@
         "time": 1,
         "reversibility": "reversible"
       },
-      "idempotency": "partial"
+      "idempotency": "partial",
+      "wcp_namespace": "reserved"
     },
     {
-      "id": "prof.fed.partner_strict",
+      "id": "prof.fed.partner-strict",
       "type": "profile",
       "pack_id": "pack.18",
       "name": "Strict Partner Federation Profile",
@@ -4093,17 +4149,18 @@
         "security"
       ],
       "controls_required": [
-        "ctrl.obs.audit_log_append_only",
-        "ctrl.obs.structured_logging",
-        "ctrl.sandbox.no_egress_default_deny"
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.obs.structured-logging",
+        "ctrl.sandbox.no-egress-default-deny"
       ],
       "recommended_for_risk_tiers": [
         "high",
         "critical"
-      ]
+      ],
+      "wcp_namespace": "reserved"
     },
     {
-      "id": "prof.fed.guest_isolated",
+      "id": "prof.fed.guest-isolated",
       "type": "profile",
       "pack_id": "pack.18",
       "name": "Guest Isolated Federation Profile",
@@ -4114,15 +4171,16 @@
         "isolation"
       ],
       "controls_required": [
-        "ctrl.sandbox.no_egress_default_deny",
-        "ctrl.sandbox.workspace_mounts_only",
-        "ctrl.sandbox.resource_limits_strict"
+        "ctrl.sandbox.no-egress-default-deny",
+        "ctrl.sandbox.workspace-mounts-only",
+        "ctrl.sandbox.resource-limits-strict"
       ],
       "recommended_for_risk_tiers": [
         "medium",
         "high",
         "critical"
-      ]
+      ],
+      "wcp_namespace": "reserved"
     },
     {
       "id": "cap.model.eval.run",
@@ -4145,8 +4203,8 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.obs.metrics_core",
-        "ctrl.obs.structured_logging"
+        "ctrl.obs.metrics-core",
+        "ctrl.obs.structured-logging"
       ],
       "idempotency": "partial",
       "determinism": "non-deterministic"
@@ -4172,8 +4230,8 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.obs.audit_log_append_only",
-        "ctrl.pol.policy_versioning"
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.pol.policy-versioning"
       ],
       "idempotency": "partial",
       "determinism": "deterministic"
@@ -4199,8 +4257,8 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.obs.audit_log_append_only",
-        "ctrl.pol.policy_versioning"
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.pol.policy-versioning"
       ],
       "idempotency": "partial",
       "determinism": "deterministic"
@@ -4226,14 +4284,14 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.obs.metrics_core",
-        "ctrl.obs.slo_alerting"
+        "ctrl.obs.metrics-core",
+        "ctrl.obs.slo-alerting"
       ],
       "idempotency": "full",
       "determinism": "non-deterministic"
     },
     {
-      "id": "cap.model.prompt_injection_test",
+      "id": "cap.model.prompt-injection-test",
       "type": "capability",
       "pack_id": "pack.19",
       "name": "Prompt Injection Test",
@@ -4253,8 +4311,8 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.obs.structured_logging",
-        "ctrl.sandbox.no_egress_default_deny"
+        "ctrl.obs.structured-logging",
+        "ctrl.sandbox.no-egress-default-deny"
       ],
       "idempotency": "partial",
       "determinism": "non-deterministic"
@@ -4271,8 +4329,8 @@
       "determinism": "nondeterministic",
       "blast_score": null,
       "required_controls": [
-        "ctrl.obs.metrics_core",
-        "ctrl.obs.structured_logging"
+        "ctrl.obs.metrics-core",
+        "ctrl.obs.structured-logging"
       ],
       "handles_capabilities": [
         "cap.model.eval.run",
@@ -4284,7 +4342,7 @@
       ],
       "serves_capabilities": [
         "cap.model.eval.run",
-        "cap.model.prompt_injection_test"
+        "cap.model.prompt-injection-test"
       ],
       "blast_radius_hint": {
         "data": 0,
@@ -4293,7 +4351,8 @@
         "time": 3,
         "reversibility": "reversible"
       },
-      "idempotency": "partial"
+      "idempotency": "partial",
+      "wcp_namespace": "reserved"
     },
     {
       "id": "wrk.model.drift.monitor",
@@ -4307,8 +4366,8 @@
       "determinism": "nondeterministic",
       "blast_score": null,
       "required_controls": [
-        "ctrl.obs.metrics_core",
-        "ctrl.obs.slo_alerting"
+        "ctrl.obs.metrics-core",
+        "ctrl.obs.slo-alerting"
       ],
       "handles_capabilities": [
         "cap.model.drift.detect"
@@ -4328,10 +4387,11 @@
         "time": 0,
         "reversibility": "reversible"
       },
-      "idempotency": "full"
+      "idempotency": "full",
+      "wcp_namespace": "reserved"
     },
     {
-      "id": "wrk.model.prompt_qa.gate",
+      "id": "wrk.model.prompt-qa.gate",
       "type": "worker_species",
       "pack_id": "pack.19",
       "name": "Prompt QA Gate Worker",
@@ -4342,7 +4402,7 @@
       "determinism": "deterministic",
       "blast_score": null,
       "required_controls": [
-        "ctrl.obs.audit_log_append_only"
+        "ctrl.obs.audit-log-append-only"
       ],
       "handles_capabilities": [
         "cap.model.prompts.update",
@@ -4364,10 +4424,11 @@
         "time": 1,
         "reversibility": "reversible"
       },
-      "idempotency": "partial"
+      "idempotency": "partial",
+      "wcp_namespace": "reserved"
     },
     {
-      "id": "prof.model.release_gated",
+      "id": "prof.model.release-gated",
       "type": "profile",
       "pack_id": "pack.19",
       "name": "Release-Gated Model Profile",
@@ -4378,18 +4439,19 @@
         "safety"
       ],
       "controls_required": [
-        "ctrl.obs.audit_log_append_only",
-        "ctrl.obs.metrics_core",
-        "ctrl.pol.policy_versioning"
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.obs.metrics-core",
+        "ctrl.pol.policy-versioning"
       ],
       "recommended_for_risk_tiers": [
         "medium",
         "high",
         "critical"
-      ]
+      ],
+      "wcp_namespace": "reserved"
     },
     {
-      "id": "prof.model.drift_strict",
+      "id": "prof.model.drift-strict",
       "type": "profile",
       "pack_id": "pack.19",
       "name": "Strict Drift Monitoring Model Profile",
@@ -4400,15 +4462,16 @@
         "observability"
       ],
       "controls_required": [
-        "ctrl.obs.metrics_core",
-        "ctrl.obs.slo_alerting",
-        "ctrl.obs.structured_logging"
+        "ctrl.obs.metrics-core",
+        "ctrl.obs.slo-alerting",
+        "ctrl.obs.structured-logging"
       ],
       "recommended_for_risk_tiers": [
         "medium",
         "high",
         "critical"
-      ]
+      ],
+      "wcp_namespace": "reserved"
     },
     {
       "id": "cap.mem.write",
@@ -4431,8 +4494,8 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.obs.audit_log_append_only",
-        "ctrl.obs.structured_logging"
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.obs.structured-logging"
       ],
       "idempotency": "partial",
       "determinism": "deterministic"
@@ -4458,7 +4521,7 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.obs.structured_logging"
+        "ctrl.obs.structured-logging"
       ],
       "idempotency": "full",
       "determinism": "non-deterministic"
@@ -4484,7 +4547,7 @@
         "reversibility": "irreversible"
       },
       "typical_controls": [
-        "ctrl.obs.audit_log_append_only"
+        "ctrl.obs.audit-log-append-only"
       ],
       "idempotency": "full",
       "determinism": "deterministic"
@@ -4510,7 +4573,7 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.obs.structured_logging"
+        "ctrl.obs.structured-logging"
       ],
       "idempotency": "full",
       "determinism": "deterministic"
@@ -4536,7 +4599,7 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.obs.structured_logging"
+        "ctrl.obs.structured-logging"
       ],
       "idempotency": "partial",
       "determinism": "non-deterministic"
@@ -4562,7 +4625,7 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.obs.structured_logging"
+        "ctrl.obs.structured-logging"
       ],
       "idempotency": "full",
       "determinism": "non-deterministic"
@@ -4579,7 +4642,7 @@
       "determinism": "nondeterministic",
       "blast_score": null,
       "required_controls": [
-        "ctrl.obs.structured_logging"
+        "ctrl.obs.structured-logging"
       ],
       "handles_capabilities": [
         "cap.mem.retrieve.rag",
@@ -4601,7 +4664,8 @@
         "time": 1,
         "reversibility": "reversible"
       },
-      "idempotency": "full"
+      "idempotency": "full",
+      "wcp_namespace": "reserved"
     },
     {
       "id": "wrk.mem.curator",
@@ -4615,8 +4679,8 @@
       "determinism": "deterministic",
       "blast_score": null,
       "required_controls": [
-        "ctrl.obs.audit_log_append_only",
-        "ctrl.obs.structured_logging"
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.obs.structured-logging"
       ],
       "handles_capabilities": [
         "cap.mem.write",
@@ -4638,7 +4702,8 @@
         "time": 1,
         "reversibility": "partially-reversible"
       },
-      "idempotency": "partial"
+      "idempotency": "partial",
+      "wcp_namespace": "reserved"
     },
     {
       "id": "wrk.mem.summarizer",
@@ -4652,7 +4717,7 @@
       "determinism": "nondeterministic",
       "blast_score": null,
       "required_controls": [
-        "ctrl.obs.structured_logging"
+        "ctrl.obs.structured-logging"
       ],
       "handles_capabilities": [
         "cap.mem.summarize",
@@ -4674,10 +4739,11 @@
         "time": 1,
         "reversibility": "reversible"
       },
-      "idempotency": "partial"
+      "idempotency": "partial",
+      "wcp_namespace": "reserved"
     },
     {
-      "id": "prof.mem.rag_strict_scoped",
+      "id": "prof.mem.rag-strict-scoped",
       "type": "profile",
       "pack_id": "pack.20",
       "name": "Strict Scoped RAG Profile",
@@ -4688,17 +4754,18 @@
         "privacy"
       ],
       "controls_required": [
-        "ctrl.obs.structured_logging",
-        "ctrl.cost.monthly_token_budget"
+        "ctrl.obs.structured-logging",
+        "ctrl.cost.monthly-token-budget"
       ],
       "recommended_for_risk_tiers": [
         "medium",
         "high",
         "critical"
-      ]
+      ],
+      "wcp_namespace": "reserved"
     },
     {
-      "id": "prof.mem.privacy_conservative",
+      "id": "prof.mem.privacy-conservative",
       "type": "profile",
       "pack_id": "pack.20",
       "name": "Privacy-Conservative Memory Profile",
@@ -4709,16 +4776,17 @@
         "gdpr"
       ],
       "controls_required": [
-        "ctrl.obs.audit_log_append_only",
-        "ctrl.obs.structured_logging"
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.obs.structured-logging"
       ],
       "recommended_for_risk_tiers": [
         "high",
         "critical"
-      ]
+      ],
+      "wcp_namespace": "reserved"
     },
     {
-      "id": "prof.mem.budgeted_summaries",
+      "id": "prof.mem.budgeted-summaries",
       "type": "profile",
       "pack_id": "pack.20",
       "name": "Budgeted Summaries Memory Profile",
@@ -4729,16 +4797,17 @@
         "summarization"
       ],
       "controls_required": [
-        "ctrl.obs.structured_logging",
-        "ctrl.cost.monthly_token_budget"
+        "ctrl.obs.structured-logging",
+        "ctrl.cost.monthly-token-budget"
       ],
       "recommended_for_risk_tiers": [
         "low",
         "medium"
-      ]
+      ],
+      "wcp_namespace": "reserved"
     },
     {
-      "id": "cap.wf.define_dag",
+      "id": "cap.wf.define-dag",
       "type": "capability",
       "pack_id": "pack.21",
       "name": "Define Workflow DAG",
@@ -4758,7 +4827,7 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.obs.structured_logging"
+        "ctrl.obs.structured-logging"
       ],
       "idempotency": "full",
       "determinism": "deterministic"
@@ -4784,8 +4853,8 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.obs.structured_logging",
-        "ctrl.obs.run_metadata_store"
+        "ctrl.obs.structured-logging",
+        "ctrl.obs.run-metadata-store"
       ],
       "idempotency": "full",
       "determinism": "deterministic"
@@ -4811,14 +4880,14 @@
         "reversibility": "partially-reversible"
       },
       "typical_controls": [
-        "ctrl.obs.audit_log_append_only",
-        "ctrl.obs.tracing_distributed"
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.obs.tracing-distributed"
       ],
       "idempotency": "full",
       "determinism": "deterministic"
     },
     {
-      "id": "cap.wf.replay_deterministic",
+      "id": "cap.wf.replay-deterministic",
       "type": "capability",
       "pack_id": "pack.21",
       "name": "Replay Deterministic Workflow",
@@ -4838,14 +4907,14 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.obs.tracing_distributed",
-        "ctrl.obs.structured_logging"
+        "ctrl.obs.tracing-distributed",
+        "ctrl.obs.structured-logging"
       ],
       "idempotency": "full",
       "determinism": "deterministic"
     },
     {
-      "id": "cap.wf.fanout_fanin",
+      "id": "cap.wf.fanout-fanin",
       "type": "capability",
       "pack_id": "pack.21",
       "name": "Fan-Out / Fan-In",
@@ -4865,8 +4934,8 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.obs.tracing_distributed",
-        "ctrl.obs.metrics_core"
+        "ctrl.obs.tracing-distributed",
+        "ctrl.obs.metrics-core"
       ],
       "idempotency": "partial",
       "determinism": "captured"
@@ -4883,8 +4952,8 @@
       "determinism": "captured-deterministic",
       "blast_score": null,
       "required_controls": [
-        "ctrl.obs.audit_log_append_only",
-        "ctrl.obs.tracing_distributed"
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.obs.tracing-distributed"
       ],
       "handles_capabilities": [
         "cap.wf.define_dag",
@@ -4898,10 +4967,10 @@
         "sagas"
       ],
       "serves_capabilities": [
-        "cap.wf.define_dag",
+        "cap.wf.define-dag",
         "cap.wf.checkpoint",
         "cap.wf.compensate",
-        "cap.wf.fanout_fanin"
+        "cap.wf.fanout-fanin"
       ],
       "blast_radius_hint": {
         "data": 3,
@@ -4910,7 +4979,8 @@
         "time": 3,
         "reversibility": "partially-reversible"
       },
-      "idempotency": "partial"
+      "idempotency": "partial",
+      "wcp_namespace": "reserved"
     },
     {
       "id": "wrk.wf.step.executor",
@@ -4924,7 +4994,7 @@
       "determinism": "deterministic",
       "blast_score": null,
       "required_controls": [
-        "ctrl.obs.structured_logging"
+        "ctrl.obs.structured-logging"
       ],
       "handles_capabilities": [
         "cap.wf.replay_deterministic"
@@ -4934,7 +5004,7 @@
         "idempotency"
       ],
       "serves_capabilities": [
-        "cap.wf.replay_deterministic"
+        "cap.wf.replay-deterministic"
       ],
       "blast_radius_hint": {
         "data": 1,
@@ -4943,10 +5013,11 @@
         "time": 1,
         "reversibility": "reversible"
       },
-      "idempotency": "full"
+      "idempotency": "full",
+      "wcp_namespace": "reserved"
     },
     {
-      "id": "prof.wf.durable_saga",
+      "id": "prof.wf.durable-saga",
       "type": "profile",
       "pack_id": "pack.21",
       "name": "Durable Saga Workflow Profile",
@@ -4957,15 +5028,16 @@
         "durability"
       ],
       "controls_required": [
-        "ctrl.obs.audit_log_append_only",
-        "ctrl.obs.tracing_distributed",
-        "ctrl.obs.run_metadata_store"
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.obs.tracing-distributed",
+        "ctrl.obs.run-metadata-store"
       ],
       "recommended_for_risk_tiers": [
         "medium",
         "high",
         "critical"
-      ]
+      ],
+      "wcp_namespace": "reserved"
     },
     {
       "id": "cap.db.read",
@@ -4988,7 +5060,7 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.obs.structured_logging"
+        "ctrl.obs.structured-logging"
       ],
       "idempotency": "full",
       "determinism": "deterministic"
@@ -5014,8 +5086,8 @@
         "reversibility": "partially-reversible"
       },
       "typical_controls": [
-        "ctrl.obs.structured_logging",
-        "ctrl.obs.audit_log_append_only"
+        "ctrl.obs.structured-logging",
+        "ctrl.obs.audit-log-append-only"
       ],
       "idempotency": "partial",
       "determinism": "deterministic"
@@ -5041,8 +5113,8 @@
         "reversibility": "partially-reversible"
       },
       "typical_controls": [
-        "ctrl.obs.audit_log_append_only",
-        "ctrl.obs.structured_logging"
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.obs.structured-logging"
       ],
       "idempotency": "full",
       "determinism": "deterministic"
@@ -5068,8 +5140,8 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.obs.structured_logging",
-        "ctrl.obs.metrics_core"
+        "ctrl.obs.structured-logging",
+        "ctrl.obs.metrics-core"
       ],
       "idempotency": "full",
       "determinism": "deterministic"
@@ -5095,8 +5167,8 @@
         "reversibility": "partially-reversible"
       },
       "typical_controls": [
-        "ctrl.obs.audit_log_append_only",
-        "ctrl.obs.structured_logging"
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.obs.structured-logging"
       ],
       "idempotency": "full",
       "determinism": "deterministic"
@@ -5113,8 +5185,8 @@
       "determinism": "deterministic",
       "blast_score": null,
       "required_controls": [
-        "ctrl.obs.audit_log_append_only",
-        "ctrl.obs.structured_logging"
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.obs.structured-logging"
       ],
       "handles_capabilities": [
         "cap.db.migrate",
@@ -5135,7 +5207,8 @@
         "time": 4,
         "reversibility": "partially-reversible"
       },
-      "idempotency": "full"
+      "idempotency": "full",
+      "wcp_namespace": "reserved"
     },
     {
       "id": "wrk.db.reconciler",
@@ -5149,7 +5222,7 @@
       "determinism": "deterministic",
       "blast_score": null,
       "required_controls": [
-        "ctrl.obs.structured_logging"
+        "ctrl.obs.structured-logging"
       ],
       "handles_capabilities": [
         "cap.db.reconcile"
@@ -5168,10 +5241,11 @@
         "time": 2,
         "reversibility": "partially-reversible"
       },
-      "idempotency": "full"
+      "idempotency": "full",
+      "wcp_namespace": "reserved"
     },
     {
-      "id": "prof.db.migration_safe",
+      "id": "prof.db.migration-safe",
       "type": "profile",
       "pack_id": "pack.22",
       "name": "Safe DB Migration Profile",
@@ -5182,18 +5256,19 @@
         "safety"
       ],
       "controls_required": [
-        "ctrl.obs.audit_log_append_only",
-        "ctrl.obs.structured_logging",
-        "ctrl.obs.run_metadata_store"
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.obs.structured-logging",
+        "ctrl.obs.run-metadata-store"
       ],
       "recommended_for_risk_tiers": [
         "medium",
         "high",
         "critical"
-      ]
+      ],
+      "wcp_namespace": "reserved"
     },
     {
-      "id": "prof.db.reconciliation_strict",
+      "id": "prof.db.reconciliation-strict",
       "type": "profile",
       "pack_id": "pack.22",
       "name": "Strict Reconciliation DB Profile",
@@ -5204,14 +5279,15 @@
         "strict"
       ],
       "controls_required": [
-        "ctrl.obs.audit_log_append_only",
-        "ctrl.obs.structured_logging",
-        "ctrl.obs.metrics_core"
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.obs.structured-logging",
+        "ctrl.obs.metrics-core"
       ],
       "recommended_for_risk_tiers": [
         "high",
         "critical"
-      ]
+      ],
+      "wcp_namespace": "reserved"
     },
     {
       "id": "cap.int.webhook.verify",
@@ -5234,7 +5310,7 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.obs.structured_logging"
+        "ctrl.obs.structured-logging"
       ],
       "idempotency": "full",
       "determinism": "deterministic"
@@ -5260,8 +5336,8 @@
         "reversibility": "partially-reversible"
       },
       "typical_controls": [
-        "ctrl.obs.structured_logging",
-        "ctrl.obs.metrics_core"
+        "ctrl.obs.structured-logging",
+        "ctrl.obs.metrics-core"
       ],
       "idempotency": "partial",
       "determinism": "non-deterministic"
@@ -5287,13 +5363,13 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.obs.structured_logging"
+        "ctrl.obs.structured-logging"
       ],
       "idempotency": "full",
       "determinism": "deterministic"
     },
     {
-      "id": "cap.int.replay_webhook",
+      "id": "cap.int.replay-webhook",
       "type": "capability",
       "pack_id": "pack.23",
       "name": "Replay Webhook",
@@ -5313,14 +5389,14 @@
         "reversibility": "partially-reversible"
       },
       "typical_controls": [
-        "ctrl.obs.structured_logging",
-        "ctrl.obs.audit_log_append_only"
+        "ctrl.obs.structured-logging",
+        "ctrl.obs.audit-log-append-only"
       ],
       "idempotency": "partial",
       "determinism": "captured"
     },
     {
-      "id": "cap.int.rotate_credentials",
+      "id": "cap.int.rotate-credentials",
       "type": "capability",
       "pack_id": "pack.23",
       "name": "Rotate Integration Credentials",
@@ -5340,14 +5416,14 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.obs.audit_log_append_only",
-        "ctrl.sandbox.secrets_denied_by_default"
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.sandbox.secrets-denied-by-default"
       ],
       "idempotency": "partial",
       "determinism": "deterministic"
     },
     {
-      "id": "wrk.int.webhook_ingest",
+      "id": "wrk.int.webhook-ingest",
       "type": "worker_species",
       "pack_id": "pack.23",
       "name": "Webhook Ingest Worker",
@@ -5358,7 +5434,7 @@
       "determinism": "deterministic",
       "blast_score": null,
       "required_controls": [
-        "ctrl.obs.structured_logging"
+        "ctrl.obs.structured-logging"
       ],
       "handles_capabilities": [
         "cap.int.webhook.verify",
@@ -5370,7 +5446,7 @@
       ],
       "serves_capabilities": [
         "cap.int.webhook.verify",
-        "cap.int.replay_webhook",
+        "cap.int.replay-webhook",
         "cap.int.contract.validate"
       ],
       "blast_radius_hint": {
@@ -5380,10 +5456,11 @@
         "time": 0,
         "reversibility": "reversible"
       },
-      "idempotency": "full"
+      "idempotency": "full",
+      "wcp_namespace": "reserved"
     },
     {
-      "id": "wrk.int.api_adapter",
+      "id": "wrk.int.api-adapter",
       "type": "worker_species",
       "pack_id": "pack.23",
       "name": "API Adapter Worker",
@@ -5394,8 +5471,8 @@
       "determinism": "captured-deterministic",
       "blast_score": null,
       "required_controls": [
-        "ctrl.obs.structured_logging",
-        "ctrl.obs.metrics_core"
+        "ctrl.obs.structured-logging",
+        "ctrl.obs.metrics-core"
       ],
       "handles_capabilities": [
         "cap.int.api.call"
@@ -5415,10 +5492,11 @@
         "time": 1,
         "reversibility": "partially-reversible"
       },
-      "idempotency": "partial"
+      "idempotency": "partial",
+      "wcp_namespace": "reserved"
     },
     {
-      "id": "prof.int.webhook_strict",
+      "id": "prof.int.webhook-strict",
       "type": "profile",
       "pack_id": "pack.23",
       "name": "Strict Webhook Integration Profile",
@@ -5429,17 +5507,18 @@
         "strict"
       ],
       "controls_required": [
-        "ctrl.obs.structured_logging",
-        "ctrl.obs.audit_log_append_only"
+        "ctrl.obs.structured-logging",
+        "ctrl.obs.audit-log-append-only"
       ],
       "recommended_for_risk_tiers": [
         "medium",
         "high",
         "critical"
-      ]
+      ],
+      "wcp_namespace": "reserved"
     },
     {
-      "id": "prof.int.resilient_adapter",
+      "id": "prof.int.resilient-adapter",
       "type": "profile",
       "pack_id": "pack.23",
       "name": "Resilient Adapter Integration Profile",
@@ -5450,13 +5529,14 @@
         "egress"
       ],
       "controls_required": [
-        "ctrl.obs.metrics_core",
-        "ctrl.obs.structured_logging"
+        "ctrl.obs.metrics-core",
+        "ctrl.obs.structured-logging"
       ],
       "recommended_for_risk_tiers": [
         "medium",
         "high"
-      ]
+      ],
+      "wcp_namespace": "reserved"
     },
     {
       "id": "cap.ui.review.queue",
@@ -5479,7 +5559,7 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.obs.structured_logging"
+        "ctrl.obs.structured-logging"
       ],
       "idempotency": "partial",
       "determinism": "deterministic"
@@ -5505,13 +5585,13 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.obs.structured_logging"
+        "ctrl.obs.structured-logging"
       ],
       "idempotency": "partial",
       "determinism": "non-deterministic"
     },
     {
-      "id": "cap.ui.show_diff",
+      "id": "cap.ui.show-diff",
       "type": "capability",
       "pack_id": "pack.24",
       "name": "Show Diff for Review",
@@ -5535,7 +5615,7 @@
       "determinism": "deterministic"
     },
     {
-      "id": "cap.ui.capture_feedback",
+      "id": "cap.ui.capture-feedback",
       "type": "capability",
       "pack_id": "pack.24",
       "name": "Capture Human Feedback",
@@ -5555,13 +5635,13 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.obs.structured_logging"
+        "ctrl.obs.structured-logging"
       ],
       "idempotency": "partial",
       "determinism": "non-deterministic"
     },
     {
-      "id": "cap.ui.escalate_to_human",
+      "id": "cap.ui.escalate-to-human",
       "type": "capability",
       "pack_id": "pack.24",
       "name": "Escalate to Human",
@@ -5581,14 +5661,14 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.obs.audit_log_append_only",
-        "ctrl.obs.structured_logging"
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.obs.structured-logging"
       ],
       "idempotency": "partial",
       "determinism": "non-deterministic"
     },
     {
-      "id": "wrk.ui.review_router",
+      "id": "wrk.ui.review-router",
       "type": "worker_species",
       "pack_id": "pack.24",
       "name": "Review Router Worker",
@@ -5599,7 +5679,7 @@
       "determinism": "deterministic",
       "blast_score": null,
       "required_controls": [
-        "ctrl.obs.structured_logging"
+        "ctrl.obs.structured-logging"
       ],
       "handles_capabilities": [
         "cap.ui.review.queue",
@@ -5611,7 +5691,7 @@
       ],
       "serves_capabilities": [
         "cap.ui.review.queue",
-        "cap.ui.escalate_to_human"
+        "cap.ui.escalate-to-human"
       ],
       "blast_radius_hint": {
         "data": 0,
@@ -5620,10 +5700,11 @@
         "time": 1,
         "reversibility": "reversible"
       },
-      "idempotency": "partial"
+      "idempotency": "partial",
+      "wcp_namespace": "reserved"
     },
     {
-      "id": "wrk.ui.feedback_collector",
+      "id": "wrk.ui.feedback-collector",
       "type": "worker_species",
       "pack_id": "pack.24",
       "name": "Feedback Collector Worker",
@@ -5634,7 +5715,7 @@
       "determinism": "nondeterministic",
       "blast_score": null,
       "required_controls": [
-        "ctrl.obs.structured_logging"
+        "ctrl.obs.structured-logging"
       ],
       "handles_capabilities": [
         "cap.ui.capture_feedback",
@@ -5645,7 +5726,7 @@
         "feedback"
       ],
       "serves_capabilities": [
-        "cap.ui.capture_feedback",
+        "cap.ui.capture-feedback",
         "cap.ui.form.collect"
       ],
       "blast_radius_hint": {
@@ -5655,10 +5736,11 @@
         "time": 0,
         "reversibility": "reversible"
       },
-      "idempotency": "partial"
+      "idempotency": "partial",
+      "wcp_namespace": "reserved"
     },
     {
-      "id": "prof.ui.review_strict",
+      "id": "prof.ui.review-strict",
       "type": "profile",
       "pack_id": "pack.24",
       "name": "Strict Review Queue UI Profile",
@@ -5669,16 +5751,17 @@
         "compliance"
       ],
       "controls_required": [
-        "ctrl.obs.audit_log_append_only",
-        "ctrl.obs.structured_logging"
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.obs.structured-logging"
       ],
       "recommended_for_risk_tiers": [
         "high",
         "critical"
-      ]
+      ],
+      "wcp_namespace": "reserved"
     },
     {
-      "id": "cap.edge.local_store",
+      "id": "cap.edge.local-store",
       "type": "capability",
       "pack_id": "pack.25",
       "name": "Edge Local Store",
@@ -5698,8 +5781,8 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.sandbox.resource_limits_strict",
-        "ctrl.obs.structured_logging"
+        "ctrl.sandbox.resource-limits-strict",
+        "ctrl.obs.structured-logging"
       ],
       "idempotency": "partial",
       "determinism": "deterministic"
@@ -5725,14 +5808,14 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.obs.structured_logging",
-        "ctrl.obs.tracing_distributed"
+        "ctrl.obs.structured-logging",
+        "ctrl.obs.tracing-distributed"
       ],
       "idempotency": "partial",
       "determinism": "captured"
     },
     {
-      "id": "cap.edge.device_attest",
+      "id": "cap.edge.device-attest",
       "type": "capability",
       "pack_id": "pack.25",
       "name": "Device Attestation",
@@ -5752,13 +5835,13 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.obs.audit_log_append_only"
+        "ctrl.obs.audit-log-append-only"
       ],
       "idempotency": "full",
       "determinism": "deterministic"
     },
     {
-      "id": "cap.edge.update_agent",
+      "id": "cap.edge.update-agent",
       "type": "capability",
       "pack_id": "pack.25",
       "name": "Update Edge Agent",
@@ -5778,14 +5861,14 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.obs.audit_log_append_only",
-        "ctrl.sandbox.resource_limits_strict"
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.sandbox.resource-limits-strict"
       ],
       "idempotency": "full",
       "determinism": "deterministic"
     },
     {
-      "id": "cap.edge.local_inference",
+      "id": "cap.edge.local-inference",
       "type": "capability",
       "pack_id": "pack.25",
       "name": "Edge Local Inference",
@@ -5805,7 +5888,7 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.sandbox.resource_limits_strict"
+        "ctrl.sandbox.resource-limits-strict"
       ],
       "idempotency": "partial",
       "determinism": "non-deterministic"
@@ -5822,7 +5905,7 @@
       "determinism": "captured-deterministic",
       "blast_score": null,
       "required_controls": [
-        "ctrl.obs.structured_logging"
+        "ctrl.obs.structured-logging"
       ],
       "handles_capabilities": [
         "cap.edge.sync",
@@ -5834,7 +5917,7 @@
       ],
       "serves_capabilities": [
         "cap.edge.sync",
-        "cap.edge.local_store"
+        "cap.edge.local-store"
       ],
       "blast_radius_hint": {
         "data": 2,
@@ -5843,7 +5926,8 @@
         "time": 2,
         "reversibility": "reversible"
       },
-      "idempotency": "partial"
+      "idempotency": "partial",
+      "wcp_namespace": "reserved"
     },
     {
       "id": "wrk.edge.update.manager",
@@ -5857,7 +5941,7 @@
       "determinism": "deterministic",
       "blast_score": null,
       "required_controls": [
-        "ctrl.obs.audit_log_append_only"
+        "ctrl.obs.audit-log-append-only"
       ],
       "handles_capabilities": [
         "cap.edge.update_agent"
@@ -5868,7 +5952,7 @@
         "supply-chain"
       ],
       "serves_capabilities": [
-        "cap.edge.update_agent"
+        "cap.edge.update-agent"
       ],
       "blast_radius_hint": {
         "data": 1,
@@ -5877,10 +5961,11 @@
         "time": 3,
         "reversibility": "reversible"
       },
-      "idempotency": "full"
+      "idempotency": "full",
+      "wcp_namespace": "reserved"
     },
     {
-      "id": "wrk.edge.local_inference.worker",
+      "id": "wrk.edge.local-inference.worker",
       "type": "worker_species",
       "pack_id": "pack.25",
       "name": "Edge Local Inference Worker",
@@ -5891,7 +5976,7 @@
       "determinism": "nondeterministic",
       "blast_score": null,
       "required_controls": [
-        "ctrl.sandbox.resource_limits_strict"
+        "ctrl.sandbox.resource-limits-strict"
       ],
       "handles_capabilities": [
         "cap.edge.local_inference"
@@ -5902,7 +5987,7 @@
         "inference"
       ],
       "serves_capabilities": [
-        "cap.edge.local_inference"
+        "cap.edge.local-inference"
       ],
       "blast_radius_hint": {
         "data": 0,
@@ -5911,10 +5996,11 @@
         "time": 2,
         "reversibility": "reversible"
       },
-      "idempotency": "partial"
+      "idempotency": "partial",
+      "wcp_namespace": "reserved"
     },
     {
-      "id": "prof.edge.offline_strict",
+      "id": "prof.edge.offline-strict",
       "type": "profile",
       "pack_id": "pack.25",
       "name": "Strict Offline Edge Profile",
@@ -5925,16 +6011,17 @@
         "security"
       ],
       "controls_required": [
-        "ctrl.sandbox.resource_limits_strict",
-        "ctrl.obs.structured_logging"
+        "ctrl.sandbox.resource-limits-strict",
+        "ctrl.obs.structured-logging"
       ],
       "recommended_for_risk_tiers": [
         "medium",
         "high"
-      ]
+      ],
+      "wcp_namespace": "reserved"
     },
     {
-      "id": "prof.edge.update_rings",
+      "id": "prof.edge.update-rings",
       "type": "profile",
       "pack_id": "pack.25",
       "name": "Ring-Based Update Edge Profile",
@@ -5945,16 +6032,17 @@
         "supply-chain"
       ],
       "controls_required": [
-        "ctrl.obs.audit_log_append_only",
-        "ctrl.sandbox.resource_limits_strict"
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.sandbox.resource-limits-strict"
       ],
       "recommended_for_risk_tiers": [
         "high",
         "critical"
-      ]
+      ],
+      "wcp_namespace": "reserved"
     },
     {
-      "id": "cap.os.register_worker",
+      "id": "cap.os.register-worker",
       "type": "capability",
       "pack_id": "pack.26",
       "name": "Register Worker",
@@ -5974,14 +6062,14 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.os.worker_registry",
-        "ctrl.obs.audit_log_append_only"
+        "ctrl.os.worker-registry",
+        "ctrl.obs.audit-log-append-only"
       ],
       "idempotency": "full",
       "determinism": "deterministic"
     },
     {
-      "id": "cap.os.route_task",
+      "id": "cap.os.route-task",
       "type": "capability",
       "pack_id": "pack.26",
       "name": "Route Task",
@@ -6001,14 +6089,14 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.os.routing_rules",
-        "ctrl.os.policy_gate_every_step"
+        "ctrl.os.routing-rules",
+        "ctrl.os.policy-gate-every-step"
       ],
       "idempotency": "full",
       "determinism": "deterministic"
     },
     {
-      "id": "cap.os.compose_workflow",
+      "id": "cap.os.compose-workflow",
       "type": "capability",
       "pack_id": "pack.26",
       "name": "Compose Workflow",
@@ -6028,14 +6116,14 @@
         "reversibility": "partially-reversible"
       },
       "typical_controls": [
-        "ctrl.os.routing_rules",
-        "ctrl.os.end_to_end_correlation"
+        "ctrl.os.routing-rules",
+        "ctrl.os.end-to-end-correlation"
       ],
       "idempotency": "partial",
       "determinism": "captured"
     },
     {
-      "id": "cap.os.enforce_policies",
+      "id": "cap.os.enforce-policies",
       "type": "capability",
       "pack_id": "pack.26",
       "name": "Enforce Policies",
@@ -6055,14 +6143,14 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.os.policy_gate_every_step",
-        "ctrl.pol.default_deny"
+        "ctrl.os.policy-gate-every-step",
+        "ctrl.pol.default-deny"
       ],
       "idempotency": "full",
       "determinism": "deterministic"
     },
     {
-      "id": "cap.os.observe_end_to_end",
+      "id": "cap.os.observe-end-to-end",
       "type": "capability",
       "pack_id": "pack.26",
       "name": "Observe End-to-End",
@@ -6082,14 +6170,14 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.os.end_to_end_correlation",
-        "ctrl.obs.tracing_distributed"
+        "ctrl.os.end-to-end-correlation",
+        "ctrl.obs.tracing-distributed"
       ],
       "idempotency": "full",
       "determinism": "deterministic"
     },
     {
-      "id": "cap.os.emergency_controls",
+      "id": "cap.os.emergency-controls",
       "type": "capability",
       "pack_id": "pack.26",
       "name": "Emergency Controls",
@@ -6109,14 +6197,14 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.os.global_kill_switches",
-        "ctrl.obs.audit_log_append_only"
+        "ctrl.os.global-kill-switches",
+        "ctrl.obs.audit-log-append-only"
       ],
       "idempotency": "full",
       "determinism": "deterministic"
     },
     {
-      "id": "cap.os.govern_worker_lifecycle",
+      "id": "cap.os.govern-worker-lifecycle",
       "type": "capability",
       "pack_id": "pack.26",
       "name": "Govern Worker Lifecycle",
@@ -6136,14 +6224,14 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.os.worker_registry",
-        "ctrl.obs.audit_log_append_only"
+        "ctrl.os.worker-registry",
+        "ctrl.obs.audit-log-append-only"
       ],
       "idempotency": "partial",
       "determinism": "deterministic"
     },
     {
-      "id": "cap.os.memory_and_context_service",
+      "id": "cap.os.memory-and-context-service",
       "type": "capability",
       "pack_id": "pack.26",
       "name": "Memory and Context Service",
@@ -6163,14 +6251,14 @@
         "reversibility": "reversible"
       },
       "typical_controls": [
-        "ctrl.obs.structured_logging",
-        "ctrl.cost.monthly_token_budget"
+        "ctrl.obs.structured-logging",
+        "ctrl.cost.monthly-token-budget"
       ],
       "idempotency": "partial",
       "determinism": "non-deterministic"
     },
     {
-      "id": "wrk.os.workforce_router",
+      "id": "wrk.os.workforce-router",
       "type": "worker_species",
       "pack_id": "pack.26",
       "name": "Workforce Router Worker",
@@ -6181,11 +6269,11 @@
       "determinism": "deterministic",
       "blast_score": null,
       "required_controls": [
-        "ctrl.os.worker_registry",
-        "ctrl.os.routing_rules",
-        "ctrl.os.policy_gate_every_step",
-        "ctrl.os.end_to_end_correlation",
-        "ctrl.os.global_kill_switches"
+        "ctrl.os.worker-registry",
+        "ctrl.os.routing-rules",
+        "ctrl.os.policy-gate-every-step",
+        "ctrl.os.end-to-end-correlation",
+        "ctrl.os.global-kill-switches"
       ],
       "handles_capabilities": [
         "cap.os.route_task",
@@ -6198,9 +6286,9 @@
         "governance"
       ],
       "serves_capabilities": [
-        "cap.os.route_task",
-        "cap.os.compose_workflow",
-        "cap.os.enforce_policies"
+        "cap.os.route-task",
+        "cap.os.compose-workflow",
+        "cap.os.enforce-policies"
       ],
       "blast_radius_hint": {
         "data": 2,
@@ -6209,10 +6297,11 @@
         "time": 3,
         "reversibility": "partially-reversible"
       },
-      "idempotency": "full"
+      "idempotency": "full",
+      "wcp_namespace": "reserved"
     },
     {
-      "id": "wrk.os.registry_manager",
+      "id": "wrk.os.registry-manager",
       "type": "worker_species",
       "pack_id": "pack.26",
       "name": "Registry Manager Worker",
@@ -6223,8 +6312,8 @@
       "determinism": "deterministic",
       "blast_score": null,
       "required_controls": [
-        "ctrl.os.worker_registry",
-        "ctrl.obs.audit_log_append_only"
+        "ctrl.os.worker-registry",
+        "ctrl.obs.audit-log-append-only"
       ],
       "handles_capabilities": [
         "cap.os.register_worker",
@@ -6235,8 +6324,8 @@
         "registry"
       ],
       "serves_capabilities": [
-        "cap.os.register_worker",
-        "cap.os.govern_worker_lifecycle"
+        "cap.os.register-worker",
+        "cap.os.govern-worker-lifecycle"
       ],
       "blast_radius_hint": {
         "data": 1,
@@ -6245,10 +6334,11 @@
         "time": 1,
         "reversibility": "reversible"
       },
-      "idempotency": "full"
+      "idempotency": "full",
+      "wcp_namespace": "reserved"
     },
     {
-      "id": "wrk.os.incident_commander",
+      "id": "wrk.os.incident-commander",
       "type": "worker_species",
       "pack_id": "pack.26",
       "name": "Incident Commander Worker",
@@ -6259,8 +6349,8 @@
       "determinism": "nondeterministic",
       "blast_score": null,
       "required_controls": [
-        "ctrl.os.global_kill_switches",
-        "ctrl.obs.audit_log_append_only"
+        "ctrl.os.global-kill-switches",
+        "ctrl.obs.audit-log-append-only"
       ],
       "handles_capabilities": [
         "cap.os.emergency_controls"
@@ -6271,7 +6361,7 @@
         "emergency"
       ],
       "serves_capabilities": [
-        "cap.os.emergency_controls"
+        "cap.os.emergency-controls"
       ],
       "blast_radius_hint": {
         "data": 0,
@@ -6280,10 +6370,11 @@
         "time": 3,
         "reversibility": "reversible"
       },
-      "idempotency": "full"
+      "idempotency": "full",
+      "wcp_namespace": "reserved"
     },
     {
-      "id": "ctrl.os.worker_registry",
+      "id": "ctrl.os.worker-registry",
       "type": "control",
       "pack_id": "pack.26",
       "name": "Worker Registry",
@@ -6299,10 +6390,11 @@
         "medium",
         "high",
         "critical"
-      ]
+      ],
+      "wcp_namespace": "reserved"
     },
     {
-      "id": "ctrl.os.routing_rules",
+      "id": "ctrl.os.routing-rules",
       "type": "control",
       "pack_id": "pack.26",
       "name": "Deterministic Routing Rules",
@@ -6316,10 +6408,11 @@
         "medium",
         "high",
         "critical"
-      ]
+      ],
+      "wcp_namespace": "reserved"
     },
     {
-      "id": "ctrl.os.policy_gate_every_step",
+      "id": "ctrl.os.policy-gate-every-step",
       "type": "control",
       "pack_id": "pack.26",
       "name": "Policy Gate Every Step",
@@ -6333,10 +6426,11 @@
       "required_for_risk_tiers": [
         "high",
         "critical"
-      ]
+      ],
+      "wcp_namespace": "reserved"
     },
     {
-      "id": "ctrl.os.end_to_end_correlation",
+      "id": "ctrl.os.end-to-end-correlation",
       "type": "control",
       "pack_id": "pack.26",
       "name": "End-to-End Correlation",
@@ -6351,10 +6445,11 @@
         "medium",
         "high",
         "critical"
-      ]
+      ],
+      "wcp_namespace": "reserved"
     },
     {
-      "id": "ctrl.os.global_kill_switches",
+      "id": "ctrl.os.global-kill-switches",
       "type": "control",
       "pack_id": "pack.26",
       "name": "Global Kill Switches",
@@ -6369,10 +6464,11 @@
         "medium",
         "high",
         "critical"
-      ]
+      ],
+      "wcp_namespace": "reserved"
     },
     {
-      "id": "ctrl.os.budget_and_cost_enforcement",
+      "id": "ctrl.os.budget-and-cost-enforcement",
       "type": "control",
       "pack_id": "pack.26",
       "name": "Budget and Cost Enforcement",
@@ -6387,10 +6483,11 @@
         "medium",
         "high",
         "critical"
-      ]
+      ],
+      "wcp_namespace": "reserved"
     },
     {
-      "id": "ctrl.os.provenance_requirements",
+      "id": "ctrl.os.provenance-requirements",
       "type": "control",
       "pack_id": "pack.26",
       "name": "Provenance Requirements",
@@ -6404,10 +6501,11 @@
       "required_for_risk_tiers": [
         "high",
         "critical"
-      ]
+      ],
+      "wcp_namespace": "reserved"
     },
     {
-      "id": "prof.os.production_control_plane",
+      "id": "prof.os.production-control-plane",
       "type": "profile",
       "pack_id": "pack.26",
       "name": "Production Control Plane Profile",
@@ -6418,20 +6516,21 @@
         "governance"
       ],
       "controls_required": [
-        "ctrl.os.worker_registry",
-        "ctrl.os.routing_rules",
-        "ctrl.os.policy_gate_every_step",
-        "ctrl.os.end_to_end_correlation",
-        "ctrl.os.budget_and_cost_enforcement",
-        "ctrl.os.provenance_requirements"
+        "ctrl.os.worker-registry",
+        "ctrl.os.routing-rules",
+        "ctrl.os.policy-gate-every-step",
+        "ctrl.os.end-to-end-correlation",
+        "ctrl.os.budget-and-cost-enforcement",
+        "ctrl.os.provenance-requirements"
       ],
       "recommended_for_risk_tiers": [
         "high",
         "critical"
-      ]
+      ],
+      "wcp_namespace": "reserved"
     },
     {
-      "id": "prof.os.incident_mode",
+      "id": "prof.os.incident-mode",
       "type": "profile",
       "pack_id": "pack.26",
       "name": "OS Incident Mode Profile",
@@ -6442,17 +6541,18 @@
         "emergency"
       ],
       "controls_required": [
-        "ctrl.os.global_kill_switches",
-        "ctrl.obs.audit_log_append_only",
-        "ctrl.obs.flight_recorder_bundle"
+        "ctrl.os.global-kill-switches",
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.obs.flight-recorder-bundle"
       ],
       "recommended_for_risk_tiers": [
         "high",
         "critical"
-      ]
+      ],
+      "wcp_namespace": "reserved"
     },
     {
-      "id": "ctrl.blast_radius_scoring",
+      "id": "ctrl.blast-radius-scoring",
       "type": "control",
       "pack_id": "pack.27",
       "name": "Blast Radius Scoring",
@@ -6466,10 +6566,11 @@
       "required_for_risk_tiers": [
         "high",
         "critical"
-      ]
+      ],
+      "wcp_namespace": "reserved"
     },
     {
-      "id": "ctrl.privilege_envelopes_required",
+      "id": "ctrl.privilege-envelopes-required",
       "type": "control",
       "pack_id": "pack.27",
       "name": "Privilege Envelopes Required",
@@ -6484,10 +6585,11 @@
         "medium",
         "high",
         "critical"
-      ]
+      ],
+      "wcp_namespace": "reserved"
     },
     {
-      "id": "pol.egress_allowlist_policy",
+      "id": "pol.egress-allowlist-policy",
       "type": "policy",
       "pack_id": "pack.27",
       "name": "Egress Allowlist Policy",
@@ -6498,13 +6600,14 @@
         "policy"
       ],
       "controls_required": [
-        "ctrl.sandbox.no_egress_default_deny",
-        "ctrl.sandbox.path_allowlists",
-        "ctrl.blast_radius_scoring"
-      ]
+        "ctrl.sandbox.no-egress-default-deny",
+        "ctrl.sandbox.path-allowlists",
+        "ctrl.blast-radius-scoring"
+      ],
+      "wcp_namespace": "reserved"
     },
     {
-      "id": "pol.replay_safety_policy",
+      "id": "pol.replay-safety-policy",
       "type": "policy",
       "pack_id": "pack.27",
       "name": "Replay Safety Policy",
@@ -6515,12 +6618,13 @@
         "policy"
       ],
       "controls_required": [
-        "ctrl.obs.audit_log_append_only",
-        "ctrl.blast_radius_scoring"
-      ]
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.blast-radius-scoring"
+      ],
+      "wcp_namespace": "reserved"
     },
     {
-      "id": "pol.sandbox.default_deny",
+      "id": "pol.sandbox.default-deny",
       "type": "policy",
       "pack_id": "pack.27",
       "name": "Sandbox Default Deny Policy",
@@ -6531,13 +6635,14 @@
         "policy"
       ],
       "controls_required": [
-        "ctrl.sandbox.no_egress_default_deny",
-        "ctrl.sandbox.secrets_denied_by_default",
-        "ctrl.privilege_envelopes_required"
-      ]
+        "ctrl.sandbox.no-egress-default-deny",
+        "ctrl.sandbox.secrets-denied-by-default",
+        "ctrl.privilege-envelopes-required"
+      ],
+      "wcp_namespace": "reserved"
     },
     {
-      "id": "pol.pol.default_deny",
+      "id": "pol.default-deny",
       "type": "policy",
       "pack_id": "pack.27",
       "name": "Policy Default Deny",
@@ -6548,10 +6653,11 @@
         "authorization"
       ],
       "controls_required": [
-        "ctrl.pol.default_deny",
-        "ctrl.pol.policy_engine_runtime",
-        "ctrl.blast_radius_scoring"
-      ]
+        "ctrl.pol.default-deny",
+        "ctrl.pol.policy-engine-runtime",
+        "ctrl.blast-radius-scoring"
+      ],
+      "wcp_namespace": "reserved"
     }
   ]
 }
