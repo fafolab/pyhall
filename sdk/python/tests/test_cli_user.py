@@ -53,9 +53,9 @@ def test_search_type_filter():
     # (We just ensure it runs successfully with the filter)
 
 
-def test_search_pack_filter():
-    """Search with --pack filter narrows to entities in that pack."""
-    result = runner.invoke(app, ["search", "doc", "--pack", "pack.10", "--quiet"])
+def test_search_type_and_limit():
+    """Search with --type and --limit together."""
+    result = runner.invoke(app, ["search", "doc", "--type", "cap", "--limit", "5", "--quiet"])
     assert result.exit_code == 0
 
 
@@ -157,23 +157,13 @@ def test_explain_json_unknown_exits_nonzero():
 # browse
 # ---------------------------------------------------------------------------
 
-def test_browse_list_packs():
-    """browse with no flags lists all packs."""
+def test_browse_list_types():
+    """browse with no flags lists entity type summary."""
     result = runner.invoke(app, ["browse", "--quiet"])
     assert result.exit_code == 0
-    # Should mention pack IDs
-    assert "pack.01" in result.output
-    assert "pack.10" in result.output
-
-
-def test_browse_with_pack_filter():
-    """browse --pack lists entities in the given pack."""
-    result = runner.invoke(app, ["browse", "--pack", "pack.10", "--quiet"])
-    assert result.exit_code == 0
-    # pack.10 is Document Pipeline — should have entities
-    assert result.output.strip() != ""
-    # Should show entity IDs from pack.10
-    assert "pack.10" in result.output or "doc" in result.output.lower()
+    # Should mention entity types
+    assert "capability" in result.output.lower()
+    assert "worker_species" in result.output.lower() or "wrk" in result.output.lower()
 
 
 def test_browse_with_type_filter():
@@ -183,31 +173,17 @@ def test_browse_with_type_filter():
     assert "cap" in result.output.lower()
 
 
-def test_browse_json_packs():
-    """browse --json lists packs as structured data."""
+def test_browse_json_by_type():
+    """browse --json returns entity type counts."""
     result = runner.invoke(app, ["browse", "--json"])
     assert result.exit_code == 0
     data = json.loads(result.output)
-    assert "packs" in data
-    packs = data["packs"]
-    assert isinstance(packs, list)
-    assert len(packs) > 0
-    # Each pack should have id and name
-    for p in packs:
-        assert "id" in p
-        assert "name" in p
-
-
-def test_browse_json_pack_filter():
-    """browse --pack --json returns entities list."""
-    result = runner.invoke(app, ["browse", "--pack", "pack.01", "--json"])
-    assert result.exit_code == 0
-    data = json.loads(result.output)
-    assert "entities" in data
-    assert "count" in data
-    assert data["count"] > 0
-    for e in data["entities"]:
-        assert e.get("pack_id") == "pack.01"
+    assert "by_type" in data
+    assert "total" in data
+    assert data["total"] > 0
+    by_type = data["by_type"]
+    assert isinstance(by_type, dict)
+    assert "capability" in by_type
 
 
 def test_browse_json_type_filter():
@@ -218,6 +194,15 @@ def test_browse_json_type_filter():
     assert "entities" in data
     for e in data["entities"]:
         assert e["type"] == "worker_species"
+
+
+def test_browse_json_no_pack_id():
+    """browse --type cap --json entities must not contain pack_id."""
+    result = runner.invoke(app, ["browse", "--type", "cap", "--json"])
+    assert result.exit_code == 0
+    data = json.loads(result.output)
+    for e in data["entities"]:
+        assert "pack_id" not in e, f"pack_id found in entity {e['id']}"
 
 
 # ---------------------------------------------------------------------------

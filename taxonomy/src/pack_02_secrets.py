@@ -1,22 +1,17 @@
 """Pack source — pack_02_secrets"""
 
-PACKS = [
-    {
-        'id': 'pack.02',
-        'name': 'Secrets, Identity & Credential Hygiene',
-        'entity_count': 5,
-    },
-]
-
 ENTITIES = [
     {
         'id': 'cap.identity.workload',
         'type': 'capability',
-        'pack_id': 'pack.02',
         'name': 'Workload Identity',
         'description': 'Assert a cryptographic workload identity bound to the execution context.',
         'risk_tier': 'high',
-        'tags': ['identity', 'security', 'credentials'],
+        'tags': [
+            'identity',
+            'security',
+            'credentials',
+        ],
         'wcp_namespace': 'reserved',
         'blast_radius_hint': {
             'data': 1,
@@ -25,18 +20,23 @@ ENTITIES = [
             'time': 0,
             'reversibility': 'reversible',
         },
-        'typical_controls': ['ctrl.sandbox.secrets-denied-by-default'],
+        'typical_controls': [
+            'ctrl.sandbox.secrets-denied-by-default',
+        ],
         'idempotency': 'full',
         'determinism': 'deterministic',
     },
     {
         'id': 'cap.secrets.read',
         'type': 'capability',
-        'pack_id': 'pack.02',
         'name': 'Read Secrets',
         'description': 'Read secrets from a secrets vault scoped to the workload identity.',
         'risk_tier': 'high',
-        'tags': ['secrets', 'security', 'credentials'],
+        'tags': [
+            'secrets',
+            'security',
+            'credentials',
+        ],
         'wcp_namespace': 'reserved',
         'blast_radius_hint': {
             'data': 3,
@@ -45,18 +45,24 @@ ENTITIES = [
             'time': 0,
             'reversibility': 'reversible',
         },
-        'typical_controls': ['ctrl.sandbox.secrets-denied-by-default', 'ctrl.obs.audit-log-append-only'],
+        'typical_controls': [
+            'ctrl.sandbox.secrets-denied-by-default',
+            'ctrl.obs.audit-log-append-only',
+        ],
         'idempotency': 'full',
         'determinism': 'deterministic',
     },
     {
         'id': 'cap.token.mint.shortlived',
         'type': 'capability',
-        'pack_id': 'pack.02',
         'name': 'Mint Short-Lived Token',
         'description': 'Mint a short-lived access token (TTL <= 1 hour) scoped to specific resources.',
         'risk_tier': 'high',
-        'tags': ['identity', 'tokens', 'security'],
+        'tags': [
+            'identity',
+            'tokens',
+            'security',
+        ],
         'wcp_namespace': 'reserved',
         'blast_radius_hint': {
             'data': 1,
@@ -65,18 +71,24 @@ ENTITIES = [
             'time': 1,
             'reversibility': 'reversible',
         },
-        'typical_controls': ['ctrl.sandbox.secrets-denied-by-default', 'ctrl.obs.audit-log-append-only'],
+        'typical_controls': [
+            'ctrl.sandbox.secrets-denied-by-default',
+            'ctrl.obs.audit-log-append-only',
+        ],
         'idempotency': 'partial',
         'determinism': 'deterministic',
     },
     {
         'id': 'cap.credential.rotate',
         'type': 'capability',
-        'pack_id': 'pack.02',
         'name': 'Rotate Credentials',
         'description': 'Rotate a credential (API key, certificate, secret) and update all references.',
         'risk_tier': 'high',
-        'tags': ['credentials', 'rotation', 'security'],
+        'tags': [
+            'credentials',
+            'rotation',
+            'security',
+        ],
         'wcp_namespace': 'reserved',
         'blast_radius_hint': {
             'data': 2,
@@ -85,18 +97,24 @@ ENTITIES = [
             'time': 2,
             'reversibility': 'reversible',
         },
-        'typical_controls': ['ctrl.obs.audit-log-append-only', 'ctrl.sandbox.secrets-denied-by-default'],
+        'typical_controls': [
+            'ctrl.obs.audit-log-append-only',
+            'ctrl.sandbox.secrets-denied-by-default',
+        ],
         'idempotency': 'partial',
         'determinism': 'deterministic',
     },
     {
         'id': 'cap.audit.read',
         'type': 'capability',
-        'pack_id': 'pack.02',
         'name': 'Read Audit Logs',
         'description': 'Read audit log entries for compliance review and forensic analysis.',
         'risk_tier': 'medium',
-        'tags': ['audit', 'compliance', 'security'],
+        'tags': [
+            'audit',
+            'compliance',
+            'security',
+        ],
         'wcp_namespace': 'reserved',
         'blast_radius_hint': {
             'data': 1,
@@ -105,7 +123,9 @@ ENTITIES = [
             'time': 0,
             'reversibility': 'reversible',
         },
-        'typical_controls': ['ctrl.obs.audit-log-append-only'],
+        'typical_controls': [
+            'ctrl.obs.audit-log-append-only',
+        ],
         'idempotency': 'full',
         'determinism': 'deterministic',
     },

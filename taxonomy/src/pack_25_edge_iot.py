@@ -1,22 +1,17 @@
 """Pack source — pack_25_edge_iot"""
 
-PACKS = [
-    {
-        'id': 'pack.25',
-        'name': 'Edge/IoT & On-Prem Agents',
-        'entity_count': 10,
-    },
-]
-
 ENTITIES = [
     {
         'id': 'cap.edge.local-store',
         'type': 'capability',
-        'pack_id': 'pack.25',
         'name': 'Edge Local Store',
         'description': 'Write data to local edge storage with TTL, size limits, and sync markers.',
         'risk_tier': 'medium',
-        'tags': ['edge', 'storage', 'offline'],
+        'tags': [
+            'edge',
+            'storage',
+            'offline',
+        ],
         'wcp_namespace': 'reserved',
         'blast_radius_hint': {
             'data': 2,
@@ -25,18 +20,24 @@ ENTITIES = [
             'time': 0,
             'reversibility': 'reversible',
         },
-        'typical_controls': ['ctrl.sandbox.resource-limits-strict', 'ctrl.obs.structured-logging'],
+        'typical_controls': [
+            'ctrl.sandbox.resource-limits-strict',
+            'ctrl.obs.structured-logging',
+        ],
         'idempotency': 'partial',
         'determinism': 'deterministic',
     },
     {
         'id': 'cap.edge.sync',
         'type': 'capability',
-        'pack_id': 'pack.25',
         'name': 'Edge Sync',
         'description': 'Sync local edge events and artifacts to cloud with conflict resolution.',
         'risk_tier': 'medium',
-        'tags': ['edge', 'sync', 'cloud'],
+        'tags': [
+            'edge',
+            'sync',
+            'cloud',
+        ],
         'wcp_namespace': 'reserved',
         'blast_radius_hint': {
             'data': 2,
@@ -45,18 +46,24 @@ ENTITIES = [
             'time': 2,
             'reversibility': 'reversible',
         },
-        'typical_controls': ['ctrl.obs.structured-logging', 'ctrl.obs.tracing-distributed'],
+        'typical_controls': [
+            'ctrl.obs.structured-logging',
+            'ctrl.obs.tracing-distributed',
+        ],
         'idempotency': 'partial',
         'determinism': 'captured',
     },
     {
         'id': 'cap.edge.device-attest',
         'type': 'capability',
-        'pack_id': 'pack.25',
         'name': 'Device Attestation',
         'description': 'Attest the integrity and identity of an edge device using TPM or hardware root of trust.',
         'risk_tier': 'high',
-        'tags': ['edge', 'security', 'attestation'],
+        'tags': [
+            'edge',
+            'security',
+            'attestation',
+        ],
         'wcp_namespace': 'reserved',
         'blast_radius_hint': {
             'data': 0,
@@ -65,18 +72,23 @@ ENTITIES = [
             'time': 0,
             'reversibility': 'reversible',
         },
-        'typical_controls': ['ctrl.obs.audit-log-append-only'],
+        'typical_controls': [
+            'ctrl.obs.audit-log-append-only',
+        ],
         'idempotency': 'full',
         'determinism': 'deterministic',
     },
     {
         'id': 'cap.edge.update-agent',
         'type': 'capability',
-        'pack_id': 'pack.25',
         'name': 'Update Edge Agent',
         'description': 'Apply a signed software update to an edge agent in a ring-based rollout.',
         'risk_tier': 'critical',
-        'tags': ['edge', 'updates', 'supply-chain'],
+        'tags': [
+            'edge',
+            'updates',
+            'supply-chain',
+        ],
         'wcp_namespace': 'reserved',
         'blast_radius_hint': {
             'data': 1,
@@ -85,18 +97,24 @@ ENTITIES = [
             'time': 3,
             'reversibility': 'reversible',
         },
-        'typical_controls': ['ctrl.obs.audit-log-append-only', 'ctrl.sandbox.resource-limits-strict'],
+        'typical_controls': [
+            'ctrl.obs.audit-log-append-only',
+            'ctrl.sandbox.resource-limits-strict',
+        ],
         'idempotency': 'full',
         'determinism': 'deterministic',
     },
     {
         'id': 'cap.edge.local-inference',
         'type': 'capability',
-        'pack_id': 'pack.25',
         'name': 'Edge Local Inference',
         'description': 'Run ML inference locally on the edge device without cloud connectivity.',
         'risk_tier': 'medium',
-        'tags': ['edge', 'ml', 'inference'],
+        'tags': [
+            'edge',
+            'ml',
+            'inference',
+        ],
         'wcp_namespace': 'reserved',
         'blast_radius_hint': {
             'data': 0,
@@ -105,25 +123,30 @@ ENTITIES = [
             'time': 2,
             'reversibility': 'reversible',
         },
-        'typical_controls': ['ctrl.sandbox.resource-limits-strict'],
+        'typical_controls': [
+            'ctrl.sandbox.resource-limits-strict',
+        ],
         'idempotency': 'partial',
         'determinism': 'non-deterministic',
     },
     {
         'id': 'wrk.edge.sync.agent',
         'type': 'worker_species',
-        'pack_id': 'pack.25',
         'name': 'Edge Sync Agent Worker',
         'description': 'Sync local events/artifacts to cloud with conflict resolution and bandwidth budgets.',
         'risk_tier': 'medium',
-        'level': 'L5',
-        'guarantee': 'at-least-once',
         'determinism': 'captured-deterministic',
-        'blast_score': None,
-        'required_controls': ['ctrl.obs.structured-logging'],
-        'handles_capabilities': ['cap.edge.sync', 'cap.edge.local_store'],
-        'tags': ['edge', 'sync'],
-        'serves_capabilities': ['cap.edge.sync', 'cap.edge.local-store'],
+        'required_controls': [
+            'ctrl.obs.structured-logging',
+        ],
+        'tags': [
+            'edge',
+            'sync',
+        ],
+        'serves_capabilities': [
+            'cap.edge.sync',
+            'cap.edge.local-store',
+        ],
         'blast_radius_hint': {
             'data': 2,
             'network': 3,
@@ -137,18 +160,21 @@ ENTITIES = [
     {
         'id': 'wrk.edge.update.manager',
         'type': 'worker_species',
-        'pack_id': 'pack.25',
         'name': 'Edge Update Manager Worker',
         'description': 'Apply signed updates in rings; verify integrity; rollback on failures.',
         'risk_tier': 'critical',
-        'level': 'L5',
-        'guarantee': 'at-least-once',
         'determinism': 'deterministic',
-        'blast_score': None,
-        'required_controls': ['ctrl.obs.audit-log-append-only'],
-        'handles_capabilities': ['cap.edge.update_agent'],
-        'tags': ['edge', 'updates', 'supply-chain'],
-        'serves_capabilities': ['cap.edge.update-agent'],
+        'required_controls': [
+            'ctrl.obs.audit-log-append-only',
+        ],
+        'tags': [
+            'edge',
+            'updates',
+            'supply-chain',
+        ],
+        'serves_capabilities': [
+            'cap.edge.update-agent',
+        ],
         'blast_radius_hint': {
             'data': 1,
             'network': 2,
@@ -162,18 +188,21 @@ ENTITIES = [
     {
         'id': 'wrk.edge.local-inference.worker',
         'type': 'worker_species',
-        'pack_id': 'pack.25',
         'name': 'Edge Local Inference Worker',
         'description': 'Run local inference under constrained compute with strict sandboxing.',
         'risk_tier': 'medium',
-        'level': 'L4',
-        'guarantee': 'best-effort',
         'determinism': 'nondeterministic',
-        'blast_score': None,
-        'required_controls': ['ctrl.sandbox.resource-limits-strict'],
-        'handles_capabilities': ['cap.edge.local_inference'],
-        'tags': ['edge', 'ml', 'inference'],
-        'serves_capabilities': ['cap.edge.local-inference'],
+        'required_controls': [
+            'ctrl.sandbox.resource-limits-strict',
+        ],
+        'tags': [
+            'edge',
+            'ml',
+            'inference',
+        ],
+        'serves_capabilities': [
+            'cap.edge.local-inference',
+        ],
         'blast_radius_hint': {
             'data': 0,
             'network': 0,
@@ -187,23 +216,41 @@ ENTITIES = [
     {
         'id': 'prof.edge.offline-strict',
         'type': 'profile',
-        'pack_id': 'pack.25',
         'name': 'Strict Offline Edge Profile',
         'description': 'Strict offline-capable edge posture: local store, device attestation, no cloud dependency.',
-        'tags': ['edge', 'offline', 'security'],
-        'controls_required': ['ctrl.sandbox.resource-limits-strict', 'ctrl.obs.structured-logging'],
-        'recommended_for_risk_tiers': ['medium', 'high'],
+        'tags': [
+            'edge',
+            'offline',
+            'security',
+        ],
+        'controls_required': [
+            'ctrl.sandbox.resource-limits-strict',
+            'ctrl.obs.structured-logging',
+        ],
+        'recommended_for_risk_tiers': [
+            'medium',
+            'high',
+        ],
         'wcp_namespace': 'reserved',
     },
     {
         'id': 'prof.edge.update-rings',
         'type': 'profile',
-        'pack_id': 'pack.25',
         'name': 'Ring-Based Update Edge Profile',
         'description': 'Ring-based update posture: signed updates, ring rollout, integrity verification, audit trail.',
-        'tags': ['edge', 'updates', 'supply-chain'],
-        'controls_required': ['ctrl.obs.audit-log-append-only', 'ctrl.sandbox.resource-limits-strict'],
-        'recommended_for_risk_tiers': ['high', 'critical'],
+        'tags': [
+            'edge',
+            'updates',
+            'supply-chain',
+        ],
+        'controls_required': [
+            'ctrl.obs.audit-log-append-only',
+            'ctrl.sandbox.resource-limits-strict',
+        ],
+        'recommended_for_risk_tiers': [
+            'high',
+            'critical',
+        ],
         'wcp_namespace': 'reserved',
     },
 ]

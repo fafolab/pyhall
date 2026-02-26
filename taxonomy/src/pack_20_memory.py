@@ -1,22 +1,17 @@
 """Pack source — pack_20_memory"""
 
-PACKS = [
-    {
-        'id': 'pack.20',
-        'name': 'Memory & Context Management',
-        'entity_count': 12,
-    },
-]
-
 ENTITIES = [
     {
         'id': 'cap.mem.write',
         'type': 'capability',
-        'pack_id': 'pack.20',
         'name': 'Write Memory',
         'description': 'Store a memory artifact (embedding, document, structured record) under a scoped key.',
         'risk_tier': 'medium',
-        'tags': ['memory', 'storage', 'context'],
+        'tags': [
+            'memory',
+            'storage',
+            'context',
+        ],
         'wcp_namespace': 'reserved',
         'blast_radius_hint': {
             'data': 2,
@@ -25,18 +20,24 @@ ENTITIES = [
             'time': 0,
             'reversibility': 'reversible',
         },
-        'typical_controls': ['ctrl.obs.audit-log-append-only', 'ctrl.obs.structured-logging'],
+        'typical_controls': [
+            'ctrl.obs.audit-log-append-only',
+            'ctrl.obs.structured-logging',
+        ],
         'idempotency': 'partial',
         'determinism': 'deterministic',
     },
     {
         'id': 'cap.mem.read',
         'type': 'capability',
-        'pack_id': 'pack.20',
         'name': 'Read Memory',
         'description': 'Retrieve a memory artifact by key or query within scope and access controls.',
         'risk_tier': 'low',
-        'tags': ['memory', 'retrieval', 'context'],
+        'tags': [
+            'memory',
+            'retrieval',
+            'context',
+        ],
         'wcp_namespace': 'reserved',
         'blast_radius_hint': {
             'data': 1,
@@ -45,18 +46,23 @@ ENTITIES = [
             'time': 0,
             'reversibility': 'reversible',
         },
-        'typical_controls': ['ctrl.obs.structured-logging'],
+        'typical_controls': [
+            'ctrl.obs.structured-logging',
+        ],
         'idempotency': 'full',
         'determinism': 'non-deterministic',
     },
     {
         'id': 'cap.mem.delete',
         'type': 'capability',
-        'pack_id': 'pack.20',
         'name': 'Delete Memory',
         'description': 'Delete one or more memory artifacts; emit deletion audit record.',
         'risk_tier': 'high',
-        'tags': ['memory', 'deletion', 'privacy'],
+        'tags': [
+            'memory',
+            'deletion',
+            'privacy',
+        ],
         'wcp_namespace': 'reserved',
         'blast_radius_hint': {
             'data': 3,
@@ -65,18 +71,23 @@ ENTITIES = [
             'time': 0,
             'reversibility': 'irreversible',
         },
-        'typical_controls': ['ctrl.obs.audit-log-append-only'],
+        'typical_controls': [
+            'ctrl.obs.audit-log-append-only',
+        ],
         'idempotency': 'full',
         'determinism': 'deterministic',
     },
     {
         'id': 'cap.mem.embed',
         'type': 'capability',
-        'pack_id': 'pack.20',
         'name': 'Embed Text',
         'description': 'Convert text to a vector embedding using a configured embedding model.',
         'risk_tier': 'low',
-        'tags': ['memory', 'embeddings', 'ml'],
+        'tags': [
+            'memory',
+            'embeddings',
+            'ml',
+        ],
         'wcp_namespace': 'reserved',
         'blast_radius_hint': {
             'data': 0,
@@ -85,18 +96,23 @@ ENTITIES = [
             'time': 1,
             'reversibility': 'reversible',
         },
-        'typical_controls': ['ctrl.obs.structured-logging'],
+        'typical_controls': [
+            'ctrl.obs.structured-logging',
+        ],
         'idempotency': 'full',
         'determinism': 'deterministic',
     },
     {
         'id': 'cap.mem.summarize',
         'type': 'capability',
-        'pack_id': 'pack.20',
         'name': 'Summarize Context',
         'description': 'Summarize a long context window to a bounded token representation preserving provenance.',
         'risk_tier': 'low',
-        'tags': ['memory', 'summarization', 'context'],
+        'tags': [
+            'memory',
+            'summarization',
+            'context',
+        ],
         'wcp_namespace': 'reserved',
         'blast_radius_hint': {
             'data': 1,
@@ -105,18 +121,23 @@ ENTITIES = [
             'time': 1,
             'reversibility': 'reversible',
         },
-        'typical_controls': ['ctrl.obs.structured-logging'],
+        'typical_controls': [
+            'ctrl.obs.structured-logging',
+        ],
         'idempotency': 'partial',
         'determinism': 'non-deterministic',
     },
     {
         'id': 'cap.mem.retrieve.rag',
         'type': 'capability',
-        'pack_id': 'pack.20',
         'name': 'RAG Retrieval',
         'description': 'Retrieve relevant memory chunks via hybrid vector + keyword search for RAG pipelines.',
         'risk_tier': 'low',
-        'tags': ['memory', 'rag', 'retrieval'],
+        'tags': [
+            'memory',
+            'rag',
+            'retrieval',
+        ],
         'wcp_namespace': 'reserved',
         'blast_radius_hint': {
             'data': 1,
@@ -125,25 +146,31 @@ ENTITIES = [
             'time': 1,
             'reversibility': 'reversible',
         },
-        'typical_controls': ['ctrl.obs.structured-logging'],
+        'typical_controls': [
+            'ctrl.obs.structured-logging',
+        ],
         'idempotency': 'full',
         'determinism': 'non-deterministic',
     },
     {
         'id': 'wrk.mem.retriever',
         'type': 'worker_species',
-        'pack_id': 'pack.20',
         'name': 'Memory Retriever Worker',
         'description': 'Retrieve memory/document chunks under scope filters and token budgets.',
         'risk_tier': 'low',
-        'level': 'L4',
-        'guarantee': 'best-effort',
         'determinism': 'nondeterministic',
-        'blast_score': None,
-        'required_controls': ['ctrl.obs.structured-logging'],
-        'handles_capabilities': ['cap.mem.retrieve.rag', 'cap.mem.read'],
-        'tags': ['memory', 'rag', 'retrieval'],
-        'serves_capabilities': ['cap.mem.retrieve.rag', 'cap.mem.read'],
+        'required_controls': [
+            'ctrl.obs.structured-logging',
+        ],
+        'tags': [
+            'memory',
+            'rag',
+            'retrieval',
+        ],
+        'serves_capabilities': [
+            'cap.mem.retrieve.rag',
+            'cap.mem.read',
+        ],
         'blast_radius_hint': {
             'data': 1,
             'network': 1,
@@ -157,18 +184,23 @@ ENTITIES = [
     {
         'id': 'wrk.mem.curator',
         'type': 'worker_species',
-        'pack_id': 'pack.20',
         'name': 'Memory Curator Worker',
         'description': 'Decide what gets stored; apply redaction, TTL, provenance; prevent poisoning.',
         'risk_tier': 'high',
-        'level': 'L5',
-        'guarantee': 'at-least-once',
         'determinism': 'deterministic',
-        'blast_score': None,
-        'required_controls': ['ctrl.obs.audit-log-append-only', 'ctrl.obs.structured-logging'],
-        'handles_capabilities': ['cap.mem.write', 'cap.mem.delete'],
-        'tags': ['memory', 'privacy', 'safety'],
-        'serves_capabilities': ['cap.mem.write', 'cap.mem.delete'],
+        'required_controls': [
+            'ctrl.obs.audit-log-append-only',
+            'ctrl.obs.structured-logging',
+        ],
+        'tags': [
+            'memory',
+            'privacy',
+            'safety',
+        ],
+        'serves_capabilities': [
+            'cap.mem.write',
+            'cap.mem.delete',
+        ],
         'blast_radius_hint': {
             'data': 3,
             'network': 0,
@@ -182,18 +214,22 @@ ENTITIES = [
     {
         'id': 'wrk.mem.summarizer',
         'type': 'worker_species',
-        'pack_id': 'pack.20',
         'name': 'Memory Summarizer Worker',
         'description': 'Summarize long context to bounded tokens preserving provenance.',
         'risk_tier': 'low',
-        'level': 'L4',
-        'guarantee': 'best-effort',
         'determinism': 'nondeterministic',
-        'blast_score': None,
-        'required_controls': ['ctrl.obs.structured-logging'],
-        'handles_capabilities': ['cap.mem.summarize', 'cap.mem.embed'],
-        'tags': ['memory', 'summarization', 'ml'],
-        'serves_capabilities': ['cap.mem.summarize', 'cap.mem.embed'],
+        'required_controls': [
+            'ctrl.obs.structured-logging',
+        ],
+        'tags': [
+            'memory',
+            'summarization',
+            'ml',
+        ],
+        'serves_capabilities': [
+            'cap.mem.summarize',
+            'cap.mem.embed',
+        ],
         'blast_radius_hint': {
             'data': 1,
             'network': 1,
@@ -207,34 +243,62 @@ ENTITIES = [
     {
         'id': 'prof.mem.rag-strict-scoped',
         'type': 'profile',
-        'pack_id': 'pack.20',
         'name': 'Strict Scoped RAG Profile',
         'description': 'Strict RAG posture: scoped retrieval, token budget enforcement, no cross-tenant leakage.',
-        'tags': ['memory', 'rag', 'privacy'],
-        'controls_required': ['ctrl.obs.structured-logging', 'ctrl.cost.monthly-token-budget'],
-        'recommended_for_risk_tiers': ['medium', 'high', 'critical'],
+        'tags': [
+            'memory',
+            'rag',
+            'privacy',
+        ],
+        'controls_required': [
+            'ctrl.obs.structured-logging',
+            'ctrl.cost.monthly-token-budget',
+        ],
+        'recommended_for_risk_tiers': [
+            'medium',
+            'high',
+            'critical',
+        ],
         'wcp_namespace': 'reserved',
     },
     {
         'id': 'prof.mem.privacy-conservative',
         'type': 'profile',
-        'pack_id': 'pack.20',
         'name': 'Privacy-Conservative Memory Profile',
         'description': 'Privacy-conservative memory posture: minimal retention, aggressive TTLs, deletion audit.',
-        'tags': ['memory', 'privacy', 'gdpr'],
-        'controls_required': ['ctrl.obs.audit-log-append-only', 'ctrl.obs.structured-logging'],
-        'recommended_for_risk_tiers': ['high', 'critical'],
+        'tags': [
+            'memory',
+            'privacy',
+            'gdpr',
+        ],
+        'controls_required': [
+            'ctrl.obs.audit-log-append-only',
+            'ctrl.obs.structured-logging',
+        ],
+        'recommended_for_risk_tiers': [
+            'high',
+            'critical',
+        ],
         'wcp_namespace': 'reserved',
     },
     {
         'id': 'prof.mem.budgeted-summaries',
         'type': 'profile',
-        'pack_id': 'pack.20',
         'name': 'Budgeted Summaries Memory Profile',
         'description': 'Cost-conscious memory posture: summarization-first, token budget enforcement.',
-        'tags': ['memory', 'cost', 'summarization'],
-        'controls_required': ['ctrl.obs.structured-logging', 'ctrl.cost.monthly-token-budget'],
-        'recommended_for_risk_tiers': ['low', 'medium'],
+        'tags': [
+            'memory',
+            'cost',
+            'summarization',
+        ],
+        'controls_required': [
+            'ctrl.obs.structured-logging',
+            'ctrl.cost.monthly-token-budget',
+        ],
+        'recommended_for_risk_tiers': [
+            'low',
+            'medium',
+        ],
         'wcp_namespace': 'reserved',
     },
 ]

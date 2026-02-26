@@ -1,22 +1,17 @@
 """Pack source — pack_04_dlq"""
 
-PACKS = [
-    {
-        'id': 'pack.04',
-        'name': 'DLQ / Repair / Replay Doctrine',
-        'entity_count': 8,
-    },
-]
-
 ENTITIES = [
     {
         'id': 'cap.dlq.inspect',
         'type': 'capability',
-        'pack_id': 'pack.04',
         'name': 'Inspect Dead Letter Queue',
         'description': 'Read and classify messages in the dead letter queue for triage.',
         'risk_tier': 'low',
-        'tags': ['dlq', 'inspection', 'repair'],
+        'tags': [
+            'dlq',
+            'inspection',
+            'repair',
+        ],
         'wcp_namespace': 'reserved',
         'blast_radius_hint': {
             'data': 0,
@@ -25,18 +20,23 @@ ENTITIES = [
             'time': 0,
             'reversibility': 'reversible',
         },
-        'typical_controls': ['ctrl.obs.structured-logging'],
+        'typical_controls': [
+            'ctrl.obs.structured-logging',
+        ],
         'idempotency': 'full',
         'determinism': 'deterministic',
     },
     {
         'id': 'cap.dlq.replay',
         'type': 'capability',
-        'pack_id': 'pack.04',
         'name': 'Replay DLQ Message',
         'description': 'Re-enqueue a dead letter message for re-processing with replay controls.',
         'risk_tier': 'medium',
-        'tags': ['dlq', 'replay', 'repair'],
+        'tags': [
+            'dlq',
+            'replay',
+            'repair',
+        ],
         'wcp_namespace': 'reserved',
         'blast_radius_hint': {
             'data': 2,
@@ -45,18 +45,24 @@ ENTITIES = [
             'time': 1,
             'reversibility': 'partially-reversible',
         },
-        'typical_controls': ['ctrl.dlq.max-replay-attempts', 'ctrl.obs.structured-logging'],
+        'typical_controls': [
+            'ctrl.dlq.max-replay-attempts',
+            'ctrl.obs.structured-logging',
+        ],
         'idempotency': 'partial',
         'determinism': 'captured',
     },
     {
         'id': 'cap.dlq.purge',
         'type': 'capability',
-        'pack_id': 'pack.04',
         'name': 'Purge Dead Letter Queue',
         'description': 'Permanently discard messages from the dead letter queue after review.',
         'risk_tier': 'medium',
-        'tags': ['dlq', 'purge', 'maintenance'],
+        'tags': [
+            'dlq',
+            'purge',
+            'maintenance',
+        ],
         'wcp_namespace': 'reserved',
         'blast_radius_hint': {
             'data': 2,
@@ -65,18 +71,24 @@ ENTITIES = [
             'time': 0,
             'reversibility': 'irreversible',
         },
-        'typical_controls': ['ctrl.obs.audit-log-append-only', 'ctrl.dlq.max-replay-attempts'],
+        'typical_controls': [
+            'ctrl.obs.audit-log-append-only',
+            'ctrl.dlq.max-replay-attempts',
+        ],
         'idempotency': 'full',
         'determinism': 'deterministic',
     },
     {
         'id': 'cap.repair.reconcile-state',
         'type': 'capability',
-        'pack_id': 'pack.04',
         'name': 'Reconcile Broken State',
         'description': 'Detect and repair inconsistent state by comparing source-of-truth with derived state.',
         'risk_tier': 'high',
-        'tags': ['repair', 'reconcile', 'consistency'],
+        'tags': [
+            'repair',
+            'reconcile',
+            'consistency',
+        ],
         'wcp_namespace': 'reserved',
         'blast_radius_hint': {
             'data': 3,
@@ -85,18 +97,24 @@ ENTITIES = [
             'time': 2,
             'reversibility': 'partially-reversible',
         },
-        'typical_controls': ['ctrl.obs.audit-log-append-only', 'ctrl.obs.structured-logging'],
+        'typical_controls': [
+            'ctrl.obs.audit-log-append-only',
+            'ctrl.obs.structured-logging',
+        ],
         'idempotency': 'full',
         'determinism': 'deterministic',
     },
     {
         'id': 'cap.repair.compensate-transaction',
         'type': 'capability',
-        'pack_id': 'pack.04',
         'name': 'Execute Compensating Transaction',
         'description': 'Execute a compensating transaction to undo a previously committed action.',
         'risk_tier': 'high',
-        'tags': ['repair', 'saga', 'compensation'],
+        'tags': [
+            'repair',
+            'saga',
+            'compensation',
+        ],
         'wcp_namespace': 'reserved',
         'blast_radius_hint': {
             'data': 3,
@@ -105,20 +123,30 @@ ENTITIES = [
             'time': 2,
             'reversibility': 'partially-reversible',
         },
-        'typical_controls': ['ctrl.obs.audit-log-append-only', 'ctrl.obs.tracing-distributed'],
+        'typical_controls': [
+            'ctrl.obs.audit-log-append-only',
+            'ctrl.obs.tracing-distributed',
+        ],
         'idempotency': 'full',
         'determinism': 'deterministic',
     },
     {
         'id': 'wrk.dlq.janitor',
         'type': 'worker_species',
-        'pack_id': 'pack.04',
         'name': 'DLQ Janitor Worker',
         'description': 'Periodic worker that inspects, classifies, and routes DLQ messages — retry, escalate, or purge.',
         'risk_tier': 'medium',
-        'tags': ['dlq', 'janitor', 'maintenance'],
+        'tags': [
+            'dlq',
+            'janitor',
+            'maintenance',
+        ],
         'wcp_namespace': 'reserved',
-        'serves_capabilities': ['cap.dlq.inspect', 'cap.dlq.replay', 'cap.dlq.purge'],
+        'serves_capabilities': [
+            'cap.dlq.inspect',
+            'cap.dlq.replay',
+            'cap.dlq.purge',
+        ],
         'blast_radius_hint': {
             'data': 2,
             'network': 1,
@@ -126,20 +154,28 @@ ENTITIES = [
             'time': 1,
             'reversibility': 'partially-reversible',
         },
-        'required_controls': ['ctrl.obs.structured-logging', 'ctrl.dlq.max-replay-attempts'],
+        'required_controls': [
+            'ctrl.obs.structured-logging',
+            'ctrl.dlq.max-replay-attempts',
+        ],
         'idempotency': 'partial',
         'determinism': 'deterministic',
     },
     {
         'id': 'wrk.repair.state-reconciler',
         'type': 'worker_species',
-        'pack_id': 'pack.04',
         'name': 'State Reconciler Worker',
         'description': 'Scans entity state periodically, detects drift from authoritative source, and triggers repair.',
         'risk_tier': 'medium',
-        'tags': ['repair', 'reconcile', 'drift'],
+        'tags': [
+            'repair',
+            'reconcile',
+            'drift',
+        ],
         'wcp_namespace': 'reserved',
-        'serves_capabilities': ['cap.repair.reconcile-state'],
+        'serves_capabilities': [
+            'cap.repair.reconcile-state',
+        ],
         'blast_radius_hint': {
             'data': 2,
             'network': 1,
@@ -147,19 +183,30 @@ ENTITIES = [
             'time': 2,
             'reversibility': 'partially-reversible',
         },
-        'required_controls': ['ctrl.obs.structured-logging', 'ctrl.obs.audit-log-append-only'],
+        'required_controls': [
+            'ctrl.obs.structured-logging',
+            'ctrl.obs.audit-log-append-only',
+        ],
         'idempotency': 'full',
         'determinism': 'deterministic',
     },
     {
         'id': 'ctrl.dlq.max-replay-attempts',
         'type': 'control',
-        'pack_id': 'pack.04',
         'name': 'Max Replay Attempts',
         'description': 'Policy control: maximum number of times a DLQ message may be replayed before permanent discard.',
-        'tags': ['dlq', 'policy', 'control'],
+        'tags': [
+            'dlq',
+            'policy',
+            'control',
+        ],
         'wcp_namespace': 'reserved',
         'enforcement_point': 'worker',
-        'required_for_risk_tiers': ['low', 'medium', 'high', 'critical'],
+        'required_for_risk_tiers': [
+            'low',
+            'medium',
+            'high',
+            'critical',
+        ],
     },
 ]

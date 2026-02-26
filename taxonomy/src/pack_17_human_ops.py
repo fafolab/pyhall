@@ -1,22 +1,17 @@
 """Pack source — pack_17_human_ops"""
 
-PACKS = [
-    {
-        'id': 'pack.17',
-        'name': 'Human Ops, Change Control & Emergency Procedures',
-        'entity_count': 8,
-    },
-]
-
 ENTITIES = [
     {
         'id': 'cap.ops.approve',
         'type': 'capability',
-        'pack_id': 'pack.17',
         'name': 'Approve Change',
         'description': 'Collect and record a human approval decision for a proposed change or action.',
         'risk_tier': 'high',
-        'tags': ['ops', 'change-control', 'human-in-loop'],
+        'tags': [
+            'ops',
+            'change-control',
+            'human-in-loop',
+        ],
         'wcp_namespace': 'reserved',
         'blast_radius_hint': {
             'data': 0,
@@ -25,18 +20,23 @@ ENTITIES = [
             'time': 1,
             'reversibility': 'reversible',
         },
-        'typical_controls': ['ctrl.obs.audit-log-append-only'],
+        'typical_controls': [
+            'ctrl.obs.audit-log-append-only',
+        ],
         'idempotency': 'partial',
         'determinism': 'non-deterministic',
     },
     {
         'id': 'cap.ops.break-glass',
         'type': 'capability',
-        'pack_id': 'pack.17',
         'name': 'Break Glass',
         'description': 'Invoke emergency break-glass access with mandatory audit logging and time-limited elevation.',
         'risk_tier': 'critical',
-        'tags': ['ops', 'emergency', 'break-glass'],
+        'tags': [
+            'ops',
+            'emergency',
+            'break-glass',
+        ],
         'wcp_namespace': 'reserved',
         'blast_radius_hint': {
             'data': 4,
@@ -45,18 +45,24 @@ ENTITIES = [
             'time': 3,
             'reversibility': 'partially-reversible',
         },
-        'typical_controls': ['ctrl.obs.audit-log-append-only', 'ctrl.obs.flight-recorder-bundle'],
+        'typical_controls': [
+            'ctrl.obs.audit-log-append-only',
+            'ctrl.obs.flight-recorder-bundle',
+        ],
         'idempotency': 'partial',
         'determinism': 'non-deterministic',
     },
     {
         'id': 'cap.ops.execute-runbook',
         'type': 'capability',
-        'pack_id': 'pack.17',
         'name': 'Execute Runbook',
         'description': 'Execute a named operational runbook with step-level audit and rollback checkpoints.',
         'risk_tier': 'high',
-        'tags': ['ops', 'runbooks', 'automation'],
+        'tags': [
+            'ops',
+            'runbooks',
+            'automation',
+        ],
         'wcp_namespace': 'reserved',
         'blast_radius_hint': {
             'data': 2,
@@ -65,18 +71,24 @@ ENTITIES = [
             'time': 2,
             'reversibility': 'partially-reversible',
         },
-        'typical_controls': ['ctrl.obs.audit-log-append-only', 'ctrl.obs.tracing-distributed'],
+        'typical_controls': [
+            'ctrl.obs.audit-log-append-only',
+            'ctrl.obs.tracing-distributed',
+        ],
         'idempotency': 'partial',
         'determinism': 'captured',
     },
     {
         'id': 'cap.ops.postmortem',
         'type': 'capability',
-        'pack_id': 'pack.17',
         'name': 'Generate Postmortem',
         'description': 'Generate a structured postmortem report from incident timeline and evidence.',
         'risk_tier': 'low',
-        'tags': ['ops', 'postmortem', 'incident'],
+        'tags': [
+            'ops',
+            'postmortem',
+            'incident',
+        ],
         'wcp_namespace': 'reserved',
         'blast_radius_hint': {
             'data': 0,
@@ -85,25 +97,32 @@ ENTITIES = [
             'time': 1,
             'reversibility': 'reversible',
         },
-        'typical_controls': ['ctrl.obs.structured-logging'],
+        'typical_controls': [
+            'ctrl.obs.structured-logging',
+        ],
         'idempotency': 'full',
         'determinism': 'non-deterministic',
     },
     {
         'id': 'wrk.ops.oncall.supervisor',
         'type': 'worker_species',
-        'pack_id': 'pack.17',
         'name': 'On-Call Supervisor Worker',
         'description': 'Coordinate incident response; enforce kill switches and runbooks.',
         'risk_tier': 'critical',
-        'level': 'L6',
-        'guarantee': 'at-least-once',
         'determinism': 'nondeterministic',
-        'blast_score': None,
-        'required_controls': ['ctrl.obs.audit-log-append-only', 'ctrl.obs.slo-alerting'],
-        'handles_capabilities': ['cap.ops.break_glass', 'cap.ops.execute_runbook'],
-        'tags': ['ops', 'incident', 'emergency'],
-        'serves_capabilities': ['cap.ops.break-glass', 'cap.ops.execute-runbook'],
+        'required_controls': [
+            'ctrl.obs.audit-log-append-only',
+            'ctrl.obs.slo-alerting',
+        ],
+        'tags': [
+            'ops',
+            'incident',
+            'emergency',
+        ],
+        'serves_capabilities': [
+            'cap.ops.break-glass',
+            'cap.ops.execute-runbook',
+        ],
         'blast_radius_hint': {
             'data': 4,
             'network': 3,
@@ -117,18 +136,21 @@ ENTITIES = [
     {
         'id': 'wrk.ops.approval.coordinator',
         'type': 'worker_species',
-        'pack_id': 'pack.17',
         'name': 'Approval Coordinator Worker',
         'description': 'Route approval requests; enforce two-person rule; track decisions.',
         'risk_tier': 'high',
-        'level': 'L5',
-        'guarantee': 'at-least-once',
         'determinism': 'deterministic',
-        'blast_score': None,
-        'required_controls': ['ctrl.obs.audit-log-append-only'],
-        'handles_capabilities': ['cap.ops.approve'],
-        'tags': ['ops', 'change-control', 'human-in-loop'],
-        'serves_capabilities': ['cap.ops.approve'],
+        'required_controls': [
+            'ctrl.obs.audit-log-append-only',
+        ],
+        'tags': [
+            'ops',
+            'change-control',
+            'human-in-loop',
+        ],
+        'serves_capabilities': [
+            'cap.ops.approve',
+        ],
         'blast_radius_hint': {
             'data': 0,
             'network': 0,
@@ -142,23 +164,42 @@ ENTITIES = [
     {
         'id': 'prof.ops.incident-mode',
         'type': 'profile',
-        'pack_id': 'pack.17',
         'name': 'Incident Mode Ops Profile',
         'description': 'Incident response posture: flight recorder, kill switches, runbook execution, break-glass controls.',
-        'tags': ['ops', 'incident', 'emergency'],
-        'controls_required': ['ctrl.obs.audit-log-append-only', 'ctrl.obs.flight-recorder-bundle', 'ctrl.obs.slo-alerting'],
-        'recommended_for_risk_tiers': ['high', 'critical'],
+        'tags': [
+            'ops',
+            'incident',
+            'emergency',
+        ],
+        'controls_required': [
+            'ctrl.obs.audit-log-append-only',
+            'ctrl.obs.flight-recorder-bundle',
+            'ctrl.obs.slo-alerting',
+        ],
+        'recommended_for_risk_tiers': [
+            'high',
+            'critical',
+        ],
         'wcp_namespace': 'reserved',
     },
     {
         'id': 'prof.ops.approval-strict',
         'type': 'profile',
-        'pack_id': 'pack.17',
         'name': 'Strict Approval Ops Profile',
         'description': 'Strict change control posture: mandatory human approval, two-person rule, full audit trail.',
-        'tags': ['ops', 'change-control', 'compliance'],
-        'controls_required': ['ctrl.obs.audit-log-append-only', 'ctrl.pol.audit-policy-decisions'],
-        'recommended_for_risk_tiers': ['high', 'critical'],
+        'tags': [
+            'ops',
+            'change-control',
+            'compliance',
+        ],
+        'controls_required': [
+            'ctrl.obs.audit-log-append-only',
+            'ctrl.pol.audit-policy-decisions',
+        ],
+        'recommended_for_risk_tiers': [
+            'high',
+            'critical',
+        ],
         'wcp_namespace': 'reserved',
     },
 ]

@@ -28,35 +28,36 @@ VALID_ID_RE = re.compile(r'^[a-z][a-z0-9\-]*(\.[a-z][a-z0-9\-]*){1,3}$')
 VERSION_SUFFIX_RE = re.compile(r'\.[vV]\d+')
 
 # Required fields per entity type (spec §3.2/§4.x)
+# NOTE: pack_id is NOT a required field — WCP §3.0 explicitly forbids pack numbers.
 REQUIRED_BY_TYPE: dict[str, set[str]] = {
     "capability": {
-        "id", "type", "pack_id", "name", "description", "risk_tier",
+        "id", "type", "name", "description", "risk_tier",
         "blast_radius_hint", "typical_controls", "idempotency", "determinism",
         "tags", "wcp_namespace",
     },
     "worker_species": {
-        "id", "type", "pack_id", "name", "description", "risk_tier",
+        "id", "type", "name", "description", "risk_tier",
         "serves_capabilities", "blast_radius_hint", "required_controls",
         "idempotency", "determinism", "tags", "wcp_namespace",
     },
     "worker": {
-        "id", "type", "pack_id", "name", "description", "risk_tier",
+        "id", "type", "name", "description", "risk_tier",
         "serves_capabilities", "blast_radius_hint", "required_controls",
         "idempotency", "determinism", "tags", "wcp_namespace",
     },
     "control": {
-        "id", "type", "pack_id", "name", "description",
+        "id", "type", "name", "description",
         "enforcement_point", "required_for_risk_tiers", "tags", "wcp_namespace",
     },
     "profile": {
-        "id", "type", "pack_id", "name", "description",
+        "id", "type", "name", "description",
         "controls_required", "recommended_for_risk_tiers", "tags", "wcp_namespace",
     },
     "event": {
-        "id", "type", "pack_id", "name", "description", "mandatory", "tags", "wcp_namespace",
+        "id", "type", "name", "description", "mandatory", "tags", "wcp_namespace",
     },
     "policy": {
-        "id", "type", "pack_id", "name", "description", "controls_required", "tags", "wcp_namespace",
+        "id", "type", "name", "description", "controls_required", "tags", "wcp_namespace",
     },
 }
 
@@ -84,10 +85,9 @@ def validate_required_fields(entity: dict) -> list[str]:
     return errors
 
 
-def load_sources() -> tuple[list[dict], list[dict]]:
-    """Load all pack and entity definitions from taxonomy/src/."""
+def load_sources() -> list[dict]:
+    """Load all entity definitions from taxonomy/src/."""
     src_dir = ROOT / "taxonomy/src"
-    packs = []
     entities = []
     for src_file in sorted(src_dir.glob("pack_*.py")):
         namespace = {}
@@ -96,13 +96,12 @@ def load_sources() -> tuple[list[dict], list[dict]]:
         except SyntaxError as exc:
             print(f"SYNTAX ERROR in {src_file.name}: {exc}", file=sys.stderr)
             sys.exit(1)
-        packs.extend(namespace.get("PACKS", []))
         entities.extend(namespace.get("ENTITIES", []))
-    return packs, entities
+    return entities
 
 
 def main():
-    packs, entities = load_sources()
+    entities = load_sources()
     errors = []
     for entity in entities:
         errors.extend(validate_id(entity["id"]))
@@ -122,11 +121,8 @@ def main():
             "version": "0.1.0",
             "wcp_spec": "0.1-DRAFT",
             "total_entities": len(entities),
-            "packs": len(packs),
-            "generated_from": "taxonomy/src/pack_*.py",
             "built": datetime.date.today().isoformat(),
         },
-        "packs": packs,
         "entities": entities,
     }
 
@@ -135,7 +131,7 @@ def main():
         dest.write_text(json.dumps(catalog, indent=2) + "\n")
         print(f"  wrote {dest.relative_to(ROOT)}")
 
-    print(f"\nCatalog built: {len(entities)} entities across {len(packs)} packs.")
+    print(f"\nCatalog built: {len(entities)} entities.")
 
 
 if __name__ == "__main__":

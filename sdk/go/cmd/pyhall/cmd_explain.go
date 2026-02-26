@@ -44,19 +44,9 @@ func printEntity(e *Entity, c *Catalog) {
 	}
 
 	row("Type", entityTypeLabel(e.Type))
-	row("Pack", packLabel(e.PackID, c))
 
 	if e.RiskTier != "" {
 		row("Risk tier", riskTierStyled(e.RiskTier))
-	}
-	if e.Level != "" {
-		row("Level", e.Level)
-	}
-	if e.Guarantee != "" {
-		row("Guarantee", e.Guarantee)
-	}
-	if e.BlastScore > 0 {
-		row("Blast score", blastScoreStyled(e.BlastScore))
 	}
 
 	if e.Description != "" {
@@ -67,17 +57,17 @@ func printEntity(e *Entity, c *Catalog) {
 		}
 	}
 
+	if len(e.ServesCaps) > 0 {
+		fmt.Printf("\n  %s\n", dimStyle.Render("Serves capabilities:"))
+		for _, cap := range e.ServesCaps {
+			fmt.Printf("    %s %s\n", successGreen.Render("•"), cap)
+		}
+	}
+
 	if len(e.RequiredControls) > 0 {
 		fmt.Printf("\n  %s\n", dimStyle.Render("Required controls:"))
 		for _, ctrl := range e.RequiredControls {
 			fmt.Printf("    %s %s\n", warningOrange.Render("•"), ctrl)
-		}
-	}
-
-	if len(e.HandlesCapabilities) > 0 {
-		fmt.Printf("\n  %s\n", dimStyle.Render("Handles capabilities:"))
-		for _, cap := range e.HandlesCapabilities {
-			fmt.Printf("    %s %s\n", successGreen.Render("•"), cap)
 		}
 	}
 
@@ -86,18 +76,6 @@ func printEntity(e *Entity, c *Catalog) {
 	}
 
 	fmt.Println()
-}
-
-func packLabel(packID string, c *Catalog) string {
-	for _, p := range c.Packs {
-		if p.ID == packID {
-			return fmt.Sprintf("%s  %s", packID, dimStyle.Render(p.Name))
-		}
-	}
-	if packID == "" {
-		return dimStyle.Render("(none)")
-	}
-	return packID
 }
 
 func riskTierStyled(tier string) string {
@@ -110,18 +88,6 @@ func riskTierStyled(tier string) string {
 		return successGreen.Render(tier)
 	default:
 		return tier
-	}
-}
-
-func blastScoreStyled(score int) string {
-	s := fmt.Sprintf("%d", score)
-	switch {
-	case score >= 70:
-		return errorRed.Render(s)
-	case score >= 40:
-		return warningOrange.Render(s)
-	default:
-		return successGreen.Render(s)
 	}
 }
 

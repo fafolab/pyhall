@@ -1,22 +1,17 @@
 """Pack source — pack_21_workflow"""
 
-PACKS = [
-    {
-        'id': 'pack.21',
-        'name': 'Workflow Orchestration (DAGs, Checkpoints, Sagas)',
-        'entity_count': 8,
-    },
-]
-
 ENTITIES = [
     {
         'id': 'cap.wf.define-dag',
         'type': 'capability',
-        'pack_id': 'pack.21',
         'name': 'Define Workflow DAG',
         'description': 'Define a directed acyclic graph of workflow steps with dependencies and data flows.',
         'risk_tier': 'medium',
-        'tags': ['workflows', 'dag', 'orchestration'],
+        'tags': [
+            'workflows',
+            'dag',
+            'orchestration',
+        ],
         'wcp_namespace': 'reserved',
         'blast_radius_hint': {
             'data': 0,
@@ -25,18 +20,23 @@ ENTITIES = [
             'time': 0,
             'reversibility': 'reversible',
         },
-        'typical_controls': ['ctrl.obs.structured-logging'],
+        'typical_controls': [
+            'ctrl.obs.structured-logging',
+        ],
         'idempotency': 'full',
         'determinism': 'deterministic',
     },
     {
         'id': 'cap.wf.checkpoint',
         'type': 'capability',
-        'pack_id': 'pack.21',
         'name': 'Checkpoint Workflow',
         'description': 'Persist workflow execution state at a checkpoint for durable resumption.',
         'risk_tier': 'medium',
-        'tags': ['workflows', 'checkpoints', 'durability'],
+        'tags': [
+            'workflows',
+            'checkpoints',
+            'durability',
+        ],
         'wcp_namespace': 'reserved',
         'blast_radius_hint': {
             'data': 1,
@@ -45,18 +45,24 @@ ENTITIES = [
             'time': 0,
             'reversibility': 'reversible',
         },
-        'typical_controls': ['ctrl.obs.structured-logging', 'ctrl.obs.run-metadata-store'],
+        'typical_controls': [
+            'ctrl.obs.structured-logging',
+            'ctrl.obs.run-metadata-store',
+        ],
         'idempotency': 'full',
         'determinism': 'deterministic',
     },
     {
         'id': 'cap.wf.compensate',
         'type': 'capability',
-        'pack_id': 'pack.21',
         'name': 'Compensate Workflow',
         'description': 'Execute compensation steps to undo committed actions in a failed saga.',
         'risk_tier': 'high',
-        'tags': ['workflows', 'saga', 'compensation'],
+        'tags': [
+            'workflows',
+            'saga',
+            'compensation',
+        ],
         'wcp_namespace': 'reserved',
         'blast_radius_hint': {
             'data': 3,
@@ -65,18 +71,24 @@ ENTITIES = [
             'time': 3,
             'reversibility': 'partially-reversible',
         },
-        'typical_controls': ['ctrl.obs.audit-log-append-only', 'ctrl.obs.tracing-distributed'],
+        'typical_controls': [
+            'ctrl.obs.audit-log-append-only',
+            'ctrl.obs.tracing-distributed',
+        ],
         'idempotency': 'full',
         'determinism': 'deterministic',
     },
     {
         'id': 'cap.wf.replay-deterministic',
         'type': 'capability',
-        'pack_id': 'pack.21',
         'name': 'Replay Deterministic Workflow',
         'description': 'Replay a workflow from a checkpoint with deterministic step execution for recovery.',
         'risk_tier': 'medium',
-        'tags': ['workflows', 'replay', 'recovery'],
+        'tags': [
+            'workflows',
+            'replay',
+            'recovery',
+        ],
         'wcp_namespace': 'reserved',
         'blast_radius_hint': {
             'data': 2,
@@ -85,18 +97,24 @@ ENTITIES = [
             'time': 2,
             'reversibility': 'reversible',
         },
-        'typical_controls': ['ctrl.obs.tracing-distributed', 'ctrl.obs.structured-logging'],
+        'typical_controls': [
+            'ctrl.obs.tracing-distributed',
+            'ctrl.obs.structured-logging',
+        ],
         'idempotency': 'full',
         'determinism': 'deterministic',
     },
     {
         'id': 'cap.wf.fanout-fanin',
         'type': 'capability',
-        'pack_id': 'pack.21',
         'name': 'Fan-Out / Fan-In',
         'description': 'Parallelize workflow steps across multiple workers and aggregate results.',
         'risk_tier': 'medium',
-        'tags': ['workflows', 'parallelism', 'aggregation'],
+        'tags': [
+            'workflows',
+            'parallelism',
+            'aggregation',
+        ],
         'wcp_namespace': 'reserved',
         'blast_radius_hint': {
             'data': 1,
@@ -105,25 +123,35 @@ ENTITIES = [
             'time': 2,
             'reversibility': 'reversible',
         },
-        'typical_controls': ['ctrl.obs.tracing-distributed', 'ctrl.obs.metrics-core'],
+        'typical_controls': [
+            'ctrl.obs.tracing-distributed',
+            'ctrl.obs.metrics-core',
+        ],
         'idempotency': 'partial',
         'determinism': 'captured',
     },
     {
         'id': 'wrk.wf.orchestrator',
         'type': 'worker_species',
-        'pack_id': 'pack.21',
         'name': 'Workflow Orchestrator Worker',
         'description': 'Execute durable workflows: schedule steps, checkpoint, retry, compensate.',
         'risk_tier': 'high',
-        'level': 'L6',
-        'guarantee': 'exactly-once',
         'determinism': 'captured-deterministic',
-        'blast_score': None,
-        'required_controls': ['ctrl.obs.audit-log-append-only', 'ctrl.obs.tracing-distributed'],
-        'handles_capabilities': ['cap.wf.define_dag', 'cap.wf.checkpoint', 'cap.wf.compensate', 'cap.wf.fanout_fanin'],
-        'tags': ['workflows', 'orchestration', 'sagas'],
-        'serves_capabilities': ['cap.wf.define-dag', 'cap.wf.checkpoint', 'cap.wf.compensate', 'cap.wf.fanout-fanin'],
+        'required_controls': [
+            'ctrl.obs.audit-log-append-only',
+            'ctrl.obs.tracing-distributed',
+        ],
+        'tags': [
+            'workflows',
+            'orchestration',
+            'sagas',
+        ],
+        'serves_capabilities': [
+            'cap.wf.define-dag',
+            'cap.wf.checkpoint',
+            'cap.wf.compensate',
+            'cap.wf.fanout-fanin',
+        ],
         'blast_radius_hint': {
             'data': 3,
             'network': 2,
@@ -137,18 +165,20 @@ ENTITIES = [
     {
         'id': 'wrk.wf.step.executor',
         'type': 'worker_species',
-        'pack_id': 'pack.21',
         'name': 'Workflow Step Executor Worker',
         'description': 'Execute a single workflow step under idempotency keys.',
         'risk_tier': 'medium',
-        'level': 'L4',
-        'guarantee': 'at-least-once',
         'determinism': 'deterministic',
-        'blast_score': None,
-        'required_controls': ['ctrl.obs.structured-logging'],
-        'handles_capabilities': ['cap.wf.replay_deterministic'],
-        'tags': ['workflows', 'idempotency'],
-        'serves_capabilities': ['cap.wf.replay-deterministic'],
+        'required_controls': [
+            'ctrl.obs.structured-logging',
+        ],
+        'tags': [
+            'workflows',
+            'idempotency',
+        ],
+        'serves_capabilities': [
+            'cap.wf.replay-deterministic',
+        ],
         'blast_radius_hint': {
             'data': 1,
             'network': 1,
@@ -162,12 +192,23 @@ ENTITIES = [
     {
         'id': 'prof.wf.durable-saga',
         'type': 'profile',
-        'pack_id': 'pack.21',
         'name': 'Durable Saga Workflow Profile',
         'description': 'Durable saga posture: checkpoints, compensations, exactly-once semantics, distributed tracing.',
-        'tags': ['workflows', 'saga', 'durability'],
-        'controls_required': ['ctrl.obs.audit-log-append-only', 'ctrl.obs.tracing-distributed', 'ctrl.obs.run-metadata-store'],
-        'recommended_for_risk_tiers': ['medium', 'high', 'critical'],
+        'tags': [
+            'workflows',
+            'saga',
+            'durability',
+        ],
+        'controls_required': [
+            'ctrl.obs.audit-log-append-only',
+            'ctrl.obs.tracing-distributed',
+            'ctrl.obs.run-metadata-store',
+        ],
+        'recommended_for_risk_tiers': [
+            'medium',
+            'high',
+            'critical',
+        ],
         'wcp_namespace': 'reserved',
     },
 ]

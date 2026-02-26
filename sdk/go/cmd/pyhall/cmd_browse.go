@@ -8,17 +8,15 @@ import (
 )
 
 func newBrowseCmd() *cobra.Command {
-	var packFlag string
 	var typeFlag string
 
 	cmd := &cobra.Command{
 		Use:   "browse",
 		Short: "Browse the WCP taxonomy catalog",
-		Long: `Browse the WCP taxonomy catalog with optional filters.
+		Long: `Browse the WCP taxonomy catalog with optional type filter.
 
-Filter by pack:   pyhall browse --pack pack.01
+Without flags: show entity counts by type.
 Filter by type:   pyhall browse --type cap
-Combine filters:  pyhall browse --pack pack.10 --type cap
 
 Valid types: cap, wrk, ctrl, pol, prof`,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -30,17 +28,14 @@ Valid types: cap, wrk, ctrl, pol, prof`,
 			// Normalize type flag to full type name
 			entityType := normalizeType(typeFlag)
 
-			// If no filters, show pack list
-			if packFlag == "" && entityType == "" {
-				return browsePacks(c)
+			// If no type filter, show summary by entity type
+			if entityType == "" {
+				return browseTypes(c)
 			}
 
-			entities := c.Browse(packFlag, entityType)
+			entities := c.Browse(entityType)
 			if len(entities) == 0 {
 				msg := "No entities found"
-				if packFlag != "" {
-					msg += fmt.Sprintf(" in pack %q", packFlag)
-				}
 				if entityType != "" {
 					msg += fmt.Sprintf(" with type %q", typeFlag)
 				}
@@ -50,13 +45,6 @@ Valid types: cap, wrk, ctrl, pol, prof`,
 
 			// Print header
 			header := "Browse"
-			if packFlag != "" {
-				if p, err2 := c.PackByID(packFlag); err2 == nil {
-					header += fmt.Sprintf(" — %s (%s)", p.Name, packFlag)
-				} else {
-					header += " — " + packFlag
-				}
-			}
 			if entityType != "" {
 				header += " [" + typeFlag + "]"
 			}
@@ -97,36 +85,42 @@ Valid types: cap, wrk, ctrl, pol, prof`,
 		},
 	}
 
-	cmd.Flags().StringVar(&packFlag, "pack", "", "Filter by pack ID (e.g. pack.01)")
 	cmd.Flags().StringVar(&typeFlag, "type", "", "Filter by entity type: cap, wrk, ctrl, pol, prof")
 	return cmd
 }
 
-func browsePacks(c *Catalog) error {
-	fmt.Printf("\n  %s\n\n", headerStyle.Render("WCP Taxonomy Packs"))
-	fmt.Printf("  %-12s  %-5s  %s\n",
-		dimStyle.Render("Pack ID"),
-		dimStyle.Render("Count"),
-		dimStyle.Render("Name"),
-	)
-	fmt.Printf("  %s\n", dimStyle.Render(strings.Repeat("─", 60)))
+func browseTypes(c *Catalog) error {
+	counts := make(map[string]int)
+	for _, e := range c.Entities {
+		counts[e.Type]++
+	}
 
-	for _, p := range c.Packs {
-		countStr := fmt.Sprintf("%d", p.EntityCount)
-		if p.EntityCount == 0 {
-			countStr = dimStyle.Render("0")
-		} else {
-			countStr = primaryBlue.Render(countStr)
+	fmt.Printf("\n  %s\n\n", headerStyle.Render("WCP Taxonomy"))
+	fmt.Printf("  %-20s  %-6s  %s\n",
+		dimStyle.Render("Type"),
+		dimStyle.Render("Short"),
+		dimStyle.Render("Count"),
+	)
+	fmt.Printf("  %s\n", dimStyle.Render(strings.Repeat("─", 40)))
+
+	typeRows := []struct{ full, short string }{
+		{"capability", "cap"},
+		{"worker_species", "wrk"},
+		{"control", "ctrl"},
+		{"profile", "prof"},
+		{"policy", "pol"},
+	}
+	for _, tr := range typeRows {
+		n := counts[tr.full]
+		countStr := dimStyle.Render("—")
+		if n > 0 {
+			countStr = primaryBlue.Render(fmt.Sprintf("%d", n))
 		}
-		fmt.Printf("  %-12s  %-5s  %s\n",
-			lightBlue.Render(p.ID),
-			countStr,
-			p.Name,
-		)
+		fmt.Printf("  %-20s  %-6s  %s\n", tr.full, tr.short, countStr)
 	}
 
 	fmt.Printf("\n  %s\n", dimStyle.Render(
-		fmt.Sprintf("Total: %d packs, %d entities. Use --pack <id> to filter.", c.PackCount(), c.EntityCount()),
+		fmt.Sprintf("Total: %d entities. Use --type <short> to filter.", c.EntityCount()),
 	))
 	return nil
 }

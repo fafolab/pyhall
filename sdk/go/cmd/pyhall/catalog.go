@@ -8,31 +8,19 @@ import (
 
 // Entity represents a single WCP taxonomy entity (capability, worker_species, control, etc.)
 type Entity struct {
-	ID                  string   `json:"id"`
-	Type                string   `json:"type"`
-	PackID              string   `json:"pack_id"`
-	Name                string   `json:"name"`
-	Description         string   `json:"description"`
-	RiskTier            string   `json:"risk_tier,omitempty"`
-	Level               string   `json:"level,omitempty"`
-	Guarantee           string   `json:"guarantee,omitempty"`
-	BlastScore          int      `json:"blast_score,omitempty"`
-	RequiredControls    []string `json:"required_controls,omitempty"`
-	HandlesCapabilities []string `json:"handles_capabilities,omitempty"`
-	Tags                []string `json:"tags,omitempty"`
-}
-
-// Pack represents a WCP taxonomy pack (a named grouping of entities).
-type Pack struct {
-	ID          string `json:"id"`
-	Name        string `json:"name"`
-	EntityCount int    `json:"entity_count"`
+	ID               string   `json:"id"`
+	Type             string   `json:"type"`
+	Name             string   `json:"name"`
+	Description      string   `json:"description"`
+	RiskTier         string   `json:"risk_tier,omitempty"`
+	RequiredControls []string `json:"required_controls,omitempty"`
+	ServesCaps       []string `json:"serves_capabilities,omitempty"`
+	Tags             []string `json:"tags,omitempty"`
 }
 
 // Catalog is the full WCP taxonomy catalog.
 type Catalog struct {
 	Meta     map[string]interface{} `json:"_meta"`
-	Packs    []Pack                 `json:"packs"`
 	Entities []Entity               `json:"entities"`
 }
 
@@ -113,14 +101,11 @@ func (c *Catalog) FindByID(id string) (*Entity, error) {
 	return nil, fmt.Errorf("entity %q not found in catalog", id)
 }
 
-// Browse returns entities filtered by optional packID and/or entityType.
-// Pass empty string to skip that filter.
-func (c *Catalog) Browse(packID, entityType string) []Entity {
+// Browse returns entities filtered by optional entityType.
+// Pass empty string to return all entities.
+func (c *Catalog) Browse(entityType string) []Entity {
 	var out []Entity
 	for _, e := range c.Entities {
-		if packID != "" && e.PackID != packID {
-			continue
-		}
 		if entityType != "" && e.Type != entityType {
 			continue
 		}
@@ -129,22 +114,7 @@ func (c *Catalog) Browse(packID, entityType string) []Entity {
 	return out
 }
 
-// PackByID looks up a pack by ID.
-func (c *Catalog) PackByID(id string) (*Pack, error) {
-	for i, p := range c.Packs {
-		if p.ID == id {
-			return &c.Packs[i], nil
-		}
-	}
-	return nil, fmt.Errorf("pack %q not found in catalog", id)
-}
-
 // EntityCount returns the total number of entities.
 func (c *Catalog) EntityCount() int {
 	return len(c.Entities)
-}
-
-// PackCount returns the total number of packs.
-func (c *Catalog) PackCount() int {
-	return len(c.Packs)
 }

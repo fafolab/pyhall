@@ -1,22 +1,17 @@
 """Pack source — pack_06_cost"""
 
-PACKS = [
-    {
-        'id': 'pack.06',
-        'name': 'Cost Governance',
-        'entity_count': 8,
-    },
-]
-
 ENTITIES = [
     {
         'id': 'cap.cost.track-token-usage',
         'type': 'capability',
-        'pack_id': 'pack.06',
         'name': 'Track Token Usage',
         'description': 'Record token consumption per worker call into the billing datastore.',
         'risk_tier': 'low',
-        'tags': ['cost', 'tokens', 'billing'],
+        'tags': [
+            'cost',
+            'tokens',
+            'billing',
+        ],
         'wcp_namespace': 'reserved',
         'blast_radius_hint': {
             'data': 0,
@@ -25,18 +20,24 @@ ENTITIES = [
             'time': 0,
             'reversibility': 'reversible',
         },
-        'typical_controls': ['ctrl.cost.monthly-token-budget', 'ctrl.obs.metrics-core'],
+        'typical_controls': [
+            'ctrl.cost.monthly-token-budget',
+            'ctrl.obs.metrics-core',
+        ],
         'idempotency': 'partial',
         'determinism': 'deterministic',
     },
     {
         'id': 'cap.cost.check-budget',
         'type': 'capability',
-        'pack_id': 'pack.06',
         'name': 'Check Cost Budget',
         'description': 'Check current spend against allocated budget before executing a cost-incurring operation.',
         'risk_tier': 'low',
-        'tags': ['cost', 'budget', 'policy'],
+        'tags': [
+            'cost',
+            'budget',
+            'policy',
+        ],
         'wcp_namespace': 'reserved',
         'blast_radius_hint': {
             'data': 0,
@@ -45,18 +46,23 @@ ENTITIES = [
             'time': 0,
             'reversibility': 'reversible',
         },
-        'typical_controls': ['ctrl.cost.monthly-token-budget'],
+        'typical_controls': [
+            'ctrl.cost.monthly-token-budget',
+        ],
         'idempotency': 'full',
         'determinism': 'deterministic',
     },
     {
         'id': 'cap.cost.enforce-cap',
         'type': 'capability',
-        'pack_id': 'pack.06',
         'name': 'Enforce Spend Cap',
         'description': 'Hard-block a worker dispatch when accumulated spend exceeds the configured cap.',
         'risk_tier': 'medium',
-        'tags': ['cost', 'enforcement', 'safety'],
+        'tags': [
+            'cost',
+            'enforcement',
+            'safety',
+        ],
         'wcp_namespace': 'reserved',
         'blast_radius_hint': {
             'data': 0,
@@ -65,18 +71,24 @@ ENTITIES = [
             'time': 1,
             'reversibility': 'reversible',
         },
-        'typical_controls': ['ctrl.cost.monthly-token-budget', 'ctrl.obs.structured-logging'],
+        'typical_controls': [
+            'ctrl.cost.monthly-token-budget',
+            'ctrl.obs.structured-logging',
+        ],
         'idempotency': 'full',
         'determinism': 'deterministic',
     },
     {
         'id': 'cap.cost.estimate-job',
         'type': 'capability',
-        'pack_id': 'pack.06',
         'name': 'Estimate Job Cost',
         'description': 'Produce a pre-execution cost estimate (tokens, compute, storage) for a job.',
         'risk_tier': 'low',
-        'tags': ['cost', 'estimation', 'planning'],
+        'tags': [
+            'cost',
+            'estimation',
+            'planning',
+        ],
         'wcp_namespace': 'reserved',
         'blast_radius_hint': {
             'data': 0,
@@ -85,18 +97,23 @@ ENTITIES = [
             'time': 0,
             'reversibility': 'reversible',
         },
-        'typical_controls': ['ctrl.cost.monthly-token-budget'],
+        'typical_controls': [
+            'ctrl.cost.monthly-token-budget',
+        ],
         'idempotency': 'full',
         'determinism': 'deterministic',
     },
     {
         'id': 'cap.cost.generate-report',
         'type': 'capability',
-        'pack_id': 'pack.06',
         'name': 'Generate Cost Report',
         'description': 'Generate a cost usage report for a tenant, project, or time period.',
         'risk_tier': 'low',
-        'tags': ['cost', 'reporting', 'billing'],
+        'tags': [
+            'cost',
+            'reporting',
+            'billing',
+        ],
         'wcp_namespace': 'reserved',
         'blast_radius_hint': {
             'data': 0,
@@ -105,20 +122,28 @@ ENTITIES = [
             'time': 1,
             'reversibility': 'reversible',
         },
-        'typical_controls': ['ctrl.obs.structured-logging'],
+        'typical_controls': [
+            'ctrl.obs.structured-logging',
+        ],
         'idempotency': 'full',
         'determinism': 'deterministic',
     },
     {
         'id': 'wrk.cost.budget-enforcer',
         'type': 'worker_species',
-        'pack_id': 'pack.06',
         'name': 'Budget Enforcer Worker',
         'description': 'Policy gate worker that intercepts dispatches and denies jobs when cost budgets would be exceeded.',
         'risk_tier': 'medium',
-        'tags': ['cost', 'enforcement', 'policy-gate'],
+        'tags': [
+            'cost',
+            'enforcement',
+            'policy-gate',
+        ],
         'wcp_namespace': 'reserved',
-        'serves_capabilities': ['cap.cost.check-budget', 'cap.cost.enforce-cap'],
+        'serves_capabilities': [
+            'cap.cost.check-budget',
+            'cap.cost.enforce-cap',
+        ],
         'blast_radius_hint': {
             'data': 0,
             'network': 0,
@@ -126,20 +151,29 @@ ENTITIES = [
             'time': 1,
             'reversibility': 'reversible',
         },
-        'required_controls': ['ctrl.cost.monthly-token-budget', 'ctrl.obs.structured-logging'],
+        'required_controls': [
+            'ctrl.cost.monthly-token-budget',
+            'ctrl.obs.structured-logging',
+        ],
         'idempotency': 'full',
         'determinism': 'deterministic',
     },
     {
         'id': 'wrk.cost.usage-aggregator',
         'type': 'worker_species',
-        'pack_id': 'pack.06',
         'name': 'Usage Aggregator Worker',
         'description': 'Collects token/compute usage events from workers and aggregates into the billing data store.',
         'risk_tier': 'low',
-        'tags': ['cost', 'aggregation', 'billing'],
+        'tags': [
+            'cost',
+            'aggregation',
+            'billing',
+        ],
         'wcp_namespace': 'reserved',
-        'serves_capabilities': ['cap.cost.track-token-usage', 'cap.cost.generate-report'],
+        'serves_capabilities': [
+            'cap.cost.track-token-usage',
+            'cap.cost.generate-report',
+        ],
         'blast_radius_hint': {
             'data': 0,
             'network': 0,
@@ -147,20 +181,29 @@ ENTITIES = [
             'time': 0,
             'reversibility': 'reversible',
         },
-        'required_controls': ['ctrl.obs.metrics-core', 'ctrl.obs.structured-logging'],
+        'required_controls': [
+            'ctrl.obs.metrics-core',
+            'ctrl.obs.structured-logging',
+        ],
         'idempotency': 'partial',
         'determinism': 'deterministic',
     },
     {
         'id': 'ctrl.cost.monthly-token-budget',
         'type': 'control',
-        'pack_id': 'pack.06',
         'name': 'Monthly Token Budget',
         'description': 'Policy control: maximum token spend per tenant per calendar month before hard cap triggers.',
-        'risk_tier': 'low',
-        'tags': ['cost', 'policy', 'budget'],
+        'tags': [
+            'cost',
+            'policy',
+            'budget',
+        ],
         'wcp_namespace': 'reserved',
         'enforcement_point': 'hall',
-        'required_for_risk_tiers': ['medium', 'high', 'critical'],
+        'required_for_risk_tiers': [
+            'medium',
+            'high',
+            'critical',
+        ],
     },
 ]

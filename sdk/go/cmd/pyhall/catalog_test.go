@@ -19,10 +19,8 @@ func TestCatalogLoads(t *testing.T) {
 	if c.EntityCount() == 0 {
 		t.Error("catalog has 0 entities — expected > 0")
 	}
-	if c.PackCount() == 0 {
-		t.Error("catalog has 0 packs — expected > 0")
-	}
-	t.Logf("catalog loaded: %d entities, %d packs", c.EntityCount(), c.PackCount())
+	// WCP §3.0: No pack numbers. Catalog has no packs array.
+	t.Logf("catalog loaded: %d entities", c.EntityCount())
 }
 
 // TestSearchFindsResults verifies that a common search term returns results.

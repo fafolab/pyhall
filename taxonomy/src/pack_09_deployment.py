@@ -1,22 +1,17 @@
 """Pack source — pack_09_deployment"""
 
-PACKS = [
-    {
-        'id': 'pack.09',
-        'name': 'Deployment, Canary & Rollback',
-        'entity_count': 8,
-    },
-]
-
 ENTITIES = [
     {
         'id': 'cap.deploy.canary-shift',
         'type': 'capability',
-        'pack_id': 'pack.09',
         'name': 'Shift Canary Traffic',
         'description': 'Shift a percentage of traffic to a new worker version for canary evaluation.',
         'risk_tier': 'high',
-        'tags': ['deploy', 'canary', 'traffic'],
+        'tags': [
+            'deploy',
+            'canary',
+            'traffic',
+        ],
         'wcp_namespace': 'reserved',
         'blast_radius_hint': {
             'data': 1,
@@ -25,18 +20,24 @@ ENTITIES = [
             'time': 2,
             'reversibility': 'reversible',
         },
-        'typical_controls': ['ctrl.deploy.canary-error-threshold', 'ctrl.obs.metrics-core'],
+        'typical_controls': [
+            'ctrl.deploy.canary-error-threshold',
+            'ctrl.obs.metrics-core',
+        ],
         'idempotency': 'partial',
         'determinism': 'deterministic',
     },
     {
         'id': 'cap.deploy.rollback',
         'type': 'capability',
-        'pack_id': 'pack.09',
         'name': 'Rollback Worker Version',
         'description': 'Roll back a worker to the previous stable version immediately.',
         'risk_tier': 'high',
-        'tags': ['deploy', 'rollback', 'safety'],
+        'tags': [
+            'deploy',
+            'rollback',
+            'safety',
+        ],
         'wcp_namespace': 'reserved',
         'blast_radius_hint': {
             'data': 1,
@@ -45,18 +46,24 @@ ENTITIES = [
             'time': 2,
             'reversibility': 'reversible',
         },
-        'typical_controls': ['ctrl.obs.audit-log-append-only', 'ctrl.deploy.canary-error-threshold'],
+        'typical_controls': [
+            'ctrl.obs.audit-log-append-only',
+            'ctrl.deploy.canary-error-threshold',
+        ],
         'idempotency': 'full',
         'determinism': 'deterministic',
     },
     {
         'id': 'cap.deploy.promote-canary',
         'type': 'capability',
-        'pack_id': 'pack.09',
         'name': 'Promote Canary to Stable',
         'description': 'Promote a validated canary version to receive 100% of production traffic.',
         'risk_tier': 'high',
-        'tags': ['deploy', 'canary', 'promotion'],
+        'tags': [
+            'deploy',
+            'canary',
+            'promotion',
+        ],
         'wcp_namespace': 'reserved',
         'blast_radius_hint': {
             'data': 1,
@@ -65,18 +72,24 @@ ENTITIES = [
             'time': 2,
             'reversibility': 'reversible',
         },
-        'typical_controls': ['ctrl.deploy.canary-error-threshold', 'ctrl.obs.metrics-core'],
+        'typical_controls': [
+            'ctrl.deploy.canary-error-threshold',
+            'ctrl.obs.metrics-core',
+        ],
         'idempotency': 'full',
         'determinism': 'deterministic',
     },
     {
         'id': 'cap.deploy.drain-worker',
         'type': 'capability',
-        'pack_id': 'pack.09',
         'name': 'Drain Worker',
         'description': 'Gracefully drain in-flight work from a worker before shutdown or version change.',
         'risk_tier': 'medium',
-        'tags': ['deploy', 'drain', 'lifecycle'],
+        'tags': [
+            'deploy',
+            'drain',
+            'lifecycle',
+        ],
         'wcp_namespace': 'reserved',
         'blast_radius_hint': {
             'data': 0,
@@ -85,18 +98,24 @@ ENTITIES = [
             'time': 2,
             'reversibility': 'reversible',
         },
-        'typical_controls': ['ctrl.obs.structured-logging', 'ctrl.obs.metrics-core'],
+        'typical_controls': [
+            'ctrl.obs.structured-logging',
+            'ctrl.obs.metrics-core',
+        ],
         'idempotency': 'full',
         'determinism': 'deterministic',
     },
     {
         'id': 'cap.deploy.feature-flag',
         'type': 'capability',
-        'pack_id': 'pack.09',
         'name': 'Toggle Feature Flag',
         'description': 'Enable or disable a feature flag to control worker behavior without redeployment.',
         'risk_tier': 'medium',
-        'tags': ['deploy', 'feature-flags', 'configuration'],
+        'tags': [
+            'deploy',
+            'feature-flags',
+            'configuration',
+        ],
         'wcp_namespace': 'reserved',
         'blast_radius_hint': {
             'data': 0,
@@ -105,20 +124,29 @@ ENTITIES = [
             'time': 1,
             'reversibility': 'reversible',
         },
-        'typical_controls': ['ctrl.obs.audit-log-append-only', 'ctrl.obs.structured-logging'],
+        'typical_controls': [
+            'ctrl.obs.audit-log-append-only',
+            'ctrl.obs.structured-logging',
+        ],
         'idempotency': 'full',
         'determinism': 'deterministic',
     },
     {
         'id': 'wrk.deploy.canary-controller',
         'type': 'worker_species',
-        'pack_id': 'pack.09',
         'name': 'Canary Controller Worker',
         'description': 'Manages canary deployments — traffic splitting, health evaluation, auto-promote or auto-rollback.',
         'risk_tier': 'high',
-        'tags': ['deploy', 'canary', 'automation'],
+        'tags': [
+            'deploy',
+            'canary',
+            'automation',
+        ],
         'wcp_namespace': 'reserved',
-        'serves_capabilities': ['cap.deploy.canary-shift', 'cap.deploy.promote-canary'],
+        'serves_capabilities': [
+            'cap.deploy.canary-shift',
+            'cap.deploy.promote-canary',
+        ],
         'blast_radius_hint': {
             'data': 1,
             'network': 3,
@@ -126,20 +154,30 @@ ENTITIES = [
             'time': 3,
             'reversibility': 'reversible',
         },
-        'required_controls': ['ctrl.deploy.canary-error-threshold', 'ctrl.obs.metrics-core', 'ctrl.obs.audit-log-append-only'],
+        'required_controls': [
+            'ctrl.deploy.canary-error-threshold',
+            'ctrl.obs.metrics-core',
+            'ctrl.obs.audit-log-append-only',
+        ],
         'idempotency': 'partial',
         'determinism': 'deterministic',
     },
     {
         'id': 'wrk.deploy.rollback-guard',
         'type': 'worker_species',
-        'pack_id': 'pack.09',
         'name': 'Rollback Guard Worker',
         'description': 'Monitors error rates and latency for new worker versions and triggers automatic rollback on threshold breach.',
         'risk_tier': 'high',
-        'tags': ['deploy', 'rollback', 'guard'],
+        'tags': [
+            'deploy',
+            'rollback',
+            'guard',
+        ],
         'wcp_namespace': 'reserved',
-        'serves_capabilities': ['cap.deploy.rollback', 'cap.deploy.drain-worker'],
+        'serves_capabilities': [
+            'cap.deploy.rollback',
+            'cap.deploy.drain-worker',
+        ],
         'blast_radius_hint': {
             'data': 0,
             'network': 2,
@@ -147,20 +185,29 @@ ENTITIES = [
             'time': 2,
             'reversibility': 'reversible',
         },
-        'required_controls': ['ctrl.deploy.canary-error-threshold', 'ctrl.obs.slo-alerting'],
+        'required_controls': [
+            'ctrl.deploy.canary-error-threshold',
+            'ctrl.obs.slo-alerting',
+        ],
         'idempotency': 'full',
         'determinism': 'deterministic',
     },
     {
         'id': 'ctrl.deploy.canary-error-threshold',
         'type': 'control',
-        'pack_id': 'pack.09',
         'name': 'Canary Error Rate Threshold',
         'description': 'Policy control: maximum allowable error rate (%) for a canary before automatic rollback triggers.',
-        'risk_tier': 'medium',
-        'tags': ['deploy', 'canary', 'policy'],
+        'tags': [
+            'deploy',
+            'canary',
+            'policy',
+        ],
         'wcp_namespace': 'reserved',
         'enforcement_point': 'hall',
-        'required_for_risk_tiers': ['medium', 'high', 'critical'],
+        'required_for_risk_tiers': [
+            'medium',
+            'high',
+            'critical',
+        ],
     },
 ]

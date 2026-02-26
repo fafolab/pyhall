@@ -1,22 +1,17 @@
 """Pack source — pack_19_model_ops"""
 
-PACKS = [
-    {
-        'id': 'pack.19',
-        'name': 'Model Ops (Eval, Drift, Prompt/Tool QA)',
-        'entity_count': 10,
-    },
-]
-
 ENTITIES = [
     {
         'id': 'cap.model.eval.run',
         'type': 'capability',
-        'pack_id': 'pack.19',
         'name': 'Run Model Eval',
         'description': 'Execute an evaluation suite against a model, prompt, or tool version and publish scores.',
         'risk_tier': 'medium',
-        'tags': ['mlops', 'eval', 'quality'],
+        'tags': [
+            'mlops',
+            'eval',
+            'quality',
+        ],
         'wcp_namespace': 'reserved',
         'blast_radius_hint': {
             'data': 0,
@@ -25,18 +20,24 @@ ENTITIES = [
             'time': 3,
             'reversibility': 'reversible',
         },
-        'typical_controls': ['ctrl.obs.metrics-core', 'ctrl.obs.structured-logging'],
+        'typical_controls': [
+            'ctrl.obs.metrics-core',
+            'ctrl.obs.structured-logging',
+        ],
         'idempotency': 'partial',
         'determinism': 'non-deterministic',
     },
     {
         'id': 'cap.model.prompts.update',
         'type': 'capability',
-        'pack_id': 'pack.19',
         'name': 'Update Prompt Templates',
         'description': 'Update versioned prompt templates after safety eval and approval gate.',
         'risk_tier': 'high',
-        'tags': ['mlops', 'prompts', 'change-control'],
+        'tags': [
+            'mlops',
+            'prompts',
+            'change-control',
+        ],
         'wcp_namespace': 'reserved',
         'blast_radius_hint': {
             'data': 1,
@@ -45,18 +46,24 @@ ENTITIES = [
             'time': 1,
             'reversibility': 'reversible',
         },
-        'typical_controls': ['ctrl.obs.audit-log-append-only', 'ctrl.pol.policy-versioning'],
+        'typical_controls': [
+            'ctrl.obs.audit-log-append-only',
+            'ctrl.pol.policy-versioning',
+        ],
         'idempotency': 'partial',
         'determinism': 'deterministic',
     },
     {
         'id': 'cap.model.tools.update',
         'type': 'capability',
-        'pack_id': 'pack.19',
         'name': 'Update Tool Definitions',
         'description': 'Update versioned tool definitions (function specs, schemas) after QA gate.',
         'risk_tier': 'high',
-        'tags': ['mlops', 'tools', 'change-control'],
+        'tags': [
+            'mlops',
+            'tools',
+            'change-control',
+        ],
         'wcp_namespace': 'reserved',
         'blast_radius_hint': {
             'data': 1,
@@ -65,18 +72,24 @@ ENTITIES = [
             'time': 1,
             'reversibility': 'reversible',
         },
-        'typical_controls': ['ctrl.obs.audit-log-append-only', 'ctrl.pol.policy-versioning'],
+        'typical_controls': [
+            'ctrl.obs.audit-log-append-only',
+            'ctrl.pol.policy-versioning',
+        ],
         'idempotency': 'partial',
         'determinism': 'deterministic',
     },
     {
         'id': 'cap.model.drift.detect',
         'type': 'capability',
-        'pack_id': 'pack.19',
         'name': 'Detect Model Drift',
         'description': 'Detect statistical drift in model output quality, safety, or cost over time.',
         'risk_tier': 'medium',
-        'tags': ['mlops', 'drift', 'observability'],
+        'tags': [
+            'mlops',
+            'drift',
+            'observability',
+        ],
         'wcp_namespace': 'reserved',
         'blast_radius_hint': {
             'data': 0,
@@ -85,18 +98,24 @@ ENTITIES = [
             'time': 0,
             'reversibility': 'reversible',
         },
-        'typical_controls': ['ctrl.obs.metrics-core', 'ctrl.obs.slo-alerting'],
+        'typical_controls': [
+            'ctrl.obs.metrics-core',
+            'ctrl.obs.slo-alerting',
+        ],
         'idempotency': 'full',
         'determinism': 'non-deterministic',
     },
     {
         'id': 'cap.model.prompt-injection-test',
         'type': 'capability',
-        'pack_id': 'pack.19',
         'name': 'Prompt Injection Test',
         'description': 'Run prompt injection attack vectors against a model to validate safety guardrails.',
         'risk_tier': 'medium',
-        'tags': ['mlops', 'safety', 'security'],
+        'tags': [
+            'mlops',
+            'safety',
+            'security',
+        ],
         'wcp_namespace': 'reserved',
         'blast_radius_hint': {
             'data': 0,
@@ -105,25 +124,32 @@ ENTITIES = [
             'time': 2,
             'reversibility': 'reversible',
         },
-        'typical_controls': ['ctrl.obs.structured-logging', 'ctrl.sandbox.no-egress-default-deny'],
+        'typical_controls': [
+            'ctrl.obs.structured-logging',
+            'ctrl.sandbox.no-egress-default-deny',
+        ],
         'idempotency': 'partial',
         'determinism': 'non-deterministic',
     },
     {
         'id': 'wrk.model.eval.runner',
         'type': 'worker_species',
-        'pack_id': 'pack.19',
         'name': 'Model Eval Runner Worker',
         'description': 'Run eval suites against model/prompt/tool versions; publish scores.',
         'risk_tier': 'medium',
-        'level': 'L4',
-        'guarantee': 'best-effort',
         'determinism': 'nondeterministic',
-        'blast_score': None,
-        'required_controls': ['ctrl.obs.metrics-core', 'ctrl.obs.structured-logging'],
-        'handles_capabilities': ['cap.model.eval.run', 'cap.model.prompt_injection_test'],
-        'tags': ['mlops', 'eval'],
-        'serves_capabilities': ['cap.model.eval.run', 'cap.model.prompt-injection-test'],
+        'required_controls': [
+            'ctrl.obs.metrics-core',
+            'ctrl.obs.structured-logging',
+        ],
+        'tags': [
+            'mlops',
+            'eval',
+        ],
+        'serves_capabilities': [
+            'cap.model.eval.run',
+            'cap.model.prompt-injection-test',
+        ],
         'blast_radius_hint': {
             'data': 0,
             'network': 1,
@@ -137,18 +163,22 @@ ENTITIES = [
     {
         'id': 'wrk.model.drift.monitor',
         'type': 'worker_species',
-        'pack_id': 'pack.19',
         'name': 'Model Drift Monitor Worker',
         'description': 'Monitor production for drift in quality/safety/cost; trigger alerts.',
         'risk_tier': 'medium',
-        'level': 'L4',
-        'guarantee': 'best-effort',
         'determinism': 'nondeterministic',
-        'blast_score': None,
-        'required_controls': ['ctrl.obs.metrics-core', 'ctrl.obs.slo-alerting'],
-        'handles_capabilities': ['cap.model.drift.detect'],
-        'tags': ['mlops', 'drift', 'observability'],
-        'serves_capabilities': ['cap.model.drift.detect'],
+        'required_controls': [
+            'ctrl.obs.metrics-core',
+            'ctrl.obs.slo-alerting',
+        ],
+        'tags': [
+            'mlops',
+            'drift',
+            'observability',
+        ],
+        'serves_capabilities': [
+            'cap.model.drift.detect',
+        ],
         'blast_radius_hint': {
             'data': 0,
             'network': 0,
@@ -162,18 +192,22 @@ ENTITIES = [
     {
         'id': 'wrk.model.prompt-qa.gate',
         'type': 'worker_species',
-        'pack_id': 'pack.19',
         'name': 'Prompt QA Gate Worker',
         'description': 'Gate prompt/tool changes via safety evals, approvals, and canary rollout.',
         'risk_tier': 'high',
-        'level': 'L5',
-        'guarantee': 'exactly-once',
         'determinism': 'deterministic',
-        'blast_score': None,
-        'required_controls': ['ctrl.obs.audit-log-append-only'],
-        'handles_capabilities': ['cap.model.prompts.update', 'cap.model.tools.update'],
-        'tags': ['mlops', 'prompts', 'safety'],
-        'serves_capabilities': ['cap.model.prompts.update', 'cap.model.tools.update'],
+        'required_controls': [
+            'ctrl.obs.audit-log-append-only',
+        ],
+        'tags': [
+            'mlops',
+            'prompts',
+            'safety',
+        ],
+        'serves_capabilities': [
+            'cap.model.prompts.update',
+            'cap.model.tools.update',
+        ],
         'blast_radius_hint': {
             'data': 1,
             'network': 1,
@@ -187,23 +221,45 @@ ENTITIES = [
     {
         'id': 'prof.model.release-gated',
         'type': 'profile',
-        'pack_id': 'pack.19',
         'name': 'Release-Gated Model Profile',
         'description': 'Release gate posture: mandatory eval, safety tests, and approval before model/prompt/tool promotion.',
-        'tags': ['mlops', 'release', 'safety'],
-        'controls_required': ['ctrl.obs.audit-log-append-only', 'ctrl.obs.metrics-core', 'ctrl.pol.policy-versioning'],
-        'recommended_for_risk_tiers': ['medium', 'high', 'critical'],
+        'tags': [
+            'mlops',
+            'release',
+            'safety',
+        ],
+        'controls_required': [
+            'ctrl.obs.audit-log-append-only',
+            'ctrl.obs.metrics-core',
+            'ctrl.pol.policy-versioning',
+        ],
+        'recommended_for_risk_tiers': [
+            'medium',
+            'high',
+            'critical',
+        ],
         'wcp_namespace': 'reserved',
     },
     {
         'id': 'prof.model.drift-strict',
         'type': 'profile',
-        'pack_id': 'pack.19',
         'name': 'Strict Drift Monitoring Model Profile',
         'description': 'Strict drift monitoring posture: continuous SLO-based alerting and automated remediation triggers.',
-        'tags': ['mlops', 'drift', 'observability'],
-        'controls_required': ['ctrl.obs.metrics-core', 'ctrl.obs.slo-alerting', 'ctrl.obs.structured-logging'],
-        'recommended_for_risk_tiers': ['medium', 'high', 'critical'],
+        'tags': [
+            'mlops',
+            'drift',
+            'observability',
+        ],
+        'controls_required': [
+            'ctrl.obs.metrics-core',
+            'ctrl.obs.slo-alerting',
+            'ctrl.obs.structured-logging',
+        ],
+        'recommended_for_risk_tiers': [
+            'medium',
+            'high',
+            'critical',
+        ],
         'wcp_namespace': 'reserved',
     },
 ]

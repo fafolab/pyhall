@@ -1,22 +1,17 @@
 """Pack source — pack_14_scheduler"""
 
-PACKS = [
-    {
-        'id': 'pack.14',
-        'name': 'Scheduler & Priority/QoS',
-        'entity_count': 6,
-    },
-]
-
 ENTITIES = [
     {
         'id': 'cap.sched.set-priority',
         'type': 'capability',
-        'pack_id': 'pack.14',
         'name': 'Set Job Priority',
         'description': 'Assign or update the scheduling priority of a job in the dispatch queue.',
         'risk_tier': 'medium',
-        'tags': ['scheduler', 'priority', 'qos'],
+        'tags': [
+            'scheduler',
+            'priority',
+            'qos',
+        ],
         'wcp_namespace': 'reserved',
         'blast_radius_hint': {
             'data': 0,
@@ -25,18 +20,23 @@ ENTITIES = [
             'time': 1,
             'reversibility': 'reversible',
         },
-        'typical_controls': ['ctrl.obs.structured-logging'],
+        'typical_controls': [
+            'ctrl.obs.structured-logging',
+        ],
         'idempotency': 'full',
         'determinism': 'deterministic',
     },
     {
         'id': 'cap.sched.preempt',
         'type': 'capability',
-        'pack_id': 'pack.14',
         'name': 'Preempt Job',
         'description': 'Preempt a lower-priority job to make capacity available for a higher-priority one.',
         'risk_tier': 'medium',
-        'tags': ['scheduler', 'preemption', 'qos'],
+        'tags': [
+            'scheduler',
+            'preemption',
+            'qos',
+        ],
         'wcp_namespace': 'reserved',
         'blast_radius_hint': {
             'data': 1,
@@ -45,18 +45,24 @@ ENTITIES = [
             'time': 2,
             'reversibility': 'reversible',
         },
-        'typical_controls': ['ctrl.obs.structured-logging', 'ctrl.obs.metrics-core'],
+        'typical_controls': [
+            'ctrl.obs.structured-logging',
+            'ctrl.obs.metrics-core',
+        ],
         'idempotency': 'partial',
         'determinism': 'deterministic',
     },
     {
         'id': 'cap.sched.reserve-capacity',
         'type': 'capability',
-        'pack_id': 'pack.14',
         'name': 'Reserve Capacity',
         'description': 'Reserve compute capacity for a tenant or workload class ahead of scheduled execution.',
         'risk_tier': 'medium',
-        'tags': ['scheduler', 'capacity', 'qos'],
+        'tags': [
+            'scheduler',
+            'capacity',
+            'qos',
+        ],
         'wcp_namespace': 'reserved',
         'blast_radius_hint': {
             'data': 0,
@@ -65,18 +71,23 @@ ENTITIES = [
             'time': 1,
             'reversibility': 'reversible',
         },
-        'typical_controls': ['ctrl.obs.structured-logging'],
+        'typical_controls': [
+            'ctrl.obs.structured-logging',
+        ],
         'idempotency': 'full',
         'determinism': 'deterministic',
     },
     {
         'id': 'cap.sched.rate-limit-tenant',
         'type': 'capability',
-        'pack_id': 'pack.14',
         'name': 'Rate Limit Tenant',
         'description': 'Apply per-tenant rate limiting to prevent one tenant from starving shared resources.',
         'risk_tier': 'medium',
-        'tags': ['scheduler', 'rate-limiting', 'fairness'],
+        'tags': [
+            'scheduler',
+            'rate-limiting',
+            'fairness',
+        ],
         'wcp_namespace': 'reserved',
         'blast_radius_hint': {
             'data': 0,
@@ -85,25 +96,34 @@ ENTITIES = [
             'time': 1,
             'reversibility': 'reversible',
         },
-        'typical_controls': ['ctrl.obs.metrics-core', 'ctrl.obs.structured-logging'],
+        'typical_controls': [
+            'ctrl.obs.metrics-core',
+            'ctrl.obs.structured-logging',
+        ],
         'idempotency': 'full',
         'determinism': 'deterministic',
     },
     {
         'id': 'wrk.sched.dispatcher',
         'type': 'worker_species',
-        'pack_id': 'pack.14',
         'name': 'Scheduler Dispatcher Worker',
         'description': 'Select from priority queues, enforce fairness/QoS, dispatch to pools.',
         'risk_tier': 'medium',
-        'level': 'L5',
-        'guarantee': 'at-least-once',
         'determinism': 'deterministic',
-        'blast_score': None,
-        'required_controls': ['ctrl.obs.metrics-core', 'ctrl.obs.structured-logging'],
-        'handles_capabilities': ['cap.sched.set_priority', 'cap.sched.preempt', 'cap.sched.reserve_capacity', 'cap.sched.rate_limit_tenant'],
-        'tags': ['scheduler', 'qos'],
-        'serves_capabilities': ['cap.sched.set-priority', 'cap.sched.preempt', 'cap.sched.reserve-capacity', 'cap.sched.rate-limit-tenant'],
+        'required_controls': [
+            'ctrl.obs.metrics-core',
+            'ctrl.obs.structured-logging',
+        ],
+        'tags': [
+            'scheduler',
+            'qos',
+        ],
+        'serves_capabilities': [
+            'cap.sched.set-priority',
+            'cap.sched.preempt',
+            'cap.sched.reserve-capacity',
+            'cap.sched.rate-limit-tenant',
+        ],
         'blast_radius_hint': {
             'data': 0,
             'network': 1,
@@ -117,12 +137,22 @@ ENTITIES = [
     {
         'id': 'prof.sched.critical-protected',
         'type': 'profile',
-        'pack_id': 'pack.14',
         'name': 'Critical Protected Scheduler Profile',
         'description': 'Protected scheduling posture for critical workloads: reserved capacity, preemption rights, SLO alerting.',
-        'tags': ['scheduler', 'critical', 'qos'],
-        'controls_required': ['ctrl.obs.metrics-core', 'ctrl.obs.slo-alerting', 'ctrl.obs.structured-logging'],
-        'recommended_for_risk_tiers': ['high', 'critical'],
+        'tags': [
+            'scheduler',
+            'critical',
+            'qos',
+        ],
+        'controls_required': [
+            'ctrl.obs.metrics-core',
+            'ctrl.obs.slo-alerting',
+            'ctrl.obs.structured-logging',
+        ],
+        'recommended_for_risk_tiers': [
+            'high',
+            'critical',
+        ],
         'wcp_namespace': 'reserved',
     },
 ]

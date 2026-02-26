@@ -23,9 +23,8 @@ func newVersionCmd() *cobra.Command {
 
 			fmt.Println(primaryBlue.Render("pyhall CLI 0.1.0 (Go)"))
 			fmt.Printf("WCP specification: %s\n", lightBlue.Render(wcpSpec))
-			fmt.Printf("Taxonomy:          %s entities, %s packs\n",
+			fmt.Printf("Taxonomy:          %s entities\n",
 				primaryBlue.Render(fmt.Sprintf("%d", c.EntityCount())),
-				primaryBlue.Render(fmt.Sprintf("%d", c.PackCount())),
 			)
 			fmt.Printf("Built by:          %s\n", primaryBlue.Render("FΔFΌ★LΔB"))
 			fmt.Printf("License:           %s\n", dimStyle.Render("Apache 2.0"))

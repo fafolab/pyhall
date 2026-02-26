@@ -1,22 +1,17 @@
 """Pack source — pack_07_data_governance"""
 
-PACKS = [
-    {
-        'id': 'pack.07',
-        'name': 'Data Governance & Compliance',
-        'entity_count': 4,
-    },
-]
-
 ENTITIES = [
     {
         'id': 'cap.data.classify',
         'type': 'capability',
-        'pack_id': 'pack.07',
         'name': 'Classify Data',
         'description': 'Classify data by sensitivity label (e.g., public, internal, restricted, top-secret).',
         'risk_tier': 'medium',
-        'tags': ['data-governance', 'classification', 'compliance'],
+        'tags': [
+            'data-governance',
+            'classification',
+            'compliance',
+        ],
         'wcp_namespace': 'reserved',
         'blast_radius_hint': {
             'data': 1,
@@ -25,18 +20,24 @@ ENTITIES = [
             'time': 0,
             'reversibility': 'reversible',
         },
-        'typical_controls': ['ctrl.obs.structured-logging', 'ctrl.obs.audit-log-append-only'],
+        'typical_controls': [
+            'ctrl.obs.structured-logging',
+            'ctrl.obs.audit-log-append-only',
+        ],
         'idempotency': 'full',
         'determinism': 'deterministic',
     },
     {
         'id': 'cap.data.route.by-sensitivity',
         'type': 'capability',
-        'pack_id': 'pack.07',
         'name': 'Route Data by Sensitivity',
         'description': 'Route data to appropriate storage or processing tier based on sensitivity classification.',
         'risk_tier': 'high',
-        'tags': ['data-governance', 'routing', 'compliance'],
+        'tags': [
+            'data-governance',
+            'routing',
+            'compliance',
+        ],
         'wcp_namespace': 'reserved',
         'blast_radius_hint': {
             'data': 3,
@@ -45,18 +46,25 @@ ENTITIES = [
             'time': 1,
             'reversibility': 'partially-reversible',
         },
-        'typical_controls': ['ctrl.obs.audit-log-append-only', 'ctrl.sandbox.no-egress-default-deny'],
+        'typical_controls': [
+            'ctrl.obs.audit-log-append-only',
+            'ctrl.sandbox.no-egress-default-deny',
+        ],
         'idempotency': 'full',
         'determinism': 'deterministic',
     },
     {
         'id': 'cap.data.delete',
         'type': 'capability',
-        'pack_id': 'pack.07',
         'name': 'Delete Data',
         'description': 'Permanently delete data records in compliance with retention policies (e.g., GDPR right-to-erasure).',
         'risk_tier': 'high',
-        'tags': ['data-governance', 'deletion', 'compliance', 'gdpr'],
+        'tags': [
+            'data-governance',
+            'deletion',
+            'compliance',
+            'gdpr',
+        ],
         'wcp_namespace': 'reserved',
         'blast_radius_hint': {
             'data': 4,
@@ -65,18 +73,24 @@ ENTITIES = [
             'time': 1,
             'reversibility': 'irreversible',
         },
-        'typical_controls': ['ctrl.obs.audit-log-append-only', 'ctrl.obs.structured-logging'],
+        'typical_controls': [
+            'ctrl.obs.audit-log-append-only',
+            'ctrl.obs.structured-logging',
+        ],
         'idempotency': 'full',
         'determinism': 'deterministic',
     },
     {
         'id': 'cap.data.redact',
         'type': 'capability',
-        'pack_id': 'pack.07',
         'name': 'Redact Data',
         'description': 'Redact sensitive fields (PII, PCI, PHI) from data artifacts before downstream processing.',
         'risk_tier': 'high',
-        'tags': ['data-governance', 'redaction', 'privacy'],
+        'tags': [
+            'data-governance',
+            'redaction',
+            'privacy',
+        ],
         'wcp_namespace': 'reserved',
         'blast_radius_hint': {
             'data': 2,
@@ -85,7 +99,10 @@ ENTITIES = [
             'time': 1,
             'reversibility': 'irreversible',
         },
-        'typical_controls': ['ctrl.obs.audit-log-append-only', 'ctrl.sandbox.workspace-mounts-only'],
+        'typical_controls': [
+            'ctrl.obs.audit-log-append-only',
+            'ctrl.sandbox.workspace-mounts-only',
+        ],
         'idempotency': 'full',
         'determinism': 'deterministic',
     },

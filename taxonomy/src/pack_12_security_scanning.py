@@ -1,22 +1,17 @@
 """Pack source — pack_12_security_scanning"""
 
-PACKS = [
-    {
-        'id': 'pack.12',
-        'name': 'Security Scanning / Supply Chain',
-        'entity_count': 10,
-    },
-]
-
 ENTITIES = [
     {
         'id': 'cap.scan.sast',
         'type': 'capability',
-        'pack_id': 'pack.12',
         'name': 'SAST Scan',
         'description': 'Run static application security testing scan on source code or compiled artifacts.',
         'risk_tier': 'medium',
-        'tags': ['security', 'sast', 'scanning'],
+        'tags': [
+            'security',
+            'sast',
+            'scanning',
+        ],
         'wcp_namespace': 'reserved',
         'blast_radius_hint': {
             'data': 0,
@@ -25,18 +20,24 @@ ENTITIES = [
             'time': 2,
             'reversibility': 'reversible',
         },
-        'typical_controls': ['ctrl.sandbox.no-egress-default-deny', 'ctrl.obs.structured-logging'],
+        'typical_controls': [
+            'ctrl.sandbox.no-egress-default-deny',
+            'ctrl.obs.structured-logging',
+        ],
         'idempotency': 'full',
         'determinism': 'deterministic',
     },
     {
         'id': 'cap.scan.deps',
         'type': 'capability',
-        'pack_id': 'pack.12',
         'name': 'Dependency Scan',
         'description': 'Scan project dependencies for known CVEs and risky licenses.',
         'risk_tier': 'medium',
-        'tags': ['security', 'supply-chain', 'dependencies'],
+        'tags': [
+            'security',
+            'supply-chain',
+            'dependencies',
+        ],
         'wcp_namespace': 'reserved',
         'blast_radius_hint': {
             'data': 0,
@@ -45,18 +46,23 @@ ENTITIES = [
             'time': 1,
             'reversibility': 'reversible',
         },
-        'typical_controls': ['ctrl.obs.structured-logging'],
+        'typical_controls': [
+            'ctrl.obs.structured-logging',
+        ],
         'idempotency': 'full',
         'determinism': 'deterministic',
     },
     {
         'id': 'cap.scan.sbom.generate',
         'type': 'capability',
-        'pack_id': 'pack.12',
         'name': 'Generate SBOM',
         'description': 'Generate a Software Bill of Materials (SBOM) in SPDX or CycloneDX format.',
         'risk_tier': 'low',
-        'tags': ['security', 'sbom', 'supply-chain'],
+        'tags': [
+            'security',
+            'sbom',
+            'supply-chain',
+        ],
         'wcp_namespace': 'reserved',
         'blast_radius_hint': {
             'data': 0,
@@ -65,18 +71,23 @@ ENTITIES = [
             'time': 1,
             'reversibility': 'reversible',
         },
-        'typical_controls': ['ctrl.obs.run-metadata-store'],
+        'typical_controls': [
+            'ctrl.obs.run-metadata-store',
+        ],
         'idempotency': 'full',
         'determinism': 'deterministic',
     },
     {
         'id': 'cap.scan.dast',
         'type': 'capability',
-        'pack_id': 'pack.12',
         'name': 'DAST Scan',
         'description': 'Run dynamic application security testing against a live endpoint.',
         'risk_tier': 'high',
-        'tags': ['security', 'dast', 'scanning'],
+        'tags': [
+            'security',
+            'dast',
+            'scanning',
+        ],
         'wcp_namespace': 'reserved',
         'blast_radius_hint': {
             'data': 1,
@@ -85,18 +96,24 @@ ENTITIES = [
             'time': 3,
             'reversibility': 'partially-reversible',
         },
-        'typical_controls': ['ctrl.obs.structured-logging', 'ctrl.obs.audit-log-append-only'],
+        'typical_controls': [
+            'ctrl.obs.structured-logging',
+            'ctrl.obs.audit-log-append-only',
+        ],
         'idempotency': 'partial',
         'determinism': 'non-deterministic',
     },
     {
         'id': 'cap.verify.artifact-integrity',
         'type': 'capability',
-        'pack_id': 'pack.12',
         'name': 'Verify Artifact Integrity',
         'description': 'Verify cryptographic digest and/or signature of a build artifact before execution.',
         'risk_tier': 'high',
-        'tags': ['security', 'signing', 'supply-chain'],
+        'tags': [
+            'security',
+            'signing',
+            'supply-chain',
+        ],
         'wcp_namespace': 'reserved',
         'blast_radius_hint': {
             'data': 0,
@@ -105,25 +122,31 @@ ENTITIES = [
             'time': 0,
             'reversibility': 'reversible',
         },
-        'typical_controls': ['ctrl.obs.audit-log-append-only'],
+        'typical_controls': [
+            'ctrl.obs.audit-log-append-only',
+        ],
         'idempotency': 'full',
         'determinism': 'deterministic',
     },
     {
         'id': 'wrk.sec.sast.scanner',
         'type': 'worker_species',
-        'pack_id': 'pack.12',
         'name': 'SAST Scanner Worker',
         'description': 'Run static code scans; normalize findings; gate build.',
         'risk_tier': 'medium',
-        'level': 'L4',
-        'guarantee': 'best-effort',
         'determinism': 'deterministic',
-        'blast_score': None,
-        'required_controls': ['ctrl.obs.structured-logging', 'ctrl.sandbox.no-egress-default-deny'],
-        'handles_capabilities': ['cap.scan.sast'],
-        'tags': ['security', 'sast', 'supply-chain'],
-        'serves_capabilities': ['cap.scan.sast'],
+        'required_controls': [
+            'ctrl.obs.structured-logging',
+            'ctrl.sandbox.no-egress-default-deny',
+        ],
+        'tags': [
+            'security',
+            'sast',
+            'supply-chain',
+        ],
+        'serves_capabilities': [
+            'cap.scan.sast',
+        ],
         'blast_radius_hint': {
             'data': 0,
             'network': 0,
@@ -137,18 +160,22 @@ ENTITIES = [
     {
         'id': 'wrk.sec.deps.scanner',
         'type': 'worker_species',
-        'pack_id': 'pack.12',
         'name': 'Dependency Scanner Worker',
         'description': 'Scan dependencies for CVEs and risky licenses; generate SBOM.',
         'risk_tier': 'medium',
-        'level': 'L4',
-        'guarantee': 'best-effort',
         'determinism': 'deterministic',
-        'blast_score': None,
-        'required_controls': ['ctrl.obs.structured-logging'],
-        'handles_capabilities': ['cap.scan.deps', 'cap.scan.sbom.generate'],
-        'tags': ['security', 'supply-chain', 'sbom'],
-        'serves_capabilities': ['cap.scan.deps', 'cap.scan.sbom.generate'],
+        'required_controls': [
+            'ctrl.obs.structured-logging',
+        ],
+        'tags': [
+            'security',
+            'supply-chain',
+            'sbom',
+        ],
+        'serves_capabilities': [
+            'cap.scan.deps',
+            'cap.scan.sbom.generate',
+        ],
         'blast_radius_hint': {
             'data': 0,
             'network': 1,
@@ -162,18 +189,21 @@ ENTITIES = [
     {
         'id': 'wrk.sec.artifact.verifier',
         'type': 'worker_species',
-        'pack_id': 'pack.12',
         'name': 'Artifact Verifier Worker',
         'description': 'Verify artifact digests/signatures before execution.',
         'risk_tier': 'high',
-        'level': 'L5',
-        'guarantee': 'at-least-once',
         'determinism': 'deterministic',
-        'blast_score': None,
-        'required_controls': ['ctrl.obs.audit-log-append-only'],
-        'handles_capabilities': ['cap.verify.artifact_integrity'],
-        'tags': ['security', 'supply-chain', 'signing'],
-        'serves_capabilities': ['cap.verify.artifact-integrity'],
+        'required_controls': [
+            'ctrl.obs.audit-log-append-only',
+        ],
+        'tags': [
+            'security',
+            'supply-chain',
+            'signing',
+        ],
+        'serves_capabilities': [
+            'cap.verify.artifact-integrity',
+        ],
         'blast_radius_hint': {
             'data': 0,
             'network': 0,
@@ -187,23 +217,42 @@ ENTITIES = [
     {
         'id': 'prof.sec.ci-gated',
         'type': 'profile',
-        'pack_id': 'pack.12',
         'name': 'CI-Gated Security Profile',
         'description': 'CI pipeline security posture: SAST, dependency scan, and SBOM on every build.',
-        'tags': ['security', 'ci', 'supply-chain'],
-        'controls_required': ['ctrl.obs.structured-logging', 'ctrl.sandbox.no-egress-default-deny'],
-        'recommended_for_risk_tiers': ['medium', 'high', 'critical'],
+        'tags': [
+            'security',
+            'ci',
+            'supply-chain',
+        ],
+        'controls_required': [
+            'ctrl.obs.structured-logging',
+            'ctrl.sandbox.no-egress-default-deny',
+        ],
+        'recommended_for_risk_tiers': [
+            'medium',
+            'high',
+            'critical',
+        ],
         'wcp_namespace': 'reserved',
     },
     {
         'id': 'prof.sec.artifact-strict',
         'type': 'profile',
-        'pack_id': 'pack.12',
         'name': 'Strict Artifact Security Profile',
         'description': 'Strict artifact security posture: mandatory signature verification and full audit trail before execution.',
-        'tags': ['security', 'signing', 'supply-chain'],
-        'controls_required': ['ctrl.obs.audit-log-append-only', 'ctrl.obs.structured-logging'],
-        'recommended_for_risk_tiers': ['high', 'critical'],
+        'tags': [
+            'security',
+            'signing',
+            'supply-chain',
+        ],
+        'controls_required': [
+            'ctrl.obs.audit-log-append-only',
+            'ctrl.obs.structured-logging',
+        ],
+        'recommended_for_risk_tiers': [
+            'high',
+            'critical',
+        ],
         'wcp_namespace': 'reserved',
     },
 ]

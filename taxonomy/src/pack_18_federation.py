@@ -1,22 +1,17 @@
 """Pack source — pack_18_federation"""
 
-PACKS = [
-    {
-        'id': 'pack.18',
-        'name': 'Multi-Org / Federated Trust',
-        'entity_count': 8,
-    },
-]
-
 ENTITIES = [
     {
         'id': 'cap.fed.accept-external-identity',
         'type': 'capability',
-        'pack_id': 'pack.18',
         'name': 'Accept External Identity',
         'description': 'Accept and validate an identity token from a trusted external organization.',
         'risk_tier': 'high',
-        'tags': ['federation', 'identity', 'multi-org'],
+        'tags': [
+            'federation',
+            'identity',
+            'multi-org',
+        ],
         'wcp_namespace': 'reserved',
         'blast_radius_hint': {
             'data': 2,
@@ -25,18 +20,24 @@ ENTITIES = [
             'time': 0,
             'reversibility': 'reversible',
         },
-        'typical_controls': ['ctrl.obs.audit-log-append-only', 'ctrl.obs.structured-logging'],
+        'typical_controls': [
+            'ctrl.obs.audit-log-append-only',
+            'ctrl.obs.structured-logging',
+        ],
         'idempotency': 'full',
         'determinism': 'deterministic',
     },
     {
         'id': 'cap.fed.exchange-tokens',
         'type': 'capability',
-        'pack_id': 'pack.18',
         'name': 'Exchange Federation Tokens',
         'description': 'Exchange a partner token for a scoped local token via federation handshake.',
         'risk_tier': 'high',
-        'tags': ['federation', 'tokens', 'identity'],
+        'tags': [
+            'federation',
+            'tokens',
+            'identity',
+        ],
         'wcp_namespace': 'reserved',
         'blast_radius_hint': {
             'data': 1,
@@ -45,18 +46,23 @@ ENTITIES = [
             'time': 1,
             'reversibility': 'reversible',
         },
-        'typical_controls': ['ctrl.obs.audit-log-append-only'],
+        'typical_controls': [
+            'ctrl.obs.audit-log-append-only',
+        ],
         'idempotency': 'partial',
         'determinism': 'deterministic',
     },
     {
         'id': 'cap.fed.enforce-data-contract',
         'type': 'capability',
-        'pack_id': 'pack.18',
         'name': 'Enforce Data Contract',
         'description': 'Validate inbound/outbound data against the partner data contract before processing.',
         'risk_tier': 'high',
-        'tags': ['federation', 'contracts', 'data-governance'],
+        'tags': [
+            'federation',
+            'contracts',
+            'data-governance',
+        ],
         'wcp_namespace': 'reserved',
         'blast_radius_hint': {
             'data': 2,
@@ -65,18 +71,24 @@ ENTITIES = [
             'time': 0,
             'reversibility': 'reversible',
         },
-        'typical_controls': ['ctrl.obs.audit-log-append-only', 'ctrl.obs.structured-logging'],
+        'typical_controls': [
+            'ctrl.obs.audit-log-append-only',
+            'ctrl.obs.structured-logging',
+        ],
         'idempotency': 'full',
         'determinism': 'deterministic',
     },
     {
         'id': 'cap.fed.isolate-guest-workers',
         'type': 'capability',
-        'pack_id': 'pack.18',
         'name': 'Isolate Guest Workers',
         'description': 'Run partner/guest workers in isolated execution pools with default-deny capabilities.',
         'risk_tier': 'high',
-        'tags': ['federation', 'sandbox', 'isolation'],
+        'tags': [
+            'federation',
+            'sandbox',
+            'isolation',
+        ],
         'wcp_namespace': 'reserved',
         'blast_radius_hint': {
             'data': 2,
@@ -85,25 +97,33 @@ ENTITIES = [
             'time': 1,
             'reversibility': 'reversible',
         },
-        'typical_controls': ['ctrl.sandbox.no-egress-default-deny', 'ctrl.sandbox.workspace-mounts-only'],
+        'typical_controls': [
+            'ctrl.sandbox.no-egress-default-deny',
+            'ctrl.sandbox.workspace-mounts-only',
+        ],
         'idempotency': 'full',
         'determinism': 'deterministic',
     },
     {
         'id': 'wrk.fed.gateway',
         'type': 'worker_species',
-        'pack_id': 'pack.18',
         'name': 'Federation Gateway Worker',
         'description': 'Front-door for partner integrations; validate identity; issue scoped tokens.',
         'risk_tier': 'high',
-        'level': 'L5',
-        'guarantee': 'at-least-once',
         'determinism': 'deterministic',
-        'blast_score': None,
-        'required_controls': ['ctrl.obs.audit-log-append-only', 'ctrl.obs.structured-logging'],
-        'handles_capabilities': ['cap.fed.accept_external_identity', 'cap.fed.exchange_tokens'],
-        'tags': ['federation', 'identity'],
-        'serves_capabilities': ['cap.fed.accept-external-identity', 'cap.fed.exchange-tokens', 'cap.fed.enforce-data-contract'],
+        'required_controls': [
+            'ctrl.obs.audit-log-append-only',
+            'ctrl.obs.structured-logging',
+        ],
+        'tags': [
+            'federation',
+            'identity',
+        ],
+        'serves_capabilities': [
+            'cap.fed.accept-external-identity',
+            'cap.fed.exchange-tokens',
+            'cap.fed.enforce-data-contract',
+        ],
         'blast_radius_hint': {
             'data': 2,
             'network': 2,
@@ -117,18 +137,21 @@ ENTITIES = [
     {
         'id': 'wrk.fed.guest-pool.worker',
         'type': 'worker_species',
-        'pack_id': 'pack.18',
         'name': 'Guest Pool Worker',
         'description': 'Execute partner workloads in isolated pools with default-deny capabilities.',
         'risk_tier': 'high',
-        'level': 'L4',
-        'guarantee': 'best-effort',
         'determinism': 'nondeterministic',
-        'blast_score': None,
-        'required_controls': ['ctrl.sandbox.no-egress-default-deny', 'ctrl.sandbox.workspace-mounts-only'],
-        'handles_capabilities': ['cap.fed.isolate_guest_workers'],
-        'tags': ['federation', 'sandbox'],
-        'serves_capabilities': ['cap.fed.isolate-guest-workers'],
+        'required_controls': [
+            'ctrl.sandbox.no-egress-default-deny',
+            'ctrl.sandbox.workspace-mounts-only',
+        ],
+        'tags': [
+            'federation',
+            'sandbox',
+        ],
+        'serves_capabilities': [
+            'cap.fed.isolate-guest-workers',
+        ],
         'blast_radius_hint': {
             'data': 2,
             'network': 0,
@@ -142,23 +165,44 @@ ENTITIES = [
     {
         'id': 'prof.fed.partner-strict',
         'type': 'profile',
-        'pack_id': 'pack.18',
         'name': 'Strict Partner Federation Profile',
         'description': 'Strict federation posture: validated identity, scoped tokens, data contract enforcement, full audit.',
-        'tags': ['federation', 'partner', 'security'],
-        'controls_required': ['ctrl.obs.audit-log-append-only', 'ctrl.obs.structured-logging', 'ctrl.sandbox.no-egress-default-deny'],
-        'recommended_for_risk_tiers': ['high', 'critical'],
+        'tags': [
+            'federation',
+            'partner',
+            'security',
+        ],
+        'controls_required': [
+            'ctrl.obs.audit-log-append-only',
+            'ctrl.obs.structured-logging',
+            'ctrl.sandbox.no-egress-default-deny',
+        ],
+        'recommended_for_risk_tiers': [
+            'high',
+            'critical',
+        ],
         'wcp_namespace': 'reserved',
     },
     {
         'id': 'prof.fed.guest-isolated',
         'type': 'profile',
-        'pack_id': 'pack.18',
         'name': 'Guest Isolated Federation Profile',
         'description': 'Guest workload isolation posture: sandboxed execution, no egress, workspace-only access.',
-        'tags': ['federation', 'sandbox', 'isolation'],
-        'controls_required': ['ctrl.sandbox.no-egress-default-deny', 'ctrl.sandbox.workspace-mounts-only', 'ctrl.sandbox.resource-limits-strict'],
-        'recommended_for_risk_tiers': ['medium', 'high', 'critical'],
+        'tags': [
+            'federation',
+            'sandbox',
+            'isolation',
+        ],
+        'controls_required': [
+            'ctrl.sandbox.no-egress-default-deny',
+            'ctrl.sandbox.workspace-mounts-only',
+            'ctrl.sandbox.resource-limits-strict',
+        ],
+        'recommended_for_risk_tiers': [
+            'medium',
+            'high',
+            'critical',
+        ],
         'wcp_namespace': 'reserved',
     },
 ]

@@ -1,22 +1,17 @@
 """Pack source — pack_23_integrations"""
 
-PACKS = [
-    {
-        'id': 'pack.23',
-        'name': 'Integration Adapters (3rd-Party APIs, Webhooks, Contracts)',
-        'entity_count': 9,
-    },
-]
-
 ENTITIES = [
     {
         'id': 'cap.int.webhook.verify',
         'type': 'capability',
-        'pack_id': 'pack.23',
         'name': 'Verify Inbound Webhook',
         'description': 'Verify the signature and authenticity of an inbound webhook before processing.',
         'risk_tier': 'medium',
-        'tags': ['integrations', 'webhooks', 'security'],
+        'tags': [
+            'integrations',
+            'webhooks',
+            'security',
+        ],
         'wcp_namespace': 'reserved',
         'blast_radius_hint': {
             'data': 0,
@@ -25,18 +20,23 @@ ENTITIES = [
             'time': 0,
             'reversibility': 'reversible',
         },
-        'typical_controls': ['ctrl.obs.structured-logging'],
+        'typical_controls': [
+            'ctrl.obs.structured-logging',
+        ],
         'idempotency': 'full',
         'determinism': 'deterministic',
     },
     {
         'id': 'cap.int.api.call',
         'type': 'capability',
-        'pack_id': 'pack.23',
         'name': 'Call External API',
         'description': 'Call a third-party API with backoff, circuit breakers, and rate limiting.',
         'risk_tier': 'medium',
-        'tags': ['integrations', 'egress', 'resilience'],
+        'tags': [
+            'integrations',
+            'egress',
+            'resilience',
+        ],
         'wcp_namespace': 'reserved',
         'blast_radius_hint': {
             'data': 1,
@@ -45,18 +45,24 @@ ENTITIES = [
             'time': 1,
             'reversibility': 'partially-reversible',
         },
-        'typical_controls': ['ctrl.obs.structured-logging', 'ctrl.obs.metrics-core'],
+        'typical_controls': [
+            'ctrl.obs.structured-logging',
+            'ctrl.obs.metrics-core',
+        ],
         'idempotency': 'partial',
         'determinism': 'non-deterministic',
     },
     {
         'id': 'cap.int.contract.validate',
         'type': 'capability',
-        'pack_id': 'pack.23',
         'name': 'Validate Data Contract',
         'description': 'Validate a data payload against a versioned data contract schema.',
         'risk_tier': 'medium',
-        'tags': ['integrations', 'contracts', 'validation'],
+        'tags': [
+            'integrations',
+            'contracts',
+            'validation',
+        ],
         'wcp_namespace': 'reserved',
         'blast_radius_hint': {
             'data': 0,
@@ -65,18 +71,23 @@ ENTITIES = [
             'time': 0,
             'reversibility': 'reversible',
         },
-        'typical_controls': ['ctrl.obs.structured-logging'],
+        'typical_controls': [
+            'ctrl.obs.structured-logging',
+        ],
         'idempotency': 'full',
         'determinism': 'deterministic',
     },
     {
         'id': 'cap.int.replay-webhook',
         'type': 'capability',
-        'pack_id': 'pack.23',
         'name': 'Replay Webhook',
         'description': 'Replay a previously received webhook event for recovery or re-processing.',
         'risk_tier': 'medium',
-        'tags': ['integrations', 'webhooks', 'replay'],
+        'tags': [
+            'integrations',
+            'webhooks',
+            'replay',
+        ],
         'wcp_namespace': 'reserved',
         'blast_radius_hint': {
             'data': 1,
@@ -85,18 +96,24 @@ ENTITIES = [
             'time': 1,
             'reversibility': 'partially-reversible',
         },
-        'typical_controls': ['ctrl.obs.structured-logging', 'ctrl.obs.audit-log-append-only'],
+        'typical_controls': [
+            'ctrl.obs.structured-logging',
+            'ctrl.obs.audit-log-append-only',
+        ],
         'idempotency': 'partial',
         'determinism': 'captured',
     },
     {
         'id': 'cap.int.rotate-credentials',
         'type': 'capability',
-        'pack_id': 'pack.23',
         'name': 'Rotate Integration Credentials',
         'description': 'Rotate API keys, OAuth tokens, or other credentials for a third-party integration.',
         'risk_tier': 'high',
-        'tags': ['integrations', 'credentials', 'rotation'],
+        'tags': [
+            'integrations',
+            'credentials',
+            'rotation',
+        ],
         'wcp_namespace': 'reserved',
         'blast_radius_hint': {
             'data': 1,
@@ -105,25 +122,32 @@ ENTITIES = [
             'time': 2,
             'reversibility': 'reversible',
         },
-        'typical_controls': ['ctrl.obs.audit-log-append-only', 'ctrl.sandbox.secrets-denied-by-default'],
+        'typical_controls': [
+            'ctrl.obs.audit-log-append-only',
+            'ctrl.sandbox.secrets-denied-by-default',
+        ],
         'idempotency': 'partial',
         'determinism': 'deterministic',
     },
     {
         'id': 'wrk.int.webhook-ingest',
         'type': 'worker_species',
-        'pack_id': 'pack.23',
         'name': 'Webhook Ingest Worker',
         'description': 'Ingest external webhooks; verify signatures; validate contracts; enqueue.',
         'risk_tier': 'medium',
-        'level': 'L4',
-        'guarantee': 'at-least-once',
         'determinism': 'deterministic',
-        'blast_score': None,
-        'required_controls': ['ctrl.obs.structured-logging'],
-        'handles_capabilities': ['cap.int.webhook.verify', 'cap.int.replay_webhook'],
-        'tags': ['integrations', 'webhooks'],
-        'serves_capabilities': ['cap.int.webhook.verify', 'cap.int.replay-webhook', 'cap.int.contract.validate'],
+        'required_controls': [
+            'ctrl.obs.structured-logging',
+        ],
+        'tags': [
+            'integrations',
+            'webhooks',
+        ],
+        'serves_capabilities': [
+            'cap.int.webhook.verify',
+            'cap.int.replay-webhook',
+            'cap.int.contract.validate',
+        ],
         'blast_radius_hint': {
             'data': 1,
             'network': 1,
@@ -137,18 +161,22 @@ ENTITIES = [
     {
         'id': 'wrk.int.api-adapter',
         'type': 'worker_species',
-        'pack_id': 'pack.23',
         'name': 'API Adapter Worker',
         'description': 'Call external APIs with backoff, circuit breakers, rate limits, and idempotency.',
         'risk_tier': 'medium',
-        'level': 'L4',
-        'guarantee': 'at-least-once',
         'determinism': 'captured-deterministic',
-        'blast_score': None,
-        'required_controls': ['ctrl.obs.structured-logging', 'ctrl.obs.metrics-core'],
-        'handles_capabilities': ['cap.int.api.call'],
-        'tags': ['integrations', 'egress', 'resilience'],
-        'serves_capabilities': ['cap.int.api.call'],
+        'required_controls': [
+            'ctrl.obs.structured-logging',
+            'ctrl.obs.metrics-core',
+        ],
+        'tags': [
+            'integrations',
+            'egress',
+            'resilience',
+        ],
+        'serves_capabilities': [
+            'cap.int.api.call',
+        ],
         'blast_radius_hint': {
             'data': 1,
             'network': 3,
@@ -162,23 +190,42 @@ ENTITIES = [
     {
         'id': 'prof.int.webhook-strict',
         'type': 'profile',
-        'pack_id': 'pack.23',
         'name': 'Strict Webhook Integration Profile',
         'description': 'Strict webhook posture: signature verification, contract validation, replay idempotency.',
-        'tags': ['integrations', 'webhooks', 'strict'],
-        'controls_required': ['ctrl.obs.structured-logging', 'ctrl.obs.audit-log-append-only'],
-        'recommended_for_risk_tiers': ['medium', 'high', 'critical'],
+        'tags': [
+            'integrations',
+            'webhooks',
+            'strict',
+        ],
+        'controls_required': [
+            'ctrl.obs.structured-logging',
+            'ctrl.obs.audit-log-append-only',
+        ],
+        'recommended_for_risk_tiers': [
+            'medium',
+            'high',
+            'critical',
+        ],
         'wcp_namespace': 'reserved',
     },
     {
         'id': 'prof.int.resilient-adapter',
         'type': 'profile',
-        'pack_id': 'pack.23',
         'name': 'Resilient Adapter Integration Profile',
         'description': 'Resilient API adapter posture: circuit breakers, backoff, rate limits, metrics.',
-        'tags': ['integrations', 'resilience', 'egress'],
-        'controls_required': ['ctrl.obs.metrics-core', 'ctrl.obs.structured-logging'],
-        'recommended_for_risk_tiers': ['medium', 'high'],
+        'tags': [
+            'integrations',
+            'resilience',
+            'egress',
+        ],
+        'controls_required': [
+            'ctrl.obs.metrics-core',
+            'ctrl.obs.structured-logging',
+        ],
+        'recommended_for_risk_tiers': [
+            'medium',
+            'high',
+        ],
         'wcp_namespace': 'reserved',
     },
 ]

@@ -1,22 +1,16 @@
 """Pack source — pack_05_idempotency"""
 
-PACKS = [
-    {
-        'id': 'pack.05',
-        'name': 'Idempotency & Exactly-Once-Illusion',
-        'entity_count': 7,
-    },
-]
-
 ENTITIES = [
     {
         'id': 'cap.idempotency.check-key',
         'type': 'capability',
-        'pack_id': 'pack.05',
         'name': 'Check Idempotency Key',
         'description': 'Check whether an idempotency key has been seen and return cached result if present.',
         'risk_tier': 'low',
-        'tags': ['idempotency', 'dedup'],
+        'tags': [
+            'idempotency',
+            'dedup',
+        ],
         'wcp_namespace': 'reserved',
         'blast_radius_hint': {
             'data': 0,
@@ -25,18 +19,22 @@ ENTITIES = [
             'time': 0,
             'reversibility': 'reversible',
         },
-        'typical_controls': ['ctrl.idempotency.key-ttl-seconds'],
+        'typical_controls': [
+            'ctrl.idempotency.key-ttl-seconds',
+        ],
         'idempotency': 'full',
         'determinism': 'deterministic',
     },
     {
         'id': 'cap.idempotency.register-key',
         'type': 'capability',
-        'pack_id': 'pack.05',
         'name': 'Register Idempotency Key',
         'description': 'Register a new idempotency key and bind it to the current execution result.',
         'risk_tier': 'low',
-        'tags': ['idempotency', 'registration'],
+        'tags': [
+            'idempotency',
+            'registration',
+        ],
         'wcp_namespace': 'reserved',
         'blast_radius_hint': {
             'data': 0,
@@ -45,18 +43,23 @@ ENTITIES = [
             'time': 0,
             'reversibility': 'reversible',
         },
-        'typical_controls': ['ctrl.idempotency.key-ttl-seconds'],
+        'typical_controls': [
+            'ctrl.idempotency.key-ttl-seconds',
+        ],
         'idempotency': 'full',
         'determinism': 'deterministic',
     },
     {
         'id': 'cap.idempotency.expire-key',
         'type': 'capability',
-        'pack_id': 'pack.05',
         'name': 'Expire Idempotency Key',
         'description': 'Force-expire an idempotency key before its TTL for maintenance purposes.',
         'risk_tier': 'low',
-        'tags': ['idempotency', 'expiry', 'maintenance'],
+        'tags': [
+            'idempotency',
+            'expiry',
+            'maintenance',
+        ],
         'wcp_namespace': 'reserved',
         'blast_radius_hint': {
             'data': 0,
@@ -65,18 +68,23 @@ ENTITIES = [
             'time': 0,
             'reversibility': 'reversible',
         },
-        'typical_controls': ['ctrl.idempotency.key-ttl-seconds'],
+        'typical_controls': [
+            'ctrl.idempotency.key-ttl-seconds',
+        ],
         'idempotency': 'full',
         'determinism': 'deterministic',
     },
     {
         'id': 'cap.idempotency.atomic-write',
         'type': 'capability',
-        'pack_id': 'pack.05',
         'name': 'Atomic Idempotent Write',
         'description': 'Write a value atomically using check-and-set semantics tied to an idempotency key.',
         'risk_tier': 'medium',
-        'tags': ['idempotency', 'atomic', 'writes'],
+        'tags': [
+            'idempotency',
+            'atomic',
+            'writes',
+        ],
         'wcp_namespace': 'reserved',
         'blast_radius_hint': {
             'data': 1,
@@ -85,20 +93,30 @@ ENTITIES = [
             'time': 1,
             'reversibility': 'reversible',
         },
-        'typical_controls': ['ctrl.idempotency.key-ttl-seconds', 'ctrl.obs.structured-logging'],
+        'typical_controls': [
+            'ctrl.idempotency.key-ttl-seconds',
+            'ctrl.obs.structured-logging',
+        ],
         'idempotency': 'full',
         'determinism': 'deterministic',
     },
     {
         'id': 'wrk.idempotency.guard',
         'type': 'worker_species',
-        'pack_id': 'pack.05',
         'name': 'Idempotency Guard Worker',
         'description': 'Middleware worker that intercepts job submissions, checks/registers idempotency keys, and short-circuits duplicates.',
         'risk_tier': 'low',
-        'tags': ['idempotency', 'middleware', 'guard'],
+        'tags': [
+            'idempotency',
+            'middleware',
+            'guard',
+        ],
         'wcp_namespace': 'reserved',
-        'serves_capabilities': ['cap.idempotency.check-key', 'cap.idempotency.register-key', 'cap.idempotency.atomic-write'],
+        'serves_capabilities': [
+            'cap.idempotency.check-key',
+            'cap.idempotency.register-key',
+            'cap.idempotency.atomic-write',
+        ],
         'blast_radius_hint': {
             'data': 0,
             'network': 0,
@@ -106,20 +124,28 @@ ENTITIES = [
             'time': 0,
             'reversibility': 'reversible',
         },
-        'required_controls': ['ctrl.idempotency.key-ttl-seconds', 'ctrl.obs.structured-logging'],
+        'required_controls': [
+            'ctrl.idempotency.key-ttl-seconds',
+            'ctrl.obs.structured-logging',
+        ],
         'idempotency': 'full',
         'determinism': 'deterministic',
     },
     {
         'id': 'wrk.idempotency.dedup-sweeper',
         'type': 'worker_species',
-        'pack_id': 'pack.05',
         'name': 'Dedup Sweeper Worker',
         'description': 'Periodic worker that removes expired idempotency keys from the store to control storage growth.',
         'risk_tier': 'low',
-        'tags': ['idempotency', 'maintenance', 'expiry'],
+        'tags': [
+            'idempotency',
+            'maintenance',
+            'expiry',
+        ],
         'wcp_namespace': 'reserved',
-        'serves_capabilities': ['cap.idempotency.expire-key'],
+        'serves_capabilities': [
+            'cap.idempotency.expire-key',
+        ],
         'blast_radius_hint': {
             'data': 0,
             'network': 0,
@@ -127,19 +153,29 @@ ENTITIES = [
             'time': 1,
             'reversibility': 'reversible',
         },
-        'required_controls': ['ctrl.idempotency.key-ttl-seconds'],
+        'required_controls': [
+            'ctrl.idempotency.key-ttl-seconds',
+        ],
         'idempotency': 'full',
         'determinism': 'deterministic',
     },
     {
         'id': 'ctrl.idempotency.key-ttl-seconds',
         'type': 'control',
-        'pack_id': 'pack.05',
         'name': 'Idempotency Key TTL',
         'description': 'Policy control: time-to-live in seconds for idempotency keys in the dedup store.',
-        'tags': ['idempotency', 'policy', 'ttl'],
+        'tags': [
+            'idempotency',
+            'policy',
+            'ttl',
+        ],
         'wcp_namespace': 'reserved',
         'enforcement_point': 'worker',
-        'required_for_risk_tiers': ['low', 'medium', 'high', 'critical'],
+        'required_for_risk_tiers': [
+            'low',
+            'medium',
+            'high',
+            'critical',
+        ],
     },
 ]

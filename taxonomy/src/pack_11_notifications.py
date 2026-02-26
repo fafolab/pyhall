@@ -1,22 +1,17 @@
 """Pack source — pack_11_notifications"""
 
-PACKS = [
-    {
-        'id': 'pack.11',
-        'name': 'Notification / Deliverability',
-        'entity_count': 8,
-    },
-]
-
 ENTITIES = [
     {
         'id': 'cap.notify.send-email',
         'type': 'capability',
-        'pack_id': 'pack.11',
         'name': 'Send Email',
         'description': 'Send a transactional or notification email via configured email provider.',
         'risk_tier': 'medium',
-        'tags': ['notifications', 'email', 'egress'],
+        'tags': [
+            'notifications',
+            'email',
+            'egress',
+        ],
         'wcp_namespace': 'reserved',
         'blast_radius_hint': {
             'data': 1,
@@ -25,18 +20,24 @@ ENTITIES = [
             'time': 1,
             'reversibility': 'irreversible',
         },
-        'typical_controls': ['ctrl.obs.structured-logging', 'ctrl.obs.metrics-core'],
+        'typical_controls': [
+            'ctrl.obs.structured-logging',
+            'ctrl.obs.metrics-core',
+        ],
         'idempotency': 'partial',
         'determinism': 'captured',
     },
     {
         'id': 'cap.notify.send-sms',
         'type': 'capability',
-        'pack_id': 'pack.11',
         'name': 'Send SMS',
         'description': 'Send an SMS notification via configured telephony provider.',
         'risk_tier': 'medium',
-        'tags': ['notifications', 'sms', 'egress'],
+        'tags': [
+            'notifications',
+            'sms',
+            'egress',
+        ],
         'wcp_namespace': 'reserved',
         'blast_radius_hint': {
             'data': 1,
@@ -45,18 +46,24 @@ ENTITIES = [
             'time': 1,
             'reversibility': 'irreversible',
         },
-        'typical_controls': ['ctrl.obs.structured-logging', 'ctrl.obs.metrics-core'],
+        'typical_controls': [
+            'ctrl.obs.structured-logging',
+            'ctrl.obs.metrics-core',
+        ],
         'idempotency': 'partial',
         'determinism': 'captured',
     },
     {
         'id': 'cap.notify.send-push',
         'type': 'capability',
-        'pack_id': 'pack.11',
         'name': 'Send Push Notification',
         'description': 'Send a push notification to a mobile/web device via push provider.',
         'risk_tier': 'low',
-        'tags': ['notifications', 'push', 'egress'],
+        'tags': [
+            'notifications',
+            'push',
+            'egress',
+        ],
         'wcp_namespace': 'reserved',
         'blast_radius_hint': {
             'data': 0,
@@ -65,18 +72,23 @@ ENTITIES = [
             'time': 1,
             'reversibility': 'irreversible',
         },
-        'typical_controls': ['ctrl.obs.structured-logging'],
+        'typical_controls': [
+            'ctrl.obs.structured-logging',
+        ],
         'idempotency': 'partial',
         'determinism': 'captured',
     },
     {
         'id': 'cap.notify.manage-suppression',
         'type': 'capability',
-        'pack_id': 'pack.11',
         'name': 'Manage Suppression Lists',
         'description': 'Add, remove, or query suppression list entries (unsubscribes, bounces, complaints).',
         'risk_tier': 'medium',
-        'tags': ['notifications', 'suppression', 'compliance'],
+        'tags': [
+            'notifications',
+            'suppression',
+            'compliance',
+        ],
         'wcp_namespace': 'reserved',
         'blast_radius_hint': {
             'data': 1,
@@ -85,25 +97,33 @@ ENTITIES = [
             'time': 0,
             'reversibility': 'reversible',
         },
-        'typical_controls': ['ctrl.obs.audit-log-append-only', 'ctrl.obs.structured-logging'],
+        'typical_controls': [
+            'ctrl.obs.audit-log-append-only',
+            'ctrl.obs.structured-logging',
+        ],
         'idempotency': 'full',
         'determinism': 'deterministic',
     },
     {
         'id': 'wrk.notify.delivery.worker',
         'type': 'worker_species',
-        'pack_id': 'pack.11',
         'name': 'Notification Delivery Worker',
         'description': 'Send email/SMS/push with deliverability controls and idempotency.',
         'risk_tier': 'medium',
-        'level': 'L4',
-        'guarantee': 'at-least-once',
         'determinism': 'captured-deterministic',
-        'blast_score': None,
-        'required_controls': ['ctrl.obs.structured-logging', 'ctrl.obs.metrics-core'],
-        'handles_capabilities': ['cap.notify.send_email', 'cap.notify.send_sms', 'cap.notify.send_push'],
-        'tags': ['notifications', 'egress'],
-        'serves_capabilities': ['cap.notify.send-email', 'cap.notify.send-sms', 'cap.notify.send-push'],
+        'required_controls': [
+            'ctrl.obs.structured-logging',
+            'ctrl.obs.metrics-core',
+        ],
+        'tags': [
+            'notifications',
+            'egress',
+        ],
+        'serves_capabilities': [
+            'cap.notify.send-email',
+            'cap.notify.send-sms',
+            'cap.notify.send-push',
+        ],
         'blast_radius_hint': {
             'data': 1,
             'network': 2,
@@ -117,18 +137,20 @@ ENTITIES = [
     {
         'id': 'wrk.notify.webhook.ingest',
         'type': 'worker_species',
-        'pack_id': 'pack.11',
         'name': 'Notification Webhook Ingest Worker',
         'description': 'Ingest provider webhooks (bounces/complaints), update suppression.',
         'risk_tier': 'medium',
-        'level': 'L4',
-        'guarantee': 'at-least-once',
         'determinism': 'deterministic',
-        'blast_score': None,
-        'required_controls': ['ctrl.obs.structured-logging'],
-        'handles_capabilities': ['cap.notify.manage_suppression'],
-        'tags': ['notifications', 'webhooks'],
-        'serves_capabilities': ['cap.notify.manage-suppression'],
+        'required_controls': [
+            'ctrl.obs.structured-logging',
+        ],
+        'tags': [
+            'notifications',
+            'webhooks',
+        ],
+        'serves_capabilities': [
+            'cap.notify.manage-suppression',
+        ],
         'blast_radius_hint': {
             'data': 1,
             'network': 1,
@@ -142,23 +164,41 @@ ENTITIES = [
     {
         'id': 'prof.notify.standard',
         'type': 'profile',
-        'pack_id': 'pack.11',
         'name': 'Standard Notification Profile',
         'description': 'Standard notification posture with deliverability logging and suppression checks.',
-        'tags': ['notifications', 'standard'],
-        'controls_required': ['ctrl.obs.structured-logging', 'ctrl.obs.metrics-core'],
-        'recommended_for_risk_tiers': ['low', 'medium'],
+        'tags': [
+            'notifications',
+            'standard',
+        ],
+        'controls_required': [
+            'ctrl.obs.structured-logging',
+            'ctrl.obs.metrics-core',
+        ],
+        'recommended_for_risk_tiers': [
+            'low',
+            'medium',
+        ],
         'wcp_namespace': 'reserved',
     },
     {
         'id': 'prof.notify.compliance-strict',
         'type': 'profile',
-        'pack_id': 'pack.11',
         'name': 'Strict Compliance Notification Profile',
         'description': 'Strict notification posture for regulated channels: audit, suppression, and consent enforcement.',
-        'tags': ['notifications', 'compliance', 'strict'],
-        'controls_required': ['ctrl.obs.audit-log-append-only', 'ctrl.obs.structured-logging', 'ctrl.obs.metrics-core'],
-        'recommended_for_risk_tiers': ['high', 'critical'],
+        'tags': [
+            'notifications',
+            'compliance',
+            'strict',
+        ],
+        'controls_required': [
+            'ctrl.obs.audit-log-append-only',
+            'ctrl.obs.structured-logging',
+            'ctrl.obs.metrics-core',
+        ],
+        'recommended_for_risk_tiers': [
+            'high',
+            'critical',
+        ],
         'wcp_namespace': 'reserved',
     },
 ]

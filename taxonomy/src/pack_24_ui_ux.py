@@ -1,22 +1,17 @@
 """Pack source — pack_24_ui_ux"""
 
-PACKS = [
-    {
-        'id': 'pack.24',
-        'name': 'UI/UX Agents (Forms, Review Queues, Human Feedback)',
-        'entity_count': 8,
-    },
-]
-
 ENTITIES = [
     {
         'id': 'cap.ui.review.queue',
         'type': 'capability',
-        'pack_id': 'pack.24',
         'name': 'Route to Review Queue',
         'description': 'Route a task or decision to a human review queue with explainability bundles.',
         'risk_tier': 'medium',
-        'tags': ['ui', 'human-in-loop', 'review'],
+        'tags': [
+            'ui',
+            'human-in-loop',
+            'review',
+        ],
         'wcp_namespace': 'reserved',
         'blast_radius_hint': {
             'data': 0,
@@ -25,18 +20,23 @@ ENTITIES = [
             'time': 1,
             'reversibility': 'reversible',
         },
-        'typical_controls': ['ctrl.obs.structured-logging'],
+        'typical_controls': [
+            'ctrl.obs.structured-logging',
+        ],
         'idempotency': 'partial',
         'determinism': 'deterministic',
     },
     {
         'id': 'cap.ui.form.collect',
         'type': 'capability',
-        'pack_id': 'pack.24',
         'name': 'Collect Form Input',
         'description': 'Present a structured form to a human user and collect validated input.',
         'risk_tier': 'low',
-        'tags': ['ui', 'forms', 'human-in-loop'],
+        'tags': [
+            'ui',
+            'forms',
+            'human-in-loop',
+        ],
         'wcp_namespace': 'reserved',
         'blast_radius_hint': {
             'data': 0,
@@ -45,18 +45,23 @@ ENTITIES = [
             'time': 1,
             'reversibility': 'reversible',
         },
-        'typical_controls': ['ctrl.obs.structured-logging'],
+        'typical_controls': [
+            'ctrl.obs.structured-logging',
+        ],
         'idempotency': 'partial',
         'determinism': 'non-deterministic',
     },
     {
         'id': 'cap.ui.show-diff',
         'type': 'capability',
-        'pack_id': 'pack.24',
         'name': 'Show Diff for Review',
         'description': 'Display a structured diff of proposed changes to a human reviewer.',
         'risk_tier': 'low',
-        'tags': ['ui', 'diff', 'review'],
+        'tags': [
+            'ui',
+            'diff',
+            'review',
+        ],
         'wcp_namespace': 'reserved',
         'blast_radius_hint': {
             'data': 0,
@@ -72,11 +77,14 @@ ENTITIES = [
     {
         'id': 'cap.ui.capture-feedback',
         'type': 'capability',
-        'pack_id': 'pack.24',
         'name': 'Capture Human Feedback',
         'description': 'Collect structured feedback (thumbs, ratings, corrections) from a human user.',
         'risk_tier': 'low',
-        'tags': ['ui', 'feedback', 'rlhf'],
+        'tags': [
+            'ui',
+            'feedback',
+            'rlhf',
+        ],
         'wcp_namespace': 'reserved',
         'blast_radius_hint': {
             'data': 0,
@@ -85,18 +93,23 @@ ENTITIES = [
             'time': 0,
             'reversibility': 'reversible',
         },
-        'typical_controls': ['ctrl.obs.structured-logging'],
+        'typical_controls': [
+            'ctrl.obs.structured-logging',
+        ],
         'idempotency': 'partial',
         'determinism': 'non-deterministic',
     },
     {
         'id': 'cap.ui.escalate-to-human',
         'type': 'capability',
-        'pack_id': 'pack.24',
         'name': 'Escalate to Human',
         'description': 'Interrupt automated processing and escalate to a human operator with full context.',
         'risk_tier': 'medium',
-        'tags': ['ui', 'escalation', 'human-in-loop'],
+        'tags': [
+            'ui',
+            'escalation',
+            'human-in-loop',
+        ],
         'wcp_namespace': 'reserved',
         'blast_radius_hint': {
             'data': 0,
@@ -105,25 +118,31 @@ ENTITIES = [
             'time': 2,
             'reversibility': 'reversible',
         },
-        'typical_controls': ['ctrl.obs.audit-log-append-only', 'ctrl.obs.structured-logging'],
+        'typical_controls': [
+            'ctrl.obs.audit-log-append-only',
+            'ctrl.obs.structured-logging',
+        ],
         'idempotency': 'partial',
         'determinism': 'non-deterministic',
     },
     {
         'id': 'wrk.ui.review-router',
         'type': 'worker_species',
-        'pack_id': 'pack.24',
         'name': 'Review Router Worker',
         'description': 'Route tasks to review queues with explainability bundles and SLAs.',
         'risk_tier': 'medium',
-        'level': 'L4',
-        'guarantee': 'at-least-once',
         'determinism': 'deterministic',
-        'blast_score': None,
-        'required_controls': ['ctrl.obs.structured-logging'],
-        'handles_capabilities': ['cap.ui.review.queue', 'cap.ui.escalate_to_human'],
-        'tags': ['ui', 'human-in-loop'],
-        'serves_capabilities': ['cap.ui.review.queue', 'cap.ui.escalate-to-human'],
+        'required_controls': [
+            'ctrl.obs.structured-logging',
+        ],
+        'tags': [
+            'ui',
+            'human-in-loop',
+        ],
+        'serves_capabilities': [
+            'cap.ui.review.queue',
+            'cap.ui.escalate-to-human',
+        ],
         'blast_radius_hint': {
             'data': 0,
             'network': 0,
@@ -137,18 +156,21 @@ ENTITIES = [
     {
         'id': 'wrk.ui.feedback-collector',
         'type': 'worker_species',
-        'pack_id': 'pack.24',
         'name': 'Feedback Collector Worker',
         'description': 'Collect structured human feedback tied to outcomes.',
         'risk_tier': 'low',
-        'level': 'L4',
-        'guarantee': 'best-effort',
         'determinism': 'nondeterministic',
-        'blast_score': None,
-        'required_controls': ['ctrl.obs.structured-logging'],
-        'handles_capabilities': ['cap.ui.capture_feedback', 'cap.ui.form.collect'],
-        'tags': ['ui', 'feedback'],
-        'serves_capabilities': ['cap.ui.capture-feedback', 'cap.ui.form.collect'],
+        'required_controls': [
+            'ctrl.obs.structured-logging',
+        ],
+        'tags': [
+            'ui',
+            'feedback',
+        ],
+        'serves_capabilities': [
+            'cap.ui.capture-feedback',
+            'cap.ui.form.collect',
+        ],
         'blast_radius_hint': {
             'data': 0,
             'network': 0,
@@ -162,12 +184,21 @@ ENTITIES = [
     {
         'id': 'prof.ui.review-strict',
         'type': 'profile',
-        'pack_id': 'pack.24',
         'name': 'Strict Review Queue UI Profile',
         'description': 'Strict review queue posture: mandatory human review for all high-stakes decisions, SLA tracking.',
-        'tags': ['ui', 'review', 'compliance'],
-        'controls_required': ['ctrl.obs.audit-log-append-only', 'ctrl.obs.structured-logging'],
-        'recommended_for_risk_tiers': ['high', 'critical'],
+        'tags': [
+            'ui',
+            'review',
+            'compliance',
+        ],
+        'controls_required': [
+            'ctrl.obs.audit-log-append-only',
+            'ctrl.obs.structured-logging',
+        ],
+        'recommended_for_risk_tiers': [
+            'high',
+            'critical',
+        ],
         'wcp_namespace': 'reserved',
     },
 ]
