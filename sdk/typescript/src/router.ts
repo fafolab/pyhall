@@ -1092,6 +1092,18 @@ export function makeDecision(opts: MakeDecisionOptions): RouteDecision {
     );
   }
 
+  // F24: Emit telemetry when attestation was not performed in prod/edge
+  if (!workerAttestationChecked && (inp.env === "prod" || inp.env === "edge")) {
+    telemetry.push({
+      event_id: "evt.os.worker.attestation_skipped",
+      correlation_id: inp.correlation_id,
+      worker_species_id: selected,
+      env: inp.env,
+      reason: "requireWorkerAttestation=false or hallConfig=undefined",
+      severity: "warn",
+    });
+  }
+
   // Mandatory WCP telemetry (required for WCP-Standard and above)
   telemetry.push(
     osTaskRouted(

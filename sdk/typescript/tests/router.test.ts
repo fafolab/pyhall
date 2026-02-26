@@ -2406,7 +2406,29 @@ describe("Router attestation enforcement (WCP §5.10)", () => {
     ).toBe("DENY_WORKER_HASH_UNAVAILABLE");
   });
 
-  // 8. requireWorkerAttestation=true but no worker selected → no attestation check
+  // 8. Invalid registered hash format → DENY_WORKER_ATTESTATION_INVALID_HASH
+  test("registryGetWorkerHash returns malformed hash → DENY_WORKER_ATTESTATION_INVALID_HASH", () => {
+    const rules = loadRulesFromDoc(ATTEST_ENFORCE_RULES_DOC);
+    const registry = registryWithWorker();
+    registry.addControlsPresent(["ctrl.obs.audit-log-append-only"]);
+
+    const i = inp();
+    const dec = makeDecision({
+      inp: i,
+      rules,
+      registryControlsPresent: registry.controlsPresent(),
+      registryWorkerAvailable: (id) => registry.workerAvailable(id),
+      hallConfig: { requireWorkerAttestation: true },
+      registryGetWorkerHash: (_speciesId) => "not-a-valid-sha256",
+      registryGetCurrentWorkerHash: (_speciesId) => "a".repeat(64),
+    });
+    expect(dec.denied).toBe(true);
+    expect(
+      (dec.deny_reason_if_denied as Record<string, unknown>)["code"]
+    ).toBe("DENY_WORKER_ATTESTATION_INVALID_HASH");
+  });
+
+  // 9. requireWorkerAttestation=true but no worker selected → no attestation check
   test("requireWorkerAttestation=true but no worker available → denied for no worker, not attestation", () => {
     const rules = loadRulesFromDoc(ATTEST_ENFORCE_RULES_DOC);
     const registry = new Registry();
@@ -2429,5 +2451,26 @@ describe("Router attestation enforcement (WCP §5.10)", () => {
     ).toBe("DENY_NO_AVAILABLE_WORKER");
     // Attestation was not attempted — no worker was selected
     expect(dec.worker_attestation_checked).toBeFalsy();
+  });
+
+  // 10. requireWorkerAttestation=false in prod → attestation_skipped telemetry emitted
+  test("requireWorkerAttestation=false in prod → telemetry includes evt.os.worker.attestation_skipped", () => {
+    const rules = loadRulesFromDoc(ATTEST_ENFORCE_RULES_DOC);
+    const registry = registryWithWorker();
+    registry.addControlsPresent(["ctrl.obs.audit-log-append-only"]);
+
+    const i = { ...inp(), env: "prod" as const };
+    const dec = makeDecision({
+      inp: i,
+      rules,
+      registryControlsPresent: registry.controlsPresent(),
+      registryWorkerAvailable: (id) => registry.workerAvailable(id),
+      hallConfig: { requireWorkerAttestation: false },
+    });
+    expect(dec.denied).toBe(false);
+    const skipped = dec.telemetry_envelopes.find(
+      (ev) => (ev as Record<string, unknown>)["event_id"] === "evt.os.worker.attestation_skipped"
+    );
+    expect(skipped).toBeDefined();
   });
 });
