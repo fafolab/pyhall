@@ -45,8 +45,16 @@ def run(ctx, request):
 
     # Load SDK catalog for entity count check
     catalog_path = ROOT / "sdk/python/pyhall/taxonomy/catalog.json"
-    catalog = json.loads(catalog_path.read_text())
-    expected_count = catalog["_meta"]["total_entities"]
+    try:
+        catalog = json.loads(catalog_path.read_text())
+    except FileNotFoundError:
+        findings.append({
+            "severity": "error",
+            "detail": "sdk/python/pyhall/taxonomy/catalog.json not found — run scripts/build_catalog.py first",
+        })
+        return {"passed": False, "sdk_entity_count": 0, "findings": findings}
+    # Use set-based count (consistent with playground_validator — dedup-safe)
+    expected_count = len({e["id"] for e in catalog.get("entities", [])})
 
     # 1. Required files exist
     for rel in REQUIRED_WEB_FILES:

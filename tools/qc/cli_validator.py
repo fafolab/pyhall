@@ -54,7 +54,7 @@ def _run_python_version() -> dict:
         result = subprocess.run(
             [sys.executable, "-c",
              "import sys; sys.argv=['pyhall','version']; "
-             "sys.path.insert(0, str()); "
+             f"sys.path.insert(0, {str(ROOT / 'sdk/python')!r}); "
              "from pyhall.cli import main; main()"],
             capture_output=True, text=True,
             cwd=str(ROOT / "sdk/python"),

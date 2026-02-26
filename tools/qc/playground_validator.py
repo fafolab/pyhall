@@ -23,10 +23,16 @@ def run(ctx, request):
     findings = []
 
     # Load SDK catalog (source of truth)
-    sdk_catalog = json.loads(
-        (ROOT / "sdk/python/pyhall/taxonomy/catalog.json").read_text()
-    )
-    valid_ids = {e["id"] for e in sdk_catalog["entities"]}
+    catalog_path = ROOT / "sdk/python/pyhall/taxonomy/catalog.json"
+    try:
+        sdk_catalog = json.loads(catalog_path.read_text())
+    except FileNotFoundError:
+        findings.append({
+            "severity": "error",
+            "detail": "sdk/python/pyhall/taxonomy/catalog.json not found — run scripts/build_catalog.py first",
+        })
+        return {"passed": False, "sdk_entity_count": 0, "findings": findings}
+    valid_ids = {e["id"] for e in sdk_catalog.get("entities", [])}
 
     # 1. Playground catalog.json sync check
     pg_catalog_path = ROOT / "web/playground/data/catalog.json"

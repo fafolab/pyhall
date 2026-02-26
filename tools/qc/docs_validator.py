@@ -66,10 +66,16 @@ def run(ctx, request):
     findings = []
 
     # Load SDK catalog
-    catalog = json.loads(
-        (ROOT / "sdk/python/pyhall/taxonomy/catalog.json").read_text()
-    )
-    valid_ids = {e["id"] for e in catalog["entities"]}
+    catalog_path = ROOT / "sdk/python/pyhall/taxonomy/catalog.json"
+    try:
+        catalog = json.loads(catalog_path.read_text())
+    except FileNotFoundError:
+        findings.append({
+            "severity": "error",
+            "detail": "sdk/python/pyhall/taxonomy/catalog.json not found — run scripts/build_catalog.py first",
+        })
+        return {"passed": False, "docs_checked": 0, "findings": findings}
+    valid_ids = {e["id"] for e in catalog.get("entities", [])}
 
     for doc_rel in PUBLISHED_DOCS:
         doc = ROOT / doc_rel
