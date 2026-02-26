@@ -4,9 +4,32 @@
 
 **Goal:** Ship worker attestation (WCP §5.10) in all three SDKs, with a QA/QC worker fleet, catalog rebuild, and Round 9 adversarial security testing — all gated through a release checklist by March 1, 2026.
 
-**Architecture:** Python attestation is the reference (complete). TypeScript and Go implement the same pattern: `registerAttestation()` computes SHA-256 of worker source file at enrollment; router checks current hash at dispatch; mismatch → deny. Five QA/QC workers (Python, v0.1 architecture) enforce spec compliance and gate the release. Catalog is rebuilt from a Python source-of-truth generator validated against WCP spec §3.2/§3.4.
+**Architecture:** Python attestation is the reference (complete). TypeScript and Go implement the same pattern: `registerAttestation()` computes SHA-256 of worker source file at enrollment; router checks current hash at dispatch; mismatch → deny. Ten QA/QC workers (Python, v0.1 architecture) execute mechanical checks. Four reasoning agents (Claude subagents) review correctness, coherence, and narrative — workers execute, agents reason. Catalog is rebuilt from a Python source-of-truth generator validated against WCP spec §3.2/§3.4.
 
-**Tech Stack:** Python 3.12, TypeScript (Node crypto), Go 1.21 (crypto/sha256), pytest, Vitest, Go testing, SQLite
+**Tech Stack:** Python 3.12, TypeScript (Node crypto), Go 1.21 (crypto/sha256), pytest, Vitest, Go testing, SQLite, Claude subagents (feature-dev:code-reviewer)
+
+## Two-Layer QA Architecture
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  REASONING AGENTS (Tasks 16-19)                         │
+│  Claude subagents — read full context, reason, report   │
+│  "Does this make sense? Is it correct? Does it hang?"   │
+└───────────────────┬─────────────────────────────────────┘
+                    │ dispatches / interprets
+┌───────────────────▼─────────────────────────────────────┐
+│  WORKERS (Tasks 5-12)                                   │
+│  Python scripts — execute checks, produce findings      │
+│  "Pattern match, count, hash, run tests"                │
+└─────────────────────────────────────────────────────────┘
+```
+
+| Agent | Role | When |
+|-------|------|------|
+| Implementation Reviewer | Reviews TypeScript + Go attestation vs Python reference | After Tasks 1-3 |
+| Worker Correctness Reviewer | Reads each QC worker and reasons about its logic | After Tasks 7-12 |
+| System Coherence Reviewer | Reads full release: spec, SDKs, apps, docs — does it hang together? | After Task 13 |
+| Research + Narrative Reviewer | Reviews evidence catalog, market validation, NIST draft — does the story hold? | After Task 14 |
 
 ---
 
@@ -1724,6 +1747,110 @@ Review output. For each confirmed stale file, move to `archive/2026-02-26/`.
 
 ---
 
+## Task 16: Reasoning Agent — Implementation Review
+
+**When:** After Tasks 1-3 (TypeScript + Go attestation complete)
+**Agent type:** `feature-dev:code-reviewer` subagent
+**Output:** `release/qa-reports/review-attestation-impl.md`
+
+**What the agent reviews:**
+
+Dispatch a code-reviewer subagent with this scope:
+
+> Read the Python attestation implementation (the reference) in `sdk/python/pyhall/registry.py` and `sdk/python/pyhall/router.py`. Then read the TypeScript implementation in `sdk/typescript/src/registry.ts` and `sdk/typescript/src/router.ts`. Then read the Go implementation in `sdk/go/wcp/registry.go` and `sdk/go/wcp/router.go`.
+>
+> For each of the three implementations, reason about:
+> 1. Does it correctly implement WCP spec §5.10 (worker code attestation)?
+> 2. Does it match the Python reference behavior exactly?
+> 3. Are there edge cases not handled? (symlinks, empty files, concurrent modification, missing files after registration)
+> 4. Are the deny codes consistent across all three? (`DENY_WORKER_TAMPERED`, `DENY_ATTESTATION_UNCONFIGURED`)
+> 5. Does the evidence receipt include all required fields? (`worker_attestation_checked`, `worker_attestation_valid`, `registered_hash`, `current_hash`)
+> 6. Are the tests (CV-013 in all three SDKs) actually testing the right behavior?
+>
+> Report: confidence-rated findings only. High confidence issues are blockers. Medium confidence are warnings. Write to `release/qa-reports/review-attestation-impl.md`.
+
+**Gate:** No HIGH confidence findings before proceeding to Task 14.
+
+---
+
+## Task 17: Reasoning Agent — Worker Correctness Review
+
+**When:** After Tasks 7-12 (all QC workers built)
+**Agent type:** `feature-dev:code-reviewer` subagent
+**Output:** `release/qa-reports/review-worker-correctness.md`
+
+**What the agent reviews:**
+
+Dispatch a code-reviewer subagent with this scope:
+
+> Read every QC worker in `tools/qc/`. For each worker, reason about:
+> 1. Does the worker actually check what its description says it checks?
+> 2. Is the check correct? (e.g., does `catalog_validator.py` correctly implement spec §3.2/§3.4 ID rules?)
+> 3. Are there false negatives — cases where a real problem would pass undetected?
+> 4. Are there false positives — cases where valid content would be flagged as an error?
+> 5. Is the `passed` return value meaningful? Does a PASS from this worker actually mean what the release checklist assumes it means?
+> 6. Does each worker write findings in a consistent format usable by the release gate?
+>
+> For each worker: APPROVE (logic is correct), WARN (logic has gaps but acceptable), or BLOCK (logic is wrong — this worker should not be trusted in the release gate).
+>
+> Write findings to `release/qa-reports/review-worker-correctness.md`.
+
+**Gate:** No BLOCK findings before running the release gate (Task 15).
+
+---
+
+## Task 18: Reasoning Agent — System Coherence Review
+
+**When:** After Task 13 (archive complete, all code in place)
+**Agent type:** `feature-dev:code-explorer` subagent
+**Output:** `release/qa-reports/review-system-coherence.md`
+
+**What the agent reviews:**
+
+Dispatch a code-explorer subagent with this scope:
+
+> Read the following in full: `WCP_SPEC.md`, the Python SDK (`sdk/python/pyhall/`), one routing rule from each language, the catalog (`sdk/python/pyhall/taxonomy/catalog.json`), and the web playground (`web/playground/js/wcp-engine.js`).
+>
+> Reason about the system as a whole:
+> 1. Does the spec match the implementation? Pick 5 specific spec requirements and verify each SDK implements them.
+> 2. Does the catalog make sense as a taxonomy? Are the entity types (capability, worker, control, profile, event) used consistently?
+> 3. Does the playground reflect the SDK behavior? (blast thresholds, deny codes, routing logic)
+> 4. Are the three CLIs consistent with each other? Do they expose the same capabilities?
+> 5. Is the desktop app's API layer aligned with the WCP discovery API (§5.6)?
+> 6. Is there anything in the release that contradicts the spec, creates confusion, or would embarrass the project publicly?
+>
+> This is the "does it hang together" review. Be honest. Write findings to `release/qa-reports/review-system-coherence.md`.
+
+**Gate:** Reviewer must explicitly state "SYSTEM COHERENT: ready for public release" or list blocking issues.
+
+---
+
+## Task 19: Reasoning Agent — Research + Narrative Review
+
+**When:** After Task 14 (Round 9 security testing complete)
+**Agent type:** `feature-dev:code-reviewer` subagent (reading docs, not code)
+**Output:** `release/qa-reports/review-research-narrative.md`
+
+**What the agent reviews:**
+
+Dispatch a subagent with this scope:
+
+> Read the following documents in full: `docs/research/WCP_EVIDENCE_CATALOG_2026-02-26.md`, `docs/research/WCP_MARKET_VALIDATION_2026-02-26.md`, `web/blog/the-governance-gap.html`, and `WCP_SPEC.md`.
+>
+> Reason about the research and narrative:
+> 1. Are the statistics accurate and properly attributed? (e.g., "87% of agents lack safety cards" — is the source cited? Is it used in the right context?)
+> 2. Are entity IDs referenced in the blog and docs real catalog entries?
+> 3. Does the narrative (governance gap, NIST alignment, WCP as the answer) hold up to scrutiny? Would a skeptical reviewer at NIST find the claims credible?
+> 4. Is the NIST alignment argument supported by actual spec text? (NIST Pillar 2 calling for "community-led open-source protocol development" — does WCP actually satisfy this?)
+> 5. Are there any claims that are unsubstantiated, misleading, or that could undermine credibility in a public comment?
+> 6. Is the Round 9 security report complete and honest? Does it accurately document the limitations of v0.1 attestation?
+>
+> Write findings to `release/qa-reports/review-research-narrative.md`. Flag anything that would embarrass the project in the NIST comment process.
+
+**Gate:** Reviewer must confirm research is credible and NIST-ready, or flag specific items for correction.
+
+---
+
 ## Task 14: Round 9 Security Testing
 
 **File:** `release/qa-reports/round-9-attestation.md`
@@ -1840,8 +1967,14 @@ Open `RELEASING.md` (create it if not present) and verify all items:
 - [ ] Market validation doc present
 - [ ] Security findings: Round 9 report complete, 7 attacks documented
 
+## Reasoning Agent Reviews
+- [ ] Agent 1 (Implementation): no HIGH findings on TypeScript + Go attestation
+- [ ] Agent 2 (Worker Correctness): no BLOCK findings on any QC worker
+- [ ] Agent 3 (System Coherence): explicit "SYSTEM COHERENT" sign-off
+- [ ] Agent 4 (Research + Narrative): confirms research is credible and NIST-ready
+
 ## Audit + QA
-- [ ] QC worker fleet: all 5 core workers + 5 app/doc workers run clean
+- [ ] QC worker fleet: all 10 workers run clean (5 core + 5 app/doc)
 - [ ] release_gate.py: all three SDK test suites green
 - [ ] pyhall_audit.db hash chain intact
 - [ ] workforce-os archived
