@@ -1,0 +1,12 @@
+{
+  "worker_id": "org.pyhall.qc.sdk-parity",
+  "worker_species_id": "wrk.qc.sdk-parity",
+  "capabilities": ["cap.qc.sdk.check"],
+  "risk_tier": "low",
+  "required_controls": [],
+  "currently_implements": [],
+  "allowed_environments": ["dev", "stage"],
+  "blast_radius": {"data": 0, "network": 0, "financial": 0, "time": 1},
+  "owner": "org.pyhall",
+  "contact": "rob@fafolab.ai"
+}

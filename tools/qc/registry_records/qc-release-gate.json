@@ -1,0 +1,12 @@
+{
+  "worker_id": "org.pyhall.qc.release-gate",
+  "worker_species_id": "wrk.qc.release-gate",
+  "capabilities": ["cap.qc.release.check"],
+  "risk_tier": "low",
+  "required_controls": ["ctrl.obs.audit-log-append-only"],
+  "currently_implements": ["ctrl.obs.audit-log-append-only"],
+  "allowed_environments": ["dev", "stage"],
+  "blast_radius": {"data": 0, "network": 0, "financial": 0, "time": 1},
+  "owner": "org.pyhall",
+  "contact": "rob@fafolab.ai"
+}
