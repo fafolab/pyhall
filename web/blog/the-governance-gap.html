@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Governance Gap No One Is Talking About — PyHall</title>
+  <meta name="description" content="Every protocol in the AI agent ecosystem defines how agents communicate. None define whether a worker should be trusted to execute. That gap has a name now.">
+  <meta property="og:title" content="The Governance Gap No One Is Talking About">
+  <meta property="og:description" content="MCP, A2A, ACP, AGNTCY — four protocols, zero worker governance. How we built WCP to fill the gap, and why it matters before the EU AI Act deadline.">
+  <meta property="og:type" content="article">
+  <link rel="canonical" href="https://pyhall.dev/blog/the-governance-gap">
+  <style>
+    :root {
+      --bg: #ffffff;
+      --bg-subtle: #f7f9fc;
+      --border: #e1e8f0;
+      --text: #1a2332;
+      --text-secondary: #4a5568;
+      --text-muted: #718096;
+      --accent: #0050d4;
+      --accent-light: #e8f0fd;
+      --warn: #b45309;
+      --warn-bg: #fffbeb;
+      --warn-border: #fcd34d;
+      --code-bg: #f0f4f8;
+      --max-width: 720px;
+      --font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', Consolas, monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, 'Segoe UI', system-ui, sans-serif;
+      font-size: 17px;
+      line-height: 1.75;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    /* Nav */
+    nav {
+      position: sticky;
+      top: 0;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      z-index: 100;
+      padding: 0 24px;
+    }
+    .nav-inner {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .nav-brand {
+      font-weight: 700;
+      font-size: 15px;
+      color: var(--accent);
+      text-decoration: none;
+      letter-spacing: -0.01em;
+    }
+    .nav-links { display: flex; gap: 24px; }
+    .nav-links a {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      text-decoration: none;
+    }
+    .nav-links a:hover { color: var(--accent); }
+
+    /* Content */
+    .article {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 64px 24px 96px;
+    }
+
+    /* Header */
+    .article-meta {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+      display: flex;
+      gap: 16px;
+      align-items: center;
+    }
+    .tag {
+      background: var(--accent-light);
+      color: var(--accent);
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 4px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      font-size: 36px;
+      font-weight: 800;
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+      color: var(--text);
+      margin-bottom: 20px;
+    }
+
+    .article-lede {
+      font-size: 20px;
+      line-height: 1.55;
+      color: var(--text-secondary);
+      border-left: 3px solid var(--accent);
+      padding-left: 20px;
+      margin-bottom: 48px;
+    }
+
+    /* Body typography */
+    h2 {
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      color: var(--text);
+      margin: 52px 0 16px;
+      padding-top: 8px;
+    }
+
+    h3 {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text);
+      margin: 36px 0 12px;
+    }
+
+    p { margin-bottom: 20px; }
+
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    strong { font-weight: 600; }
+
+    /* Tables */
+    .table-wrap { overflow-x: auto; margin: 28px 0; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    th {
+      text-align: left;
+      font-weight: 600;
+      font-size: 12px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      padding: 10px 12px;
+      border-bottom: 2px solid var(--border);
+      background: var(--bg-subtle);
+    }
+    td {
+      padding: 12px 12px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: var(--bg-subtle); }
+
+    /* Code */
+    code {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      background: var(--code-bg);
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: var(--text);
+    }
+
+    pre {
+      background: #1a2332;
+      color: #e2e8f0;
+      padding: 20px 24px;
+      border-radius: 8px;
+      overflow-x: auto;
+      margin: 24px 0;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+    pre code {
+      background: none;
+      padding: 0;
+      color: inherit;
+    }
+    .kw { color: #93c5fd; }
+    .fn { color: #6ee7b7; }
+    .str { color: #fcd34d; }
+    .cm { color: #64748b; }
+
+    /* Callouts */
+    .callout {
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--accent);
+      background: var(--accent-light);
+      padding: 16px 20px;
+      border-radius: 6px;
+      margin: 28px 0;
+      font-size: 15px;
+    }
+    .callout-warn {
+      border-color: var(--warn-border);
+      border-left-color: var(--warn);
+      background: var(--warn-bg);
+    }
+    .callout-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 6px;
+    }
+    .callout-warn .callout-label { color: var(--warn); }
+
+    /* Pull quote */
+    blockquote {
+      border-left: 4px solid var(--accent);
+      padding: 4px 0 4px 24px;
+      margin: 32px 0;
+      color: var(--text-secondary);
+      font-size: 19px;
+      line-height: 1.5;
+      font-style: italic;
+    }
+    blockquote cite {
+      display: block;
+      margin-top: 10px;
+      font-size: 13px;
+      font-style: normal;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    /* Token math */
+    .token-compare {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin: 28px 0;
+    }
+    .token-box {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px;
+    }
+    .token-box.good { border-color: #22c55e; background: #f0fdf4; }
+    .token-box.bad  { border-color: #ef4444; background: #fef2f2; }
+    .token-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+    .token-num {
+      font-size: 32px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+    .token-box.bad .token-num { color: #dc2626; }
+    .token-box.good .token-num { color: #16a34a; }
+    .token-desc { font-size: 13px; color: var(--text-secondary); margin-top: 4px; }
+
+    /* Stat grid */
+    .stat-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin: 28px 0;
+    }
+    .stat-box {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px 16px;
+      text-align: center;
+      background: var(--bg-subtle);
+    }
+    .stat-n {
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: var(--accent);
+    }
+    .stat-l { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+
+    /* Footer */
+    footer {
+      border-top: 1px solid var(--border);
+      background: var(--bg-subtle);
+      padding: 40px 24px;
+      text-align: center;
+    }
+    .footer-inner { max-width: var(--max-width); margin: 0 auto; }
+    .footer-brand { font-weight: 700; color: var(--accent); margin-bottom: 8px; }
+    .footer-links { font-size: 13px; color: var(--text-muted); }
+    .footer-links a { color: var(--text-secondary); }
+
+    /* Install CTA */
+    .cta-block {
+      background: var(--accent);
+      border-radius: 8px;
+      padding: 28px 32px;
+      margin: 52px 0;
+      color: white;
+    }
+    .cta-block h3 { color: white; margin: 0 0 8px; }
+    .cta-block p { color: rgba(255,255,255,0.85); margin-bottom: 16px; font-size: 15px; }
+    .cta-install {
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 6px;
+      padding: 12px 16px;
+      font-family: var(--font-mono);
+      font-size: 14px;
+      color: white;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .cta-install span { color: rgba(255,255,255,0.5); }
+
+    @media (max-width: 600px) {
+      h1 { font-size: 26px; }
+      .token-compare, .stat-row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a class="nav-brand" href="/">PyHall</a>
+    <div class="nav-links">
+      <a href="/#docs">Docs</a>
+      <a href="/#spec">Spec</a>
+      <a href="/blog/">Blog</a>
+      <a href="https://github.com/fafolab/pyhall">GitHub</a>
+    </div>
+  </div>
+</nav>
+
+<article class="article">
+
+  <div class="article-meta">
+    <span class="tag">WCP</span>
+    <span>February 25, 2026</span>
+    <span>Rob Kennedy — FΔFΌ★LΔB</span>
+  </div>
+
+  <h1>The Governance Gap No One Is Talking About</h1>
+
+  <p class="article-lede">
+    Every protocol in the AI agent ecosystem defines how agents communicate.
+    MCP, A2A, ACP, AGNTCY — all four. None of them define whether a worker
+    should be trusted to execute. That gap has a name now: WCP.
+  </p>
+
+  <h2>The protocols we have</h2>
+
+  <p>
+    The AI agent infrastructure layer has been moving fast. In the last 18 months,
+    we got four serious protocols that define how agents talk to each other and
+    to tools:
+  </p>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Protocol</th>
+          <th>Publisher</th>
+          <th>What it governs</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>MCP</strong></td>
+          <td>Anthropic</td>
+          <td>How agents call tools</td>
+        </tr>
+        <tr>
+          <td><strong>A2A</strong></td>
+          <td>Google</td>
+          <td>How agents communicate with each other</td>
+        </tr>
+        <tr>
+          <td><strong>ACP</strong></td>
+          <td>IBM / BeeAgent</td>
+          <td>Agent communication patterns</td>
+        </tr>
+        <tr>
+          <td><strong>AGNTCY</strong></td>
+          <td>AGNTCY consortium</td>
+          <td>Agent discovery and marketplace</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>
+    These are real, solid protocols. MCP has production adoption. A2A is backed
+    by Google's full weight. They solve real problems.
+  </p>
+
+  <p>
+    But look at the "What it governs" column. Every row covers the <em>communication</em>
+    layer. None of them cover the <em>execution</em> layer. That is the gap.
+  </p>
+
+  <blockquote>
+    "Technical protocols for inter-agent communication are solid. What's missing are
+    organizational protocols — governance and policy frameworks for worker execution."
+    <cite>— O'Reilly, AI Agent Infrastructure Report 2025 (Shyamsundar)</cite>
+  </blockquote>
+
+  <p>
+    None of these protocols answer: <em>When an AI worker executes, what policy governs it?
+    Who approved it? What data did it touch? Can you prove it?</em>
+  </p>
+
+  <h2>What "governance gap" means in practice</h2>
+
+  <p>
+    Here is what happens without a governance layer. These are not hypothetical:
+  </p>
+
+  <h3>Air Canada, 2024</h3>
+
+  <p>
+    An AI chatbot promised a bereavement fare discount that the airline's actual policy
+    did not permit. When the customer tried to claim it, Air Canada's defense was that
+    the chatbot was "a separate legal entity" responsible for its own statements.
+  </p>
+
+  <p>
+    The British Columbia Civil Resolution Tribunal rejected this. Air Canada was ordered
+    to honor the discount plus pay damages. The court found Air Canada responsible for
+    what its AI agent said.
+  </p>
+
+  <div class="callout callout-warn">
+    <div class="callout-label">Legal finding</div>
+    "Air Canada did not explain why it...could not be held responsible for information
+    provided by one of its agents." — BC Civil Resolution Tribunal, 2024
+  </div>
+
+  <p>
+    The chatbot had no policy layer. It had no record of what it promised or why.
+    There was no audit trail. There was nothing to show it had checked whether the
+    discount was approved. The execution had no governance.
+  </p>
+
+  <h3>OpenAI Operator, February 2025</h3>
+
+  <p>
+    OpenAI's Operator agent autonomously completed a $31.43 online purchase without
+    explicit per-transaction user consent. The Washington Post documented the case.
+    Operator had been configured to handle tasks, and it handled one the user did not
+    intend.
+  </p>
+
+  <p>
+    This is not an attack. This is an agent doing exactly what it was told — just
+    without the right controls on <em>when</em> and <em>what</em> it could execute.
+  </p>
+
+  <h3>Our own lab</h3>
+
+  <p>
+    We spent three hours debugging a worker routing failure. The agent kept calling
+    <code>cap.recall.fetch</code> (a pre-WCP non-conformant ID with a version suffix). The routing rules expected <code>cap.mem.retrieve.rag</code>.
+    Both seemed valid. The router silently denied the request and routed to the default.
+    No error. No audit trail. Three hours.
+  </p>
+
+  <p>
+    That was a governance failure. The worker had no declared capability contract.
+    The router had no way to verify what the worker could handle. The agent had no
+    way to know it had been silently redirected.
+  </p>
+
+  <h2>Why observability alone is not enough</h2>
+
+  <blockquote>
+    "Observability without enforcement creates a false sense of safety. You can see
+    everything that happened. You cannot prevent what you're watching."
+    <cite>— O'Reilly, AI Agent Infrastructure Report 2025 (Raj)</cite>
+  </blockquote>
+
+  <p>
+    The existing tooling (LangSmith, Helicone, Arize Phoenix) solves observability.
+    You can trace what happened. You can see the call graph. You can see which
+    workers were invoked.
+  </p>
+
+  <p>
+    Observability answers: <em>what happened?</em>
+  </p>
+
+  <p>
+    Governance answers: <em>was it allowed to happen?</em>
+  </p>
+
+  <p>
+    These are different questions. In a regulated environment — finance, healthcare,
+    federal contracting — you need both. And the governance layer has to run
+    <em>before</em> execution, not after.
+  </p>
+
+  <div class="stat-row">
+    <div class="stat-box">
+      <div class="stat-n">87%</div>
+      <div class="stat-l">of AI agents lack safety documentation (MIT CSAIL)</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-n">7%</div>
+      <div class="stat-l">of organizations have embedded AI governance (Knostic, 2025)</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-n">97%</div>
+      <div class="stat-l">of AI breach victims lacked access controls (IBM Security)</div>
+    </div>
+  </div>
+
+  <h2>The token efficiency problem</h2>
+
+  <p>
+    There is a practical engineering argument for a governance layer beyond compliance.
+    It is the token budget.
+  </p>
+
+  <p>
+    The current pattern for giving an agent access to workers: describe every worker
+    inline in the system prompt. Ten workers, six hundred tokens each. That is six
+    thousand tokens of overhead on every call. On top of that, the agent has to reason
+    about which worker to call — another few hundred tokens.
+  </p>
+
+  <div class="token-compare">
+    <div class="token-box bad">
+      <div class="token-label">Without WCP Hall</div>
+      <div class="token-num">6,300</div>
+      <div class="token-desc">tokens overhead per call<br>(10 workers × 600 tokens + 300 routing)</div>
+    </div>
+    <div class="token-box good">
+      <div class="token-label">With WCP Hall</div>
+      <div class="token-num">280</div>
+      <div class="token-desc">tokens overhead per call<br>(10 × 20 token IDs + 80 dispatch payload)</div>
+    </div>
+  </div>
+
+  <p>
+    The WCP pattern replaces inline worker descriptions with capability IDs.
+    Instead of six hundred tokens describing what a worker does, you send
+    <code>cap.doc.summarize</code>. The Hall looks it up. The agent asks for
+    capabilities; it does not have to describe them.
+  </p>
+
+  <p>
+    This is not theoretical. Cloudflare's engineering blog documented a production
+    AI agent system that reduced context size from 1.17 million tokens to approximately
+    1,000 tokens using exactly this pattern — a <strong>99.9% reduction</strong> in
+    context overhead per agent call (February 2026).
+  </p>
+
+  <p>
+    There is also a capability cliff. The Llama 3.2 3B model has a 4,096 token context
+    window. Ten inline worker descriptions consume 4,500 tokens before the actual task
+    is added. That model <strong>cannot run at all</strong> with inline worker descriptions.
+    With WCP capability IDs: 200 tokens. The small model becomes viable.
+  </p>
+
+  <h2>The protocol, not the product</h2>
+
+  <p>
+    We built WCP as an open protocol, not a product. The reasoning is the same
+    as OpenTelemetry.
+  </p>
+
+  <p>
+    OpenTelemetry is 100% free, Apache 2.0, governed by CNCF. It makes zero revenue.
+    The ecosystem built on top of it — Datadog ($2.7B ARR), Grafana ($400M ARR),
+    Honeycomb, New Relic — captures billions. OTel's authors work at those companies.
+    They benefit from the standard they wrote.
+  </p>
+
+  <p>
+    WCP follows the same path. The spec is the protocol layer. PyHall is the reference
+    implementation. The revenue happens on top:
+  </p>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Layer</th>
+          <th>What it is</th>
+          <th>OTel equivalent</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>WCP_SPEC.md</strong></td>
+          <td>Apache 2.0 open standard</td>
+          <td>OTel Specification</td>
+        </tr>
+        <tr>
+          <td><strong>PyHall</strong></td>
+          <td>Reference implementation (Python, TypeScript, Go)</td>
+          <td>OTel SDKs</td>
+        </tr>
+        <tr>
+          <td><strong>pyhall.cloud</strong></td>
+          <td>Managed Hall SaaS (coming)</td>
+          <td>Grafana Cloud</td>
+        </tr>
+        <tr>
+          <td><strong>Compliance packs</strong></td>
+          <td>FedRAMP, SOC2, EU AI Act profiles</td>
+          <td>Honeycomb paid tier</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>
+    The protocol has to be free and unencumbered for this to work. Apache 2.0 adds
+    the patent grant that MIT lacks — critical for enterprise adoption and CNCF
+    submission. The "PyHall" and "WCP" names remain trademarks regardless of
+    how the protocol is forked or extended.
+  </p>
+
+  <h2>What WCP actually is</h2>
+
+  <p>
+    WCP defines five required behaviors for any compliant worker dispatch system:
+  </p>
+
+  <div class="callout">
+    <div class="callout-label">WCP-Basic required behaviors</div>
+    <strong>1. Fail-closed</strong> — unknown capability request = deny, never pass-through<br>
+    <strong>2. Deterministic</strong> — same inputs always produce same routing decision<br>
+    <strong>3. Declared controls</strong> — every worker declares what it needs before enrolling<br>
+    <strong>4. Mandatory telemetry</strong> — three events minimum: dispatch, complete/fail, evidence<br>
+    <strong>5. Dry-run</strong> — every request can be routed without execution for testing
+  </div>
+
+  <p>
+    The routing decision object includes: the selected worker, why it was selected,
+    what controls were verified, the blast radius score (how much damage could this
+    worker do if it malfunctions), and an evidence receipt with a SHA-256 hash of
+    the dispatch record.
+  </p>
+
+  <pre><code><span class="cm"># Three lines to route a capability request through a Hall</span>
+<span class="kw">from</span> pyhall <span class="kw">import</span> make_decision, RouteInput, load_rules, Registry
+
+rules = load_rules(<span class="str">"routing_rules.json"</span>)
+registry = Registry(registry_dir=<span class="str">"enrolled/"</span>)
+
+decision = make_decision(RouteInput(
+    capability_id=<span class="str">"cap.doc.summarize"</span>,
+    env=<span class="str">"prod"</span>,
+    data_label=<span class="str">"CONFIDENTIAL"</span>,
+    tenant_risk=<span class="str">"low"</span>,
+    qos_class=<span class="str">"P2"</span>,
+    tenant_id=<span class="str">"acme-corp"</span>,
+), rules, registry)
+
+<span class="cm"># decision.selected_worker_species_id — which worker handles this
+# decision.controls_verified       — what was checked before routing
+# decision.blast_score              — risk if this worker fails
+# decision.evidence_receipt.hash   — SHA-256, hash-chained to previous</span></code></pre>
+
+  <p>
+    That is the entire routing call. The Hall checked capability availability,
+    applied policy gates (data classification, environment, tenant risk), computed
+    blast radius, and emitted a signed evidence receipt — before any worker ran.
+  </p>
+
+  <h2>Why the clock is running</h2>
+
+  <div class="callout callout-warn">
+    <div class="callout-label">EU AI Act — Article 12</div>
+    High-risk AI systems must maintain comprehensive event logs for the system's
+    lifetime, with full traceability of inputs, outputs, and decisions.
+    <strong>Deadline: August 2, 2026.</strong> Penalty: up to 7% of global annual revenue.
+  </div>
+
+  <p>
+    The EU AI Act's high-risk system requirements are not abstract. AI systems making
+    decisions in employment, credit, critical infrastructure, healthcare, and law enforcement
+    qualify. Many enterprise AI agent deployments are in scope today.
+  </p>
+
+  <p>
+    WCP's evidence receipt builder generates exactly what Article 12 requires:
+    lifetime event logs, cryptographically hash-chained, with full traceability
+    of dispatch decisions. This is not a compliance add-on bolted on afterward.
+    It is built into the dispatch protocol from the first call.
+  </p>
+
+  <h2>What ships today</h2>
+
+  <p>
+    WCP v0.1-DRAFT is published. PyHall ships in three languages:
+  </p>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Package</th>
+          <th>Install</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>pyhall</strong> (Python)</td>
+          <td><code>pip install pyhall</code></td>
+          <td>v0.1.0 — routing engine, conformance, CLI</td>
+        </tr>
+        <tr>
+          <td><strong>@pyhall/core</strong> (TypeScript)</td>
+          <td><code>npm install @pyhall/core</code></td>
+          <td>v0.1.0 — 21/21 tests passing</td>
+        </tr>
+        <tr>
+          <td><strong>pyhall-go</strong> (Go)</td>
+          <td><code>go get github.com/fafolab/pyhall-go</code></td>
+          <td>v0.1 — interfaces and routing stub</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>
+    v0.2 (60 days): <code>WorkerBase</code> class, <code>HallClient</code> for agents,
+    <code>pyhall serve</code> (one command to run a Hall), and the evidence receipt
+    auto-builder with hash chaining.
+  </p>
+
+  <div class="cta-block">
+    <h3>Try it in five minutes</h3>
+    <p>
+      Enroll a worker, route a capability request, verify the evidence receipt.
+      PyHall is Apache 2.0. No API key required. No cloud dependency.
+    </p>
+    <div class="cta-install">
+      <span>$</span> pip install pyhall
+    </div>
+  </div>
+
+  <h2>The spec, not just the tool</h2>
+
+  <p>
+    The goal is not to build another AI governance SaaS. The goal is to own the
+    <em>protocol layer</em> — the way OTel owns observability instrumentation — so that
+    every governance tool built in the next five years builds on top of WCP rather
+    than reinventing it.
+  </p>
+
+  <p>
+    WCP_SPEC.md v0.1-DRAFT is published at
+    <a href="https://pyhall.dev/spec">pyhall.dev/spec</a> under Apache 2.0.
+    The spec covers: identifier rules, compliance levels (WCP-Basic / WCP-Standard /
+    WCP-Full), five required behaviors, routing decision schema, evidence receipt
+    format, and the blast radius scoring model.
+  </p>
+
+  <p>
+    Read the spec. Implement it. Extend it. If you are building AI agent infrastructure
+    and you want a governance layer that is not locked to your vendor, this is the
+    protocol to build on.
+  </p>
+
+  <h2>Sources</h2>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Claim</th>
+          <th>Source</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>O'Reilly governance gap quotes</td>
+          <td>O'Reilly AI Agent Infrastructure Report, 2025</td>
+        </tr>
+        <tr>
+          <td>87% agents lack safety documentation</td>
+          <td>MIT CSAIL AI Agent Safety Checklist Study, 2024</td>
+        </tr>
+        <tr>
+          <td>7% of orgs have embedded AI governance</td>
+          <td>Knostic AI Governance Survey, 2025</td>
+        </tr>
+        <tr>
+          <td>97% of AI breach victims lacked access controls</td>
+          <td>IBM Security, AI Threat Intelligence Report, 2025</td>
+        </tr>
+        <tr>
+          <td>99.9% token reduction (1.17M → ~1K tokens)</td>
+          <td>Cloudflare Engineering Blog, February 2026</td>
+        </tr>
+        <tr>
+          <td>Air Canada chatbot liability ruling</td>
+          <td>Moffatt v. Air Canada, BC Civil Resolution Tribunal, 2024</td>
+        </tr>
+        <tr>
+          <td>OpenAI Operator autonomous purchase</td>
+          <td>Washington Post, February 7, 2025</td>
+        </tr>
+        <tr>
+          <td>EU AI Act Article 12, 7% revenue penalty</td>
+          <td>EU Official Journal, Regulation 2024/1689, August 2024</td>
+        </tr>
+        <tr>
+          <td>OTel: Datadog $2.7B ARR, Grafana $400M ARR</td>
+          <td>Datadog Q4 2024 earnings; Grafana Labs funding announcement, 2024</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</article>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-brand">PyHall</div>
+    <div class="footer-links">
+      <a href="/">pyhall.dev</a> &nbsp;&middot;&nbsp;
+      <a href="/spec">WCP_SPEC</a> &nbsp;&middot;&nbsp;
+      <a href="https://github.com/fafolab/pyhall">GitHub</a> &nbsp;&middot;&nbsp;
+      Apache 2.0 &nbsp;&middot;&nbsp; FΔFΌ★LΔB
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
