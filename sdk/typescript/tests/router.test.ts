@@ -1100,7 +1100,7 @@ describe("Round4Fixes", () => {
     expect(dec.denied).toBe(false);
   });
 
-  // TS-F14: requireSignatory=true with unlisted tenant → DENY_TENANT_NOT_AUTHORIZED
+  // TS-F14: requireSignatory=true with unlisted tenant → DENY_UNKNOWN_TENANT
   test("TS-F14: requireSignatory=true denies tenants not in allowedTenants", () => {
     const rules = loadRulesFromDoc(HELLO_RULES_DOC);
     const registry = registryWithWorker();
@@ -1117,7 +1117,7 @@ describe("Round4Fixes", () => {
     expect(dec.denied).toBe(true);
     expect(
       (dec.deny_reason_if_denied as Record<string, unknown>)["code"]
-    ).toBe("DENY_TENANT_NOT_AUTHORIZED");
+    ).toBe("DENY_UNKNOWN_TENANT");
   });
 
   // TS-F15: enforceRequiredControls hall floor overrides per-rule deny_if_missing_required_controls=false

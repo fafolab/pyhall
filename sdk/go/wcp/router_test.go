@@ -1153,7 +1153,7 @@ func TestCorrelationIDWhitespaceOnly(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 func TestMissingTenantID(t *testing.T) {
-	// PATCH-XSDK-TENANT-004: tenant_id="" must be denied with MISSING_TENANT_ID.
+	// PATCH-XSDK-TENANT-004: tenant_id="" must be denied with DENY_MISSING_TENANT_ID.
 	// Before the fix, an empty tenant_id was accepted and routed successfully,
 	// bypassing per-tenant governance, attribution, and audit requirements.
 	inp := minimalValidInput()
@@ -1164,8 +1164,8 @@ func TestMissingTenantID(t *testing.T) {
 		t.Fatal("PATCH-XSDK-TENANT-004: empty tenant_id must be denied")
 	}
 	code := dec.DenyReasonIfDenied["code"]
-	if code != "MISSING_TENANT_ID" {
-		t.Errorf("PATCH-XSDK-TENANT-004: expected MISSING_TENANT_ID, got %v", code)
+	if code != "DENY_MISSING_TENANT_ID" {
+		t.Errorf("PATCH-XSDK-TENANT-004: expected DENY_MISSING_TENANT_ID, got %v", code)
 	}
 }
 

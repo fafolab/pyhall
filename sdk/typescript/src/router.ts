@@ -523,7 +523,7 @@ export function makeDecision(opts: MakeDecisionOptions): RouteDecision {
       return deny(
         inp,
         "NO_MATCH",
-        "DENY_TENANT_NOT_AUTHORIZED",
+        "DENY_UNKNOWN_TENANT",
         `tenant '${inp.tenant_id}' is not in the Hall's allowedTenants list.`,
       );
     }

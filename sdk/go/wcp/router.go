@@ -372,7 +372,7 @@ func MakeDecision(input RouteInput, registry *Registry, opts RouterOptions) Rout
 	// attribution, audit, and per-tenant governance. Use strings.TrimSpace to catch
 	// whitespace-only values as well as empty strings.
 	if strings.TrimSpace(input.TenantID) == "" {
-		return denyDecision(input, "tenant_id is required", "MISSING_TENANT_ID")
+		return denyDecision(input, "tenant_id is required", "DENY_MISSING_TENANT_ID")
 	}
 
 	// --- Precondition: capability_id must be present ---
