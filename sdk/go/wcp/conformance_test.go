@@ -251,14 +251,7 @@ func TestConformanceVectors(t *testing.T) {
 			ids[v.ID] = true
 		}
 		for i := 1; i <= 13; i++ {
-			id := ""
-			if i < 10 {
-				id = "CV-00" + string(rune('0'+i))
-			} else {
-				id = "CV-0" + string(rune('0'+i-10+10))
-			}
-			// Use formatted string instead
-			id = cvID(i)
+			id := cvID(i)
 			if !ids[id] {
 				t.Errorf("required conformance vector %s is missing from vectors file", id)
 			}
@@ -274,10 +267,10 @@ func TestConformanceVectors(t *testing.T) {
 			if v.Description == "" {
 				t.Errorf("vector %s missing 'description'", v.ID)
 			}
-			if v.Input.CapabilityID == "" && v.ID != "CV-001" && v.ID != "CV-012" {
-				// CV-001 has empty correlation_id, CV-012 has malformed capability_id —
-				// but capability_id itself should be non-empty in both (it is).
-				// Just check the field is present in the struct.
+			// Procedural vectors (skip_sdks=["all"]) have no input/expect block.
+			// All others must have a non-empty capability_id.
+			if v.Input.CapabilityID == "" && !isSkipped(v) {
+				t.Errorf("vector %s missing capability_id in input", v.ID)
 			}
 		}
 	})

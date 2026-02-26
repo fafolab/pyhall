@@ -259,10 +259,11 @@ describe("WCP Cross-SDK Conformance Vectors (PATCH-XSDK-001)", () => {
 
 describe("CV-013: Worker attestation (WCP §5.10)", () => {
   it("enroll → dispatch (pass) → tamper → dispatch (DENY_WORKER_TAMPERED)", () => {
-    // Step 1: create a temp worker file
+    // Step 1: create a temp worker file (cleaned up unconditionally in finally)
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "cv013-"));
     const workerFile = path.join(tmpDir, "worker.py");
     fs.writeFileSync(workerFile, "def run(): pass\n");
+    try {
 
     const registry = new Registry();
     registry.enroll({
@@ -334,9 +335,9 @@ describe("CV-013: Worker attestation (WCP §5.10)", () => {
     // Step 6 / F4: no hash values in deny payload
     expect((dec2.deny_reason_if_denied as Record<string, unknown>)["registered_hash"]).toBeUndefined();
     expect((dec2.deny_reason_if_denied as Record<string, unknown>)["current_hash"]).toBeUndefined();
-
-    // Cleanup
-    try { fs.unlinkSync(workerFile); } catch { /* ignore */ }
-    try { fs.rmdirSync(tmpDir); } catch { /* ignore */ }
+    } finally {
+      try { fs.unlinkSync(workerFile); } catch { /* ignore */ }
+      try { fs.rmdirSync(tmpDir); } catch { /* ignore */ }
+    }
   });
 });
