@@ -1229,7 +1229,470 @@ git commit -m "feat: QA/QC worker fleet (catalog, stale-scanner, sdk-parity, rel
 
 ---
 
-## Task 8: Archive Workforce-OS + Stale Files
+## Task 8: QA/QC — CLI Apps (All 3 Languages)
+
+**Files:**
+- Create: `tools/qc/cli_validator.py`
+- Scope: `apps/cli/typescript/`, `sdk/python/pyhall/cli.py`, `sdk/go/cmd/pyhall/`
+
+**What gets checked:**
+- All 3 CLIs respond to: `version`, `search`, `explain`, `browse`, `scaffold`
+- `search` and `browse` return results from the rebuilt catalog (no `.v1` IDs in output)
+- `scaffold` generates registry records with correct field schema (14 fields, no `.v1` in IDs)
+- Existing test counts hold: Python CLI 105 pass, TypeScript CLI 36 pass, Go CLI 5 pass
+- Help text contains no `.v1` references
+
+**Step 1: Run all three CLI test suites**
+
+```bash
+# Python CLI
+cd sdk/python && python -m pytest tests/test_cli_user.py -v 2>&1 | tail -15
+
+# TypeScript CLI
+cd apps/cli/typescript && npm test 2>&1 | tail -10
+
+# Go CLI
+cd sdk/go && go test ./cmd/pyhall/... -v 2>&1 | tail -10
+```
+Expected: Python 105 pass, TypeScript 36 pass, Go 5 pass.
+
+**Step 2: Smoke test each CLI command against rebuilt catalog**
+
+```bash
+# Python
+pyhall search "document summarize" | grep -v "\.v1"
+pyhall explain cap.doc.summarize | grep -v "\.v1"
+pyhall scaffold --capability cap.doc.summarize --worker wrk.doc.summarizer --species wrk.doc.summarizer
+
+# TypeScript
+pyhall search "document" | grep -v "\.v1"
+
+# Go
+pyhall version
+pyhall search document | grep -v "\.v1"
+```
+Expected: no `.v1` appears in any CLI output.
+
+**Step 3: Check CLI help text for `.v1` references**
+
+```bash
+grep -r "\.v[0-9]" sdk/python/pyhall/cli.py apps/cli/typescript/src/ sdk/go/cmd/
+```
+Expected: zero matches. If any found, fix them — they are leftover from the old taxonomy.
+
+**Step 4: Create the CLI QC worker**
+
+Create `tools/qc/cli_validator.py`:
+
+```python
+"""cap.qc.cli.validate — Validate all 3 CLIs against rebuilt catalog."""
+import subprocess
+import re
+
+V1_RE = re.compile(r'\.[vV]\d+')
+
+def _check_no_v1(output: str) -> list[str]:
+    return [line for line in output.splitlines() if V1_RE.search(line)]
+
+def run(ctx, request):
+    findings = []
+
+    # Python CLI smoke tests
+    for cmd in [["python", "-m", "pyhall", "version"],
+                ["python", "-m", "pyhall", "search", "document"]]:
+        result = subprocess.run(cmd, capture_output=True, text=True,
+                                cwd="sdk/python")
+        if result.returncode != 0:
+            findings.append({"severity": "error", "cmd": " ".join(cmd), "detail": result.stderr})
+        violations = _check_no_v1(result.stdout)
+        for v in violations:
+            findings.append({"severity": "error", "cmd": " ".join(cmd), "detail": f".v1 in output: {v}"})
+
+    return {
+        "passed": not any(f["severity"] == "error" for f in findings),
+        "findings": findings,
+    }
+```
+
+**Step 5: Commit**
+
+```bash
+git add tools/qc/cli_validator.py
+git commit -m "feat(qc): CLI validator worker for all 3 language CLIs"
+```
+
+---
+
+## Task 9: QA/QC — pyhall.dev Website
+
+**Files:**
+- Create: `tools/qc/web_validator.py`
+- Scope: `web/index.html`, `web/blog/the-governance-gap.html`
+
+**What gets checked:**
+- Entity IDs displayed on site match catalog (no `.v1`)
+- Entity count in site copy matches `catalog._meta.total_entities`
+- `#0050D4` blue theme present in CSS (branding check)
+- Blog post entity ID references are valid
+- All internal links resolve (no dead href targets)
+- Autocomplete data (if embedded) reflects rebuilt catalog
+
+**Step 1: Check the website for .v1 references**
+
+```bash
+grep -n "\.v[0-9]" web/index.html web/blog/*.html | head -20
+```
+Expected: zero matches.
+
+**Step 2: Check entity count matches catalog**
+
+```bash
+python -c "
+import json
+catalog = json.load(open('sdk/python/pyhall/taxonomy/catalog.json'))
+count = catalog['_meta']['total_entities']
+print(f'Catalog count: {count}')
+# Check web/index.html for the count
+import subprocess
+result = subprocess.run(['grep', '-o', '[0-9]* entities', 'web/index.html'], capture_output=True, text=True)
+print('Web references:', result.stdout.strip())
+"
+```
+Expected: counts match.
+
+**Step 3: Create web QC worker**
+
+Create `tools/qc/web_validator.py`:
+
+```python
+"""cap.qc.web.validate — Validate pyhall.dev website against rebuilt catalog."""
+import json
+import re
+from pathlib import Path
+
+ROOT = Path(__file__).parent.parent.parent
+V1_RE = re.compile(r'\b[a-z]+\.[a-z]+\.[a-z]+\.v\d+\b')
+BRAND_COLOR = "#0050D4"
+
+def run(ctx, request):
+    findings = []
+    catalog = json.loads((ROOT / "sdk/python/pyhall/taxonomy/catalog.json").read_text())
+    expected_count = catalog["_meta"]["total_entities"]
+    valid_ids = {e["id"] for e in catalog["entities"]}
+
+    for web_file in [ROOT / "web/index.html", ROOT / "web/blog/the-governance-gap.html"]:
+        if not web_file.exists():
+            findings.append({"severity": "warning", "file": str(web_file), "detail": "file not found"})
+            continue
+        content = web_file.read_text()
+
+        # Check for .v1 violations
+        for match in V1_RE.finditer(content):
+            findings.append({"severity": "error", "file": web_file.name,
+                              "detail": f".v1 ID in web: {match.group()}"})
+
+        # Check branding
+        if web_file.name == "index.html" and BRAND_COLOR not in content:
+            findings.append({"severity": "warning", "file": web_file.name,
+                              "detail": f"brand color {BRAND_COLOR} not found"})
+
+    return {
+        "passed": not any(f["severity"] == "error" for f in findings),
+        "expected_entity_count": expected_count,
+        "findings": findings,
+    }
+```
+
+**Step 4: Commit**
+
+```bash
+git add tools/qc/web_validator.py
+git commit -m "feat(qc): pyhall.dev website validator worker"
+```
+
+---
+
+## Task 10: QA/QC — Web Playground
+
+**Files:**
+- Create: `tools/qc/playground_validator.py`
+- Scope: `web/playground/`, `web/playground/js/wcp-engine.js`, `web/playground/data/catalog.json`
+
+**What gets checked:**
+- Playground catalog.json matches the rebuilt catalog (same entity count, no `.v1`)
+- Blast threshold in `wcp-engine.js` is documented (currently 50, SDK default is 85 — intentional for demo, must be noted)
+- Three presets reference valid capability IDs from catalog
+- Autocomplete list reflects catalog entity IDs
+
+**Step 1: Verify playground catalog is in sync**
+
+```bash
+python -c "
+import json
+sdk_cat = json.load(open('sdk/python/pyhall/taxonomy/catalog.json'))
+web_cat = json.load(open('web/playground/data/catalog.json'))
+sdk_ids = {e['id'] for e in sdk_cat['entities']}
+web_ids = {e['id'] for e in web_cat['entities']}
+diff = sdk_ids.symmetric_difference(web_ids)
+print('Differences:', len(diff))
+for d in sorted(diff): print(' ', d)
+"
+```
+Expected: 0 differences (build_catalog.py syncs all locations).
+
+**Step 2: Check blast threshold discrepancy**
+
+```bash
+grep -n "blast.*threshold\|threshold.*blast\|BLAST_THRESHOLD\|blastThreshold" web/playground/js/wcp-engine.js
+```
+Document the value. If it's 50 and SDK uses 85, add a comment to wcp-engine.js:
+```javascript
+// NOTE: Demo threshold intentionally set to 50 (SDK default: 85) for playground visibility
+const BLAST_THRESHOLD = 50;
+```
+
+**Step 3: Verify preset capability IDs exist in catalog**
+
+```bash
+python -c "
+import json
+catalog = json.load(open('sdk/python/pyhall/taxonomy/catalog.json'))
+valid = {e['id'] for e in catalog['entities']}
+# Check presets in wcp-engine.js
+import re
+engine = open('web/playground/js/wcp-engine.js').read()
+cap_ids = re.findall(r'cap\.[a-z0-9.\-]+', engine)
+for cap in set(cap_ids):
+    status = 'OK' if cap in valid else 'MISSING'
+    print(f'{status}: {cap}')
+"
+```
+Expected: all capability IDs in presets exist in the catalog.
+
+**Step 4: Create playground QC worker**
+
+Create `tools/qc/playground_validator.py`:
+
+```python
+"""cap.qc.playground.validate — Validate web playground against rebuilt catalog."""
+import json
+import re
+from pathlib import Path
+
+ROOT = Path(__file__).parent.parent.parent
+
+def run(ctx, request):
+    findings = []
+    sdk_catalog = json.loads((ROOT / "sdk/python/pyhall/taxonomy/catalog.json").read_text())
+    valid_ids = {e["id"] for e in sdk_catalog["entities"]}
+
+    # Check playground catalog in sync
+    pg_catalog_path = ROOT / "web/playground/data/catalog.json"
+    if pg_catalog_path.exists():
+        pg_catalog = json.loads(pg_catalog_path.read_text())
+        pg_ids = {e["id"] for e in pg_catalog.get("entities", [])}
+        for missing in valid_ids - pg_ids:
+            findings.append({"severity": "error", "detail": f"entity missing from playground catalog: {missing}"})
+        for extra in pg_ids - valid_ids:
+            findings.append({"severity": "error", "detail": f"stale entity in playground catalog: {extra}"})
+    else:
+        findings.append({"severity": "error", "detail": "web/playground/data/catalog.json not found"})
+
+    # Check capability IDs in engine
+    engine_path = ROOT / "web/playground/js/wcp-engine.js"
+    if engine_path.exists():
+        engine = engine_path.read_text()
+        cap_ids = set(re.findall(r'cap\.[a-z0-9.\-]+', engine))
+        for cap in cap_ids:
+            if cap not in valid_ids:
+                findings.append({"severity": "error", "detail": f"capability ID in wcp-engine.js not in catalog: {cap}"})
+
+    return {
+        "passed": not any(f["severity"] == "error" for f in findings),
+        "findings": findings,
+    }
+```
+
+**Step 5: Commit**
+
+```bash
+git add tools/qc/playground_validator.py
+git commit -m "feat(qc): web playground validator worker"
+```
+
+---
+
+## Task 11: QA/QC — Desktop App
+
+**Files:**
+- Create: `tools/qc/desktop_validator.py`
+- Scope: `apps/desktop/src/js/api.js`, `apps/desktop/src-tauri/src/lib.rs`
+
+**What gets checked:**
+- `enroll_worker` Tauri command accepts registry records with the new 14-field schema
+- `validate_registry_record` command rejects entity IDs containing `.v1`
+- Six screens load without referencing stale entity IDs
+- API endpoint paths match what the desktop app expects (`/wcp/capabilities`, `/wcp/workers`, `/wcp/health`)
+
+**Step 1: Check desktop JS for .v1 references**
+
+```bash
+grep -rn "\.v[0-9]" apps/desktop/src/js/ apps/desktop/src-tauri/src/
+```
+Expected: zero matches.
+
+**Step 2: Check API endpoint paths**
+
+```bash
+grep -n "fetch\|axios\|request" apps/desktop/src/js/api.js | grep -v "//\s" | head -20
+```
+Verify endpoints match WCP spec §5.6: `/wcp/capabilities`, `/wcp/workers`, `/wcp/health`.
+
+**Step 3: Create desktop QC worker**
+
+Create `tools/qc/desktop_validator.py`:
+
+```python
+"""cap.qc.desktop.validate — Validate desktop app against current spec."""
+import re
+import json
+from pathlib import Path
+
+ROOT = Path(__file__).parent.parent.parent
+V1_RE = re.compile(r'\b[a-z]+\.[a-z]+\.[a-z]+\.v\d+\b')
+REQUIRED_ENDPOINTS = ["/wcp/capabilities", "/wcp/workers", "/wcp/health"]
+
+def run(ctx, request):
+    findings = []
+
+    api_js = ROOT / "apps/desktop/src/js/api.js"
+    if api_js.exists():
+        content = api_js.read_text()
+        for match in V1_RE.finditer(content):
+            findings.append({"severity": "error", "file": "api.js",
+                              "detail": f".v1 reference: {match.group()}"})
+        for endpoint in REQUIRED_ENDPOINTS:
+            if endpoint not in content:
+                findings.append({"severity": "warning", "file": "api.js",
+                                  "detail": f"expected endpoint not found: {endpoint}"})
+    else:
+        findings.append({"severity": "error", "detail": "apps/desktop/src/js/api.js not found"})
+
+    return {
+        "passed": not any(f["severity"] == "error" for f in findings),
+        "findings": findings,
+    }
+```
+
+**Step 4: Commit**
+
+```bash
+git add tools/qc/desktop_validator.py
+git commit -m "feat(qc): desktop app validator worker"
+```
+
+---
+
+## Task 12: QA/QC — Research Docs + Evidence Catalog
+
+**Files:**
+- Create: `tools/qc/docs_validator.py`
+- Scope: `docs/research/`, `docs/security/`, `WCP_SPEC.md`
+
+**What gets checked:**
+- All WCP entity IDs referenced in any doc exist in the rebuilt catalog
+- No `.v1` in any doc that will be published (WCP_SPEC.md, research docs, blog)
+- Evidence catalog stats are present (the 30 citable stats in `WCP_EVIDENCE_CATALOG_2026-02-26.md`)
+- WCP_SPEC.md version header matches v0.1-DRAFT
+- No broken cross-references between docs
+
+**Step 1: Scan all docs for .v1 references**
+
+```bash
+grep -rn "\.v[0-9]" docs/ WCP_SPEC.md --include="*.md" | grep -v "^Binary\|\.git"
+```
+Expected: zero matches in any doc that will be published.
+
+**Step 2: Verify evidence catalog is present and has citable stats**
+
+```bash
+python -c "
+from pathlib import Path
+ec = Path('docs/research/WCP_EVIDENCE_CATALOG_2026-02-26.md')
+if not ec.exists():
+    print('MISSING: evidence catalog')
+else:
+    content = ec.read_text()
+    print(f'Evidence catalog: {len(content.split(chr(10)))} lines')
+    # Count percentage/stat mentions
+    import re
+    stats = re.findall(r'\d+[%\$]|\d+\.\d+%', content)
+    print(f'Citable stats found: {len(stats)}')
+"
+```
+Expected: 844 lines, 30+ citable stats.
+
+**Step 3: Create docs QC worker**
+
+Create `tools/qc/docs_validator.py`:
+
+```python
+"""cap.qc.docs.validate — Validate research docs and WCP_SPEC against catalog."""
+import json
+import re
+from pathlib import Path
+
+ROOT = Path(__file__).parent.parent.parent
+V1_RE = re.compile(r'\b(?:cap|wrk|ctrl|prof|evt)\.[a-z0-9.\-]+\.v\d+\b')
+ENTITY_ID_RE = re.compile(r'\b(?:cap|wrk|ctrl|prof|evt)\.[a-z0-9.\-]{3,}\b')
+
+PUBLISHED_DOCS = [
+    "WCP_SPEC.md",
+    "docs/research/WCP_EVIDENCE_CATALOG_2026-02-26.md",
+    "docs/research/WCP_MARKET_VALIDATION_2026-02-26.md",
+    "web/blog/the-governance-gap.html",
+]
+
+def run(ctx, request):
+    findings = []
+    catalog = json.loads((ROOT / "sdk/python/pyhall/taxonomy/catalog.json").read_text())
+    valid_ids = {e["id"] for e in catalog["entities"]}
+
+    for doc_rel in PUBLISHED_DOCS:
+        doc = ROOT / doc_rel
+        if not doc.exists():
+            findings.append({"severity": "warning", "file": doc_rel, "detail": "file not found"})
+            continue
+        content = doc.read_text()
+
+        # .v1 check
+        for match in V1_RE.finditer(content):
+            findings.append({"severity": "error", "file": doc_rel,
+                              "detail": f".v1 entity ID in published doc: {match.group()}"})
+
+        # Reference check — entity IDs mentioned must exist in catalog
+        for match in ENTITY_ID_RE.finditer(content):
+            eid = match.group()
+            if eid not in valid_ids and len(eid.split(".")) >= 3:
+                findings.append({"severity": "warning", "file": doc_rel,
+                                  "detail": f"entity ID not in catalog: {eid}"})
+
+    return {
+        "passed": not any(f["severity"] == "error" for f in findings),
+        "findings": findings,
+    }
+```
+
+**Step 4: Commit**
+
+```bash
+git add tools/qc/docs_validator.py
+git commit -m "feat(qc): research docs and evidence catalog validator worker"
+```
+
+---
+
+## Task 13: Archive Workforce-OS + Stale Files
 
 **Step 1: Archive workforce-os**
 
@@ -1261,7 +1724,7 @@ Review output. For each confirmed stale file, move to `archive/2026-02-26/`.
 
 ---
 
-## Task 9: Round 9 Security Testing
+## Task 14: Round 9 Security Testing
 
 **File:** `release/qa-reports/round-9-attestation.md`
 
@@ -1327,7 +1790,7 @@ Write findings to `release/qa-reports/round-9-attestation.md`.
 
 ---
 
-## Task 10: Release Gate
+## Task 15: Release Gate
 
 **Step 1: Run the release gate worker**
 
@@ -1348,19 +1811,48 @@ Open `RELEASING.md` (create it if not present) and verify all items:
 ```markdown
 # PyHall v0.1.0 Release Checklist
 
+## SDK + Core Protocol
 - [ ] CV-013 passes in Python, TypeScript, Go
 - [ ] CV-001 through CV-012 still pass in all three SDKs
-- [ ] QC worker fleet: catalog_validator PASS, stale_scanner reviewed
-- [ ] release_gate.py: all three SDK test suites green
+- [ ] Python SDK: 105+ tests pass
+- [ ] TypeScript SDK: 83+ tests pass
+- [ ] Go SDK: all tests pass
 - [ ] Catalog rebuilt — zero .v1 violations, zero schema violations
-- [ ] Round 9 security report complete (7 attacks documented)
+
+## CLI Apps
+- [ ] Python CLI: 105 tests pass, no .v1 in any output
+- [ ] TypeScript CLI: 36 tests pass, no .v1 in any output
+- [ ] Go CLI: 5 tests pass, no .v1 in any output
+- [ ] All 3 CLIs: version, search, explain, browse, scaffold all work against rebuilt catalog
+
+## Web Apps
+- [ ] pyhall.dev site: no .v1 references, entity count matches catalog, #0050D4 branding present
+- [ ] Web playground: catalog in sync, preset capability IDs valid, blast threshold documented
+- [ ] Blog post: no .v1 references, all entity IDs valid
+
+## Desktop App
+- [ ] Desktop app: no .v1 references in api.js, WCP endpoints correct
+- [ ] enroll_worker Tauri command accepts new 14-field schema
+
+## Research + Docs
+- [ ] WCP_SPEC.md: no .v1 in spec text, version header = 0.1-DRAFT
+- [ ] Evidence catalog (844 lines, 30+ citable stats) present
+- [ ] Market validation doc present
+- [ ] Security findings: Round 9 report complete, 7 attacks documented
+
+## Audit + QA
+- [ ] QC worker fleet: all 5 core workers + 5 app/doc workers run clean
+- [ ] release_gate.py: all three SDK test suites green
 - [ ] pyhall_audit.db hash chain intact
 - [ ] workforce-os archived
-- [ ] CHANGELOG.md updated
+
+## Release
+- [ ] CHANGELOG.md updated with v0.1.0 attestation features
+- [ ] RELEASING.md complete
 - [ ] git tag v0.1.0 created in git/
 - [ ] Push to fafolab/pyhall (public repo)
 - [ ] PyPI: pip install pyhall
-- [ ] npm: npm install @pyhall/core
+- [ ] npm: @pyhall/core + @pyhall/cli
 - [ ] Cloudflare Pages: pyhall.dev deployed
 ```
 
