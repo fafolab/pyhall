@@ -7,7 +7,7 @@ package wcp
 // All tests verify the security fixes implemented in this audit round.
 // Run with: go test ./... -v
 //
-// Test count: 35 + 9 attestation router tests
+// Test count: 35 + 10 attestation router tests
 // Coverage: GO-F1, GO-F2, GO-F3, GO-F4, GO-F5, GO-F6, GO-F7, GO-F8,
 //           GO-F9, GO-F10, GO-F11, GO-F12, GO-F13, GO-F14, GO-F15
 //           + valid path smoke tests
@@ -1310,6 +1310,30 @@ func TestAttestationEnforcement(t *testing.T) {
 
 		if !dec.Denied {
 			t.Fatal("expected DENY_WORKER_ATTESTATION_MISSING")
+		}
+		code := dec.DenyReasonIfDenied["code"]
+		if code != "DENY_WORKER_ATTESTATION_MISSING" {
+			t.Errorf("expected DENY_WORKER_ATTESTATION_MISSING, got %v", code)
+		}
+		if !dec.WorkerAttestationChecked {
+			t.Error("expected WorkerAttestationChecked=true in attestation deny paths")
+		}
+	})
+
+	t.Run("registered hash is empty string with ok=true — DENY_WORKER_ATTESTATION_MISSING", func(t *testing.T) {
+		// GetWorkerHash returns ("", true): worker is registered but the stored
+		// hash value is an empty string. The router treats registeredHash == ""
+		// as missing regardless of the ok flag — not as a valid hash to compare.
+		inp := minimalValidInput()
+		reg := enrolledRegistry()
+		opts := attestationOpts(
+			func(_ string) (string, bool) { return "", true },
+			func(_ string) (string, bool) { return strings.Repeat("f", 64), true },
+		)
+		dec := MakeDecision(inp, reg, opts)
+
+		if !dec.Denied {
+			t.Fatal("expected DENY_WORKER_ATTESTATION_MISSING when registered hash is empty string with ok=true")
 		}
 		code := dec.DenyReasonIfDenied["code"]
 		if code != "DENY_WORKER_ATTESTATION_MISSING" {
