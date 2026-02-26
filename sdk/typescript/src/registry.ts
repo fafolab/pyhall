@@ -302,14 +302,23 @@ export class Registry {
    * Recompute the current code hash from the worker source file.
    * Returns null if no source file was registered for this species.
    * Compare to getWorkerHash() at dispatch time to detect tampering.
-   * Mirrors pyhall/registry.py get_current_worker_hash().
+   * Mirrors pyhall/registry.py compute_current_hash().
+   *
+   * TOCTOU safety: if the file becomes unreadable between the existence
+   * check and the read (e.g. deleted by another process), returns null
+   * instead of throwing — mirrors Python's OSError → None behaviour.
+   * The Hall dispatch loop must never throw from an attestation check.
    */
-  getCurrentWorkerHash(speciesId: string): string | null {
+  computeCurrentHash(speciesId: string): string | null {
     const path = this._attestationFiles.get(speciesId);
     if (path === undefined) return null;
     if (!existsSync(path)) return null;
-    const content = readFileSync(path);
-    return createHash("sha256").update(content).digest("hex");
+    try {
+      const content = readFileSync(path);
+      return createHash("sha256").update(content).digest("hex");
+    } catch {
+      return null;
+    }
   }
 
   // -----------------------------------------------------------------------

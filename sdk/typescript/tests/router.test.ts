@@ -2163,7 +2163,7 @@ describe("ShadowRuleDetection", () => {
 // Registry attestation (WCP §5.10)
 // ---------------------------------------------------------------------------
 
-import { writeFileSync, mkdtempSync } from "fs";
+import { writeFileSync, mkdtempSync, unlinkSync } from "fs";
 import { join } from "path";
 import { tmpdir } from "os";
 
@@ -2178,36 +2178,46 @@ describe("Registry attestation (WCP §5.10)", () => {
     expect(reg.getWorkerHash("wrk.test.worker")).toBe(hash);
   });
 
-  it("getCurrentWorkerHash matches registered hash when file unchanged", () => {
+  it("computeCurrentHash matches registered hash when file unchanged", () => {
     const tmpDir = mkdtempSync(join(tmpdir(), "pyhall-attest-"));
     const workerFile = join(tmpDir, "worker.py");
     writeFileSync(workerFile, "def run(): pass\n");
     const reg = new Registry();
     const registered = reg.registerAttestation("wrk.test.worker", workerFile);
-    expect(reg.getCurrentWorkerHash("wrk.test.worker")).toBe(registered);
+    expect(reg.computeCurrentHash("wrk.test.worker")).toBe(registered);
   });
 
-  it("getCurrentWorkerHash differs after file mutation", () => {
+  it("computeCurrentHash differs after file mutation", () => {
     const tmpDir = mkdtempSync(join(tmpdir(), "pyhall-attest-"));
     const workerFile = join(tmpDir, "worker.py");
     writeFileSync(workerFile, "def run(): pass\n");
     const reg = new Registry();
     const registered = reg.registerAttestation("wrk.test.worker", workerFile);
     writeFileSync(workerFile, "def run(): exfiltrate()\n");
-    expect(reg.getCurrentWorkerHash("wrk.test.worker")).not.toBe(registered);
+    expect(reg.computeCurrentHash("wrk.test.worker")).not.toBe(registered);
   });
 
   it("getWorkerHash returns null for unknown species", () => {
     expect(new Registry().getWorkerHash("wrk.unknown")).toBeNull();
   });
 
-  it("getCurrentWorkerHash returns null for species with no file registered", () => {
-    expect(new Registry().getCurrentWorkerHash("wrk.unknown")).toBeNull();
+  it("computeCurrentHash returns null for species with no file registered", () => {
+    expect(new Registry().computeCurrentHash("wrk.unknown")).toBeNull();
   });
 
   it("registerAttestation throws when file does not exist", () => {
     expect(() =>
       new Registry().registerAttestation("wrk.test", "/nonexistent/worker.py")
     ).toThrow();
+  });
+
+  it("computeCurrentHash returns null if registered file is deleted after registration", () => {
+    const tmpDir = mkdtempSync(join(tmpdir(), "pyhall-attest-"));
+    const workerFile = join(tmpDir, "worker.py");
+    writeFileSync(workerFile, "def run(): pass\n");
+    const reg = new Registry();
+    reg.registerAttestation("wrk.test.worker", workerFile);
+    unlinkSync(workerFile);
+    expect(reg.computeCurrentHash("wrk.test.worker")).toBeNull();
   });
 });
