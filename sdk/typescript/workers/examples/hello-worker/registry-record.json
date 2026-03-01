@@ -1,0 +1,28 @@
+{
+  "worker_id": "org.example.hello-greeter",
+  "worker_species_id": "wrk.hello.greeter",
+  "capabilities": ["cap.hello.greet"],
+  "risk_tier": "low",
+  "idempotency": "full",
+  "determinism": "deterministic",
+  "required_controls": ["ctrl.obs.audit-log-append-only"],
+  "currently_implements": ["ctrl.obs.audit-log-append-only"],
+  "allowed_environments": ["dev", "stage", "prod"],
+  "blast_radius": {
+    "data": 0,
+    "network": 0,
+    "financial": 0,
+    "time": 0,
+    "reversibility": "reversible"
+  },
+  "privilege_envelope": {
+    "secrets_access": [],
+    "network_egress": "none",
+    "filesystem_writes": [],
+    "tools": []
+  },
+  "owner": "org.example",
+  "contact": "you@example.com",
+  "notes": "Minimal greeting worker (TypeScript). Safe for all environments.",
+  "catalog_version_min": "1.0.0"
+}
