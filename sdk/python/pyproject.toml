@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "pyhall"
+name = "pyhall-wcp"
 version = "0.1.0"
 description = "PyHall — Python reference implementation of WCP (Worker Class Protocol)"
 readme = "README.md"
