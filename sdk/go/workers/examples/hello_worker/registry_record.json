@@ -1,0 +1,32 @@
+{
+  "worker_id": "org.fafolab.hello-worker",
+  "worker_species_id": "wrk.example.greeter",
+  "capabilities": ["cap.example.greet"],
+  "risk_tier": "low",
+  "idempotency": "full",
+  "determinism": "captured",
+  "required_controls": [
+    "ctrl.obs.audit_log_append_only"
+  ],
+  "currently_implements": [
+    "ctrl.obs.audit_log_append_only"
+  ],
+  "allowed_environments": ["dev", "stage", "prod"],
+  "privilege_envelope": {
+    "secrets_access": [],
+    "network_egress": "none",
+    "filesystem_writes": [],
+    "tools": []
+  },
+  "blast_radius": {
+    "data": 0,
+    "network": 0,
+    "financial": 0,
+    "time": 0,
+    "reversibility": "reversible"
+  },
+  "owner": "org.fafolab",
+  "contact": "rob@fafolab.ai",
+  "notes": "Canonical minimal WCP worker example. Implements cap.example.greet. Returns a greeting with an evidence receipt.",
+  "catalog_version_min": "1.0.0"
+}

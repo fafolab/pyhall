@@ -1,0 +1,55 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+
+# TypeScript / Node
+node_modules/
+dist/
+*.js.map
+
+# Go
+*.test
+vendor/
+sdk/go/pyhall
+
+# Rust / Tauri
+target/
+
+# Secrets
+*.env
+*.key
+*.pem
+secrets.*
+
+# Editor
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Generated
+.astro/
+.wrangler/
+.env*.local
+pyhall_audit.db
+
+# Not part of this repo
+WCP_SPEC.md
+sdk/go/WCP_SPEC.md
+sdk/typescript/WCP_SPEC.md
+CHANGELOG.md
+sdk/*/CHANGELOG.md
+sdk/python/wcp_id_migration.py
+web/
+docs/
+research/
+taxonomy/
+tools/
+scripts/

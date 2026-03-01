@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pyhall — Hall Monitor</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+<div id="app">
+
+  <!-- ── Header ──────────────────────────────────────────────────────────── -->
+  <header id="header">
+    <div id="header-brand">
+      <div>
+        <div id="header-title">pyhall — Hall Monitor</div>
+        <div id="header-subtitle">The Hall — every worker, every job, every decision.</div>
+      </div>
+    </div>
+    <div id="header-status">
+      <div class="hall-indicator offline" id="hall-indicator">
+        <span class="dot"></span>
+        <span class="label" id="hall-indicator-label">OFFLINE</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ── Sidebar ─────────────────────────────────────────────────────────── -->
+  <nav id="sidebar">
+    <div class="nav-item active" data-screen="status">
+      <span class="nav-icon">≡</span>
+      <span class="nav-label">Hall Status</span>
+    </div>
+    <div class="nav-item" data-screen="feed">
+      <span class="nav-icon">⚡</span>
+      <span class="nav-label">Live Feed</span>
+    </div>
+    <div class="nav-item" data-screen="crew">
+      <span class="nav-icon">👷</span>
+      <span class="nav-label">Crew on Books</span>
+    </div>
+    <div class="nav-item" data-screen="alerts">
+      <span class="nav-icon">⚠</span>
+      <span class="nav-label">Alerts</span>
+      <span class="nav-badge" id="alert-badge" style="display:none">0</span>
+    </div>
+
+    <div class="nav-spacer"></div>
+    <div class="nav-divider"></div>
+
+    <div class="nav-item" data-screen="enroll">
+      <span class="nav-icon">+</span>
+      <span class="nav-label">Enroll Worker</span>
+    </div>
+    <div class="nav-item" data-screen="config">
+      <span class="nav-icon">⚙</span>
+      <span class="nav-label">Config</span>
+    </div>
+  </nav>
+
+  <!-- ── Main Content ─────────────────────────────────────────────────────── -->
+  <main id="content">
+
+    <!-- Screen 1: Hall Status -->
+    <section class="screen active" id="screen-status">
+      <div class="screen-header">
+        <span class="screen-title">Hall Status</span>
+        <button class="btn btn-secondary btn-sm" id="btn-refresh-status">↺ Refresh</button>
+      </div>
+
+      <div class="stat-grid">
+        <!-- Hall health card -->
+        <div class="stat-card">
+          <div class="stat-label">Hall</div>
+          <div class="hall-status-line">
+            <span id="hall-status-dot">●</span>
+            <span id="hall-status-text">OFFLINE</span>
+          </div>
+          <div class="hall-url" id="hall-url-display">http://localhost:8765</div>
+          <div class="stat-detail" id="hall-latency">—</div>
+        </div>
+
+        <!-- Workers card -->
+        <div class="stat-card">
+          <div class="stat-label">Workers</div>
+          <div class="stat-value" id="stat-workers">14</div>
+          <div class="stat-detail" id="stat-active-jobs">3 active jobs</div>
+        </div>
+
+        <!-- Today card -->
+        <div class="stat-card">
+          <div class="stat-label">Today</div>
+          <div class="stat-value" id="stat-dispatches">847</div>
+          <div class="stat-detail" id="stat-refusals">12 refused</div>
+        </div>
+      </div>
+
+      <!-- Active jobs -->
+      <div class="section-divider">Active Jobs</div>
+      <table class="data-table" id="active-jobs-table">
+        <thead>
+          <tr>
+            <th>Started</th>
+            <th>Worker</th>
+            <th>Capability</th>
+            <th>Blast</th>
+          </tr>
+        </thead>
+        <tbody id="active-jobs-body">
+          <!-- Populated by status.js -->
+        </tbody>
+      </table>
+
+      <!-- Recent refusals -->
+      <div class="section-divider">Recent Refusals (last 1h)</div>
+      <div id="recent-refusals">
+        <!-- Populated by status.js -->
+      </div>
+
+      <!-- Hall info -->
+      <div class="section-divider">Hall Server Info</div>
+      <div class="info-grid" id="hall-info-grid">
+        <span class="info-label">Version</span>
+        <span class="info-value" id="info-version">pyhall 0.1.0 / WCP 0.1</span>
+        <span class="info-label">Uptime</span>
+        <span class="info-value" id="info-uptime">—</span>
+        <span class="info-label">Rules loaded</span>
+        <span class="info-value" id="info-rules">214</span>
+        <span class="info-label">Profile</span>
+        <span class="info-value" id="info-profile">prof.dev.permissive</span>
+      </div>
+
+      <div style="margin-top:16px; display:flex; gap:8px;">
+        <button class="btn btn-secondary btn-sm" id="btn-go-config-from-status">Open Hall Config</button>
+        <button class="btn btn-ghost btn-sm" id="btn-go-feed-from-status">View Live Feed</button>
+      </div>
+    </section>
+
+    <!-- Screen 2: Live Dispatch Feed -->
+    <section class="screen" id="screen-feed">
+      <div class="screen-header">
+        <span class="screen-title">Live Dispatch Feed</span>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <button class="btn btn-secondary btn-sm" id="btn-pause-feed">⏸ Pause</button>
+          <button class="btn btn-ghost btn-sm" id="btn-clear-feed">Clear</button>
+        </div>
+      </div>
+
+      <div class="paused-banner" id="paused-banner">
+        Feed paused — <span id="paused-count">0</span> new events since pause.
+        <button class="btn btn-ghost btn-sm" id="btn-resume-feed" style="margin-left:8px;">Resume</button>
+      </div>
+
+      <div class="filter-chips">
+        <span class="chip active" data-filter="all">All</span>
+        <span class="chip" data-filter="DISPATCHED">Approved</span>
+        <span class="chip" data-filter="REFUSED">Refused</span>
+        <span class="chip" data-filter="STEWARD_HOLD">Steward Hold</span>
+        <input type="text" id="feed-worker-filter" placeholder="Filter by worker..." style="padding:4px 10px; border-radius:20px; border:1px solid var(--bg-border); background:var(--bg-raised); color:var(--text-primary); font-size:11px; outline:none; width:160px;" />
+      </div>
+
+      <div style="overflow-x:auto;">
+        <table class="data-table feed-table" id="feed-table">
+          <thead>
+            <tr>
+              <th>Time</th>
+              <th>Outcome</th>
+              <th>Worker</th>
+              <th>Capability</th>
+              <th>Blast</th>
+            </tr>
+          </thead>
+          <tbody id="feed-body">
+            <!-- Populated by feed.js -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Screen 3: Crew on Books -->
+    <section class="screen" id="screen-crew">
+      <div class="screen-header">
+        <span class="screen-title">Crew on the Books</span>
+        <span class="screen-subtitle" id="crew-count">0 workers</span>
+      </div>
+
+      <div class="search-bar">
+        <span class="search-icon">⌕</span>
+        <input type="text" id="crew-search" placeholder="Search workers..." />
+      </div>
+
+      <div class="filter-chips">
+        <span class="chip active" data-crew-filter="all">All</span>
+        <span class="chip" data-crew-filter="active">Active</span>
+        <span class="chip" data-crew-filter="gated">Gated</span>
+        <span class="chip" data-crew-filter="idle">Idle</span>
+        <span class="chip" data-crew-filter="catalog">Catalog</span>
+      </div>
+
+      <div class="worker-grid" id="crew-list">
+        <!-- Populated by crew.js -->
+      </div>
+
+      <div style="margin-top:16px;">
+        <button class="btn btn-primary btn-sm" id="btn-go-enroll">+ Enroll a new worker</button>
+      </div>
+    </section>
+
+    <!-- Screen 4: Alerts -->
+    <section class="screen" id="screen-alerts">
+      <div class="screen-header">
+        <span class="screen-title">Alerts</span>
+        <span class="screen-subtitle" id="alerts-unresolved">0 unresolved</span>
+      </div>
+
+      <div class="filter-chips">
+        <span class="chip active" data-alert-filter="all">All</span>
+        <span class="chip" data-alert-filter="error">Errors</span>
+        <span class="chip" data-alert-filter="warning">Warnings</span>
+        <span class="chip" data-alert-filter="info">Info</span>
+      </div>
+
+      <div class="alert-list" id="alerts-list">
+        <!-- Populated by alerts.js -->
+      </div>
+
+      <div class="section-divider" id="ack-section-header" style="display:none;">
+        Acknowledged (last 24h)
+      </div>
+      <div id="acked-list" style="display:none;"></div>
+    </section>
+
+    <!-- Screen 5: Worker Enrollment -->
+    <section class="screen" id="screen-enroll">
+      <div class="screen-header">
+        <span class="screen-title">Register a Worker with the Hall</span>
+      </div>
+
+      <div id="enroll-dropzone-view">
+        <div class="drop-zone" id="drop-zone">
+          <div class="drop-zone-icon">📄</div>
+          <div class="drop-zone-text">Drop a registry_record.json here, or click to browse</div>
+          <div class="drop-zone-sub">registry_record.json · or <button class="btn btn-ghost btn-sm" id="btn-browse-file" style="display:inline-flex;">Browse</button></div>
+        </div>
+        <input type="file" id="file-input" accept=".json" style="display:none;" />
+
+        <p style="font-size:12px; color:var(--text-muted); text-align:center;">
+          Or generate one:
+          <a href="#" id="link-cli-wizard" style="color:var(--accent-blue); text-decoration:none;">Open the hall CLI scaffold wizard</a>
+        </p>
+      </div>
+
+      <!-- Preview state (hidden until file loaded) -->
+      <div id="enroll-preview-view" style="display:none;">
+        <div class="section-divider">Worker Preview</div>
+        <div class="preview-card" id="worker-preview">
+          <!-- Populated by enroll.js -->
+        </div>
+
+        <div class="section-divider">Validation</div>
+        <ul class="validation-list" id="validation-list">
+          <!-- Populated by enroll.js -->
+        </ul>
+
+        <div style="display:flex; gap:10px; margin-top:16px;">
+          <button class="btn btn-primary" id="btn-enroll-confirm">Register with the Hall</button>
+          <button class="btn btn-secondary" id="btn-enroll-cancel">Cancel</button>
+        </div>
+      </div>
+
+      <!-- Success state (hidden until enrolled) -->
+      <div id="enroll-success-view" style="display:none;">
+        <div style="background:var(--success-muted); border:1px solid var(--success); border-radius:var(--radius); padding:20px; margin-top:16px;">
+          <div style="font-size:16px; color:var(--success); font-weight:600; margin-bottom:8px;">
+            ✓ Worker registered with the Hall.
+          </div>
+          <div id="enroll-success-msg" style="font-size:13px; color:var(--text-primary); margin-bottom:12px;"></div>
+          <button class="btn btn-secondary btn-sm" id="btn-view-crew">View in Crew Registry</button>
+          <button class="btn btn-ghost btn-sm" id="btn-enroll-another">Enroll another</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Screen 6: Configuration -->
+    <section class="screen" id="screen-config">
+      <div class="screen-header">
+        <span class="screen-title">Configuration</span>
+      </div>
+
+      <!-- Hall Connection -->
+      <div class="config-section">
+        <div class="config-section-title">Hall Connection</div>
+
+        <div class="field">
+          <label>Server URL</label>
+          <input type="url" id="cfg-hall-url" value="http://localhost:8765" />
+        </div>
+
+        <div class="field">
+          <label>Poll Interval</label>
+          <div class="radio-group" id="poll-interval-group">
+            <label class="radio-option" data-value="1">
+              <input type="radio" name="poll" value="1" /> 1 second
+            </label>
+            <label class="radio-option selected" data-value="3">
+              <input type="radio" name="poll" value="3" checked /> 3 seconds
+            </label>
+            <label class="radio-option" data-value="10">
+              <input type="radio" name="poll" value="10" /> 10 seconds
+            </label>
+            <label class="radio-option" data-value="0">
+              <input type="radio" name="poll" value="0" /> Manual only
+            </label>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Default Profile</label>
+          <select id="cfg-profile">
+            <option value="prof.dev.permissive">prof.dev.permissive</option>
+            <option value="prof.prod.strict">prof.prod.strict</option>
+            <option value="prof.edge.isolated">prof.edge.isolated</option>
+          </select>
+        </div>
+
+        <div style="display:flex; gap:8px; align-items:center;">
+          <button class="btn btn-secondary btn-sm" id="btn-test-connection">Test Connection</button>
+          <span id="test-result-display"></span>
+        </div>
+      </div>
+
+      <!-- Notifications -->
+      <div class="config-section">
+        <div class="config-section-title">Notifications</div>
+        <div class="field">
+          <label><input type="checkbox" id="notif-hall-offline" checked /> Desktop notification: Hall offline</label>
+        </div>
+        <div class="field">
+          <label><input type="checkbox" id="notif-worker-failure" checked /> Desktop notification: Worker failure spike</label>
+        </div>
+        <div class="field">
+          <label><input type="checkbox" id="notif-steward-hold" checked /> Desktop notification: Repeated steward holds</label>
+        </div>
+        <div class="field">
+          <label><input type="checkbox" id="notif-every-denial" /> Desktop notification: Every denied dispatch <span style="color:var(--text-muted);">(noisy)</span></label>
+        </div>
+      </div>
+
+      <!-- Display -->
+      <div class="config-section">
+        <div class="config-section-title">Display</div>
+        <div class="field">
+          <label><input type="checkbox" id="display-tray" checked /> Show Hall in system tray when minimized</label>
+        </div>
+        <div class="field">
+          <label><input type="checkbox" id="display-login" /> Launch at login</label>
+        </div>
+        <div class="field">
+          <label>Live feed max rows</label>
+          <input type="text" id="cfg-feed-max" value="500" style="width:100px;" />
+        </div>
+      </div>
+
+      <button class="btn btn-primary" id="btn-save-config">Save Configuration</button>
+      <span id="save-config-result" style="margin-left:10px; font-size:12px; display:none;"></span>
+    </section>
+
+  </main>
+
+  <!-- ── Status Bar ─────────────────────────────────────────────────────── -->
+  <footer id="statusbar">
+    <span>Hall:</span>
+    <span id="sb-hall-status" class="status-offline">OFFLINE</span>
+    <span class="sep">·</span>
+    <span id="sb-workers">14 workers</span>
+    <span class="sep">·</span>
+    <span id="sb-dispatches">847 dispatches today</span>
+    <span id="clock"></span>
+  </footer>
+
+</div>
+
+<!-- Scripts -->
+<script src="js/api.js"></script>
+<script src="js/screens/status.js"></script>
+<script src="js/screens/feed.js"></script>
+<script src="js/screens/crew.js"></script>
+<script src="js/screens/alerts.js"></script>
+<script src="js/screens/enroll.js"></script>
+<script src="js/screens/config.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,6007 @@
+{
+  "_meta": {
+    "version": "0.1.0",
+    "wcp_spec": "0.1",
+    "total_entities": 245,
+    "built": "2026-02-26"
+  },
+  "entities": [
+    {
+      "id": "cap.mount.workspace",
+      "type": "capability",
+      "name": "Mount Workspace",
+      "description": "Mount a dedicated workspace directory into the execution environment.",
+      "risk_tier": "medium",
+      "tags": [
+        "sandbox",
+        "filesystem"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 1,
+        "network": 0,
+        "financial": 0,
+        "time": 1,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.sandbox.workspace-mounts-only",
+        "ctrl.sandbox.readonly-rootfs"
+      ],
+      "idempotency": "full",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "cap.net.egress.allowlisted",
+      "type": "capability",
+      "name": "Network Egress (Allowlisted)",
+      "description": "Outbound network access limited to allowlisted destinations via controlled proxy.",
+      "risk_tier": "high",
+      "tags": [
+        "sandbox",
+        "egress",
+        "network"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 2,
+        "network": 3,
+        "financial": 1,
+        "time": 1,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.sandbox.no-egress-default-deny",
+        "ctrl.sandbox.path-allowlists"
+      ],
+      "idempotency": "partial",
+      "determinism": "non-deterministic"
+    },
+    {
+      "id": "cap.net.egress.denied",
+      "type": "capability",
+      "name": "Network Egress Denied",
+      "description": "Outbound network access disabled (default deny).",
+      "risk_tier": "low",
+      "tags": [
+        "sandbox",
+        "network"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 0,
+        "network": 0,
+        "financial": 0,
+        "time": 0,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.sandbox.no-egress-default-deny"
+      ],
+      "idempotency": "full",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "cap.fs.readonly",
+      "type": "capability",
+      "name": "Filesystem Read-Only",
+      "description": "Execution environment filesystem is read-only except for mounted workspace.",
+      "risk_tier": "low",
+      "tags": [
+        "sandbox",
+        "filesystem"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 0,
+        "network": 0,
+        "financial": 0,
+        "time": 0,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.sandbox.readonly-rootfs"
+      ],
+      "idempotency": "full",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "cap.fs.workspace.write",
+      "type": "capability",
+      "name": "Workspace Write",
+      "description": "Write and modify files only within the mounted workspace boundary.",
+      "risk_tier": "medium",
+      "tags": [
+        "sandbox",
+        "filesystem"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 2,
+        "network": 0,
+        "financial": 0,
+        "time": 1,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.sandbox.workspace-mounts-only",
+        "ctrl.sandbox.path-allowlists"
+      ],
+      "idempotency": "partial",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "cap.exec.container",
+      "type": "capability",
+      "name": "Execute in Container",
+      "description": "Execute artifact within a container boundary with restricted privileges.",
+      "risk_tier": "medium",
+      "tags": [
+        "sandbox",
+        "execution"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 1,
+        "network": 1,
+        "financial": 0,
+        "time": 1,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.sandbox.no-privileged-containers",
+        "ctrl.sandbox.resource-limits-strict",
+        "ctrl.sandbox.syscall-filtering"
+      ],
+      "idempotency": "partial",
+      "determinism": "captured"
+    },
+    {
+      "id": "cap.exec.vm",
+      "type": "capability",
+      "name": "Execute in VM",
+      "description": "Execute artifact within a VM boundary (stronger isolation than containers).",
+      "risk_tier": "medium",
+      "tags": [
+        "sandbox",
+        "execution"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 1,
+        "network": 1,
+        "financial": 0,
+        "time": 2,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.sandbox.resource-limits-strict",
+        "ctrl.sandbox.no-egress-default-deny"
+      ],
+      "idempotency": "partial",
+      "determinism": "captured"
+    },
+    {
+      "id": "ctrl.sandbox.no-egress-default-deny",
+      "type": "control",
+      "name": "No Egress Default Deny",
+      "description": "Disable all outbound network by default; egress requires explicit allowlist.",
+      "tags": [
+        "sandbox",
+        "network",
+        "safety"
+      ],
+      "enforcement_point": "platform",
+      "required_for_risk_tiers": [
+        "medium",
+        "high",
+        "critical"
+      ],
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "ctrl.sandbox.readonly-rootfs",
+      "type": "control",
+      "name": "Read-Only Root Filesystem",
+      "description": "Root filesystem is read-only; only workspace mount is writable.",
+      "tags": [
+        "sandbox",
+        "filesystem"
+      ],
+      "enforcement_point": "platform",
+      "required_for_risk_tiers": [
+        "medium",
+        "high",
+        "critical"
+      ],
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "ctrl.sandbox.workspace-mounts-only",
+      "type": "control",
+      "name": "Workspace Mounts Only",
+      "description": "Only workspace path may be mounted; all other mounts denied.",
+      "tags": [
+        "sandbox",
+        "filesystem"
+      ],
+      "enforcement_point": "platform",
+      "required_for_risk_tiers": [
+        "medium",
+        "high",
+        "critical"
+      ],
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "ctrl.sandbox.resource-limits-strict",
+      "type": "control",
+      "name": "Strict Resource Limits",
+      "description": "Enforce CPU, RAM, and time limits on worker execution.",
+      "tags": [
+        "sandbox",
+        "reliability"
+      ],
+      "enforcement_point": "platform",
+      "required_for_risk_tiers": [
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ],
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "ctrl.sandbox.syscall-filtering",
+      "type": "control",
+      "name": "Syscall Filtering",
+      "description": "Apply seccomp/AppArmor profiles to restrict permitted system calls.",
+      "tags": [
+        "sandbox",
+        "security"
+      ],
+      "enforcement_point": "platform",
+      "required_for_risk_tiers": [
+        "high",
+        "critical"
+      ],
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "ctrl.sandbox.no-privileged-containers",
+      "type": "control",
+      "name": "No Privileged Containers",
+      "description": "Container execution must not use privileged mode.",
+      "tags": [
+        "sandbox",
+        "security"
+      ],
+      "enforcement_point": "platform",
+      "required_for_risk_tiers": [
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ],
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "ctrl.sandbox.secrets-denied-by-default",
+      "type": "control",
+      "name": "Secrets Denied by Default",
+      "description": "No secrets injected into workers unless explicitly granted.",
+      "tags": [
+        "sandbox",
+        "secrets",
+        "safety"
+      ],
+      "enforcement_point": "platform",
+      "required_for_risk_tiers": [
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ],
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "ctrl.sandbox.flight-recorder",
+      "type": "control",
+      "name": "Flight Recorder",
+      "description": "Record all tool calls and file activity for audit purposes.",
+      "tags": [
+        "sandbox",
+        "observability",
+        "audit"
+      ],
+      "enforcement_point": "worker",
+      "required_for_risk_tiers": [
+        "medium",
+        "high",
+        "critical"
+      ],
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "ctrl.sandbox.path-allowlists",
+      "type": "control",
+      "name": "Path Allowlists",
+      "description": "Deny access to sensitive filesystem paths not in the allowlist.",
+      "tags": [
+        "sandbox",
+        "filesystem",
+        "security"
+      ],
+      "enforcement_point": "platform",
+      "required_for_risk_tiers": [
+        "medium",
+        "high",
+        "critical"
+      ],
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "prof.sandbox.no-egress",
+      "type": "profile",
+      "name": "No-Egress Sandbox Profile",
+      "description": "No-egress sandbox posture: all outbound network disabled, workspace-only writes.",
+      "tags": [
+        "sandbox",
+        "network"
+      ],
+      "controls_required": [
+        "ctrl.sandbox.no-egress-default-deny",
+        "ctrl.sandbox.workspace-mounts-only",
+        "ctrl.sandbox.readonly-rootfs",
+        "ctrl.sandbox.secrets-denied-by-default"
+      ],
+      "recommended_for_risk_tiers": [
+        "medium",
+        "high",
+        "critical"
+      ],
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "prof.sandbox.vm-strict",
+      "type": "profile",
+      "name": "VM-Strict Sandbox Profile",
+      "description": "VM-isolated strict sandbox posture: full VM isolation, no privileged access.",
+      "tags": [
+        "sandbox",
+        "security"
+      ],
+      "controls_required": [
+        "ctrl.sandbox.no-egress-default-deny",
+        "ctrl.sandbox.resource-limits-strict",
+        "ctrl.sandbox.secrets-denied-by-default",
+        "ctrl.sandbox.flight-recorder"
+      ],
+      "recommended_for_risk_tiers": [
+        "high",
+        "critical"
+      ],
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "prof.sandbox.allowlisted-egress",
+      "type": "profile",
+      "name": "Allowlisted Egress Sandbox Profile",
+      "description": "Sandbox posture allowing egress only to explicitly allowlisted destinations.",
+      "tags": [
+        "sandbox",
+        "network",
+        "egress"
+      ],
+      "controls_required": [
+        "ctrl.sandbox.path-allowlists",
+        "ctrl.sandbox.workspace-mounts-only",
+        "ctrl.sandbox.no-privileged-containers",
+        "ctrl.sandbox.flight-recorder"
+      ],
+      "recommended_for_risk_tiers": [
+        "medium",
+        "high"
+      ],
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "cap.identity.workload",
+      "type": "capability",
+      "name": "Workload Identity",
+      "description": "Assert a cryptographic workload identity bound to the execution context.",
+      "risk_tier": "high",
+      "tags": [
+        "identity",
+        "security",
+        "credentials"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 1,
+        "network": 1,
+        "financial": 1,
+        "time": 0,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.sandbox.secrets-denied-by-default"
+      ],
+      "idempotency": "full",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "cap.secrets.read",
+      "type": "capability",
+      "name": "Read Secrets",
+      "description": "Read secrets from a secrets vault scoped to the workload identity.",
+      "risk_tier": "high",
+      "tags": [
+        "secrets",
+        "security",
+        "credentials"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 3,
+        "network": 1,
+        "financial": 2,
+        "time": 0,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.sandbox.secrets-denied-by-default",
+        "ctrl.obs.audit-log-append-only"
+      ],
+      "idempotency": "full",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "cap.token.mint.shortlived",
+      "type": "capability",
+      "name": "Mint Short-Lived Token",
+      "description": "Mint a short-lived access token (TTL <= 1 hour) scoped to specific resources.",
+      "risk_tier": "high",
+      "tags": [
+        "identity",
+        "tokens",
+        "security"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 1,
+        "network": 1,
+        "financial": 1,
+        "time": 1,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.sandbox.secrets-denied-by-default",
+        "ctrl.obs.audit-log-append-only"
+      ],
+      "idempotency": "partial",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "cap.credential.rotate",
+      "type": "capability",
+      "name": "Rotate Credentials",
+      "description": "Rotate a credential (API key, certificate, secret) and update all references.",
+      "risk_tier": "high",
+      "tags": [
+        "credentials",
+        "rotation",
+        "security"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 2,
+        "network": 2,
+        "financial": 2,
+        "time": 2,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.sandbox.secrets-denied-by-default"
+      ],
+      "idempotency": "partial",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "cap.audit.read",
+      "type": "capability",
+      "name": "Read Audit Logs",
+      "description": "Read audit log entries for compliance review and forensic analysis.",
+      "risk_tier": "medium",
+      "tags": [
+        "audit",
+        "compliance",
+        "security"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 1,
+        "network": 0,
+        "financial": 0,
+        "time": 0,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.audit-log-append-only"
+      ],
+      "idempotency": "full",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "cap.side-effect.write-external",
+      "type": "capability",
+      "name": "Write External Side Effect",
+      "description": "Perform a write to an external system (database, API, filesystem) as a declared side effect.",
+      "risk_tier": "high",
+      "tags": [
+        "side-effects",
+        "observability",
+        "audit"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 3,
+        "network": 2,
+        "financial": 1,
+        "time": 2,
+        "reversibility": "partially-reversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.obs.structured-logging"
+      ],
+      "idempotency": "partial",
+      "determinism": "captured"
+    },
+    {
+      "id": "cap.ledger.write",
+      "type": "capability",
+      "name": "Write Audit Ledger",
+      "description": "Append an immutable entry to the audit ledger.",
+      "risk_tier": "high",
+      "tags": [
+        "audit",
+        "ledger",
+        "integrity"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 1,
+        "network": 0,
+        "financial": 0,
+        "time": 0,
+        "reversibility": "irreversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.audit-log-append-only"
+      ],
+      "idempotency": "partial",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "cap.outbox.publish",
+      "type": "capability",
+      "name": "Publish via Outbox",
+      "description": "Publish a message via transactional outbox pattern ensuring at-least-once delivery.",
+      "risk_tier": "medium",
+      "tags": [
+        "outbox",
+        "messaging",
+        "reliability"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 1,
+        "network": 2,
+        "financial": 0,
+        "time": 1,
+        "reversibility": "partially-reversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.structured-logging",
+        "ctrl.obs.run-metadata-store"
+      ],
+      "idempotency": "partial",
+      "determinism": "captured"
+    },
+    {
+      "id": "cap.inbox.dedup",
+      "type": "capability",
+      "name": "Inbox Deduplication",
+      "description": "Deduplicate incoming messages using idempotency keys before processing.",
+      "risk_tier": "low",
+      "tags": [
+        "inbox",
+        "dedup",
+        "reliability"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 0,
+        "network": 0,
+        "financial": 0,
+        "time": 0,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.structured-logging"
+      ],
+      "idempotency": "full",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "ctrl.obs.structured-logging",
+      "type": "control",
+      "name": "Structured Logging",
+      "description": "All worker output must use structured (JSON) logging with correlation_id and tenant_id.",
+      "tags": [
+        "observability",
+        "logging"
+      ],
+      "enforcement_point": "worker",
+      "required_for_risk_tiers": [
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ],
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "ctrl.obs.metrics-core",
+      "type": "control",
+      "name": "Core Metrics",
+      "description": "Workers must emit core metrics (latency, error rate, throughput).",
+      "tags": [
+        "observability",
+        "metrics"
+      ],
+      "enforcement_point": "worker",
+      "required_for_risk_tiers": [
+        "medium",
+        "high",
+        "critical"
+      ],
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "ctrl.obs.tracing-distributed",
+      "type": "control",
+      "name": "Distributed Tracing",
+      "description": "Workers must emit distributed trace spans with correlation_id propagation.",
+      "tags": [
+        "observability",
+        "tracing"
+      ],
+      "enforcement_point": "worker",
+      "required_for_risk_tiers": [
+        "medium",
+        "high",
+        "critical"
+      ],
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "ctrl.obs.audit-log-append-only",
+      "type": "control",
+      "name": "Append-Only Audit Log",
+      "description": "Audit entries must be written to an append-only log; modifications forbidden.",
+      "tags": [
+        "observability",
+        "audit",
+        "integrity"
+      ],
+      "enforcement_point": "platform",
+      "required_for_risk_tiers": [
+        "medium",
+        "high",
+        "critical"
+      ],
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "ctrl.obs.run-metadata-store",
+      "type": "control",
+      "name": "Run Metadata Store",
+      "description": "Store run metadata (inputs, outputs, timing, worker version) per execution.",
+      "tags": [
+        "observability",
+        "provenance"
+      ],
+      "enforcement_point": "worker",
+      "required_for_risk_tiers": [
+        "medium",
+        "high",
+        "critical"
+      ],
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "ctrl.obs.slo-alerting",
+      "type": "control",
+      "name": "SLO Alerting",
+      "description": "Alert when SLO thresholds are breached (error budget, latency p99).",
+      "tags": [
+        "observability",
+        "slo",
+        "reliability"
+      ],
+      "enforcement_point": "platform",
+      "required_for_risk_tiers": [
+        "medium",
+        "high",
+        "critical"
+      ],
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "ctrl.obs.flight-recorder-bundle",
+      "type": "control",
+      "name": "Flight Recorder Bundle",
+      "description": "Collect and retain full flight recorder bundle (all events, tool calls, inputs/outputs) for forensic replay.",
+      "tags": [
+        "observability",
+        "audit",
+        "forensics"
+      ],
+      "enforcement_point": "worker",
+      "required_for_risk_tiers": [
+        "high",
+        "critical"
+      ],
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "cap.dlq.inspect",
+      "type": "capability",
+      "name": "Inspect Dead Letter Queue",
+      "description": "Read and classify messages in the dead letter queue for triage.",
+      "risk_tier": "low",
+      "tags": [
+        "dlq",
+        "inspection",
+        "repair"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 0,
+        "network": 0,
+        "financial": 0,
+        "time": 0,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.structured-logging"
+      ],
+      "idempotency": "full",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "cap.dlq.replay",
+      "type": "capability",
+      "name": "Replay DLQ Message",
+      "description": "Re-enqueue a dead letter message for re-processing with replay controls.",
+      "risk_tier": "medium",
+      "tags": [
+        "dlq",
+        "replay",
+        "repair"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 2,
+        "network": 1,
+        "financial": 1,
+        "time": 1,
+        "reversibility": "partially-reversible"
+      },
+      "typical_controls": [
+        "ctrl.dlq.max-replay-attempts",
+        "ctrl.obs.structured-logging"
+      ],
+      "idempotency": "partial",
+      "determinism": "captured"
+    },
+    {
+      "id": "cap.dlq.purge",
+      "type": "capability",
+      "name": "Purge Dead Letter Queue",
+      "description": "Permanently discard messages from the dead letter queue after review.",
+      "risk_tier": "medium",
+      "tags": [
+        "dlq",
+        "purge",
+        "maintenance"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 2,
+        "network": 0,
+        "financial": 0,
+        "time": 0,
+        "reversibility": "irreversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.dlq.max-replay-attempts"
+      ],
+      "idempotency": "full",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "cap.repair.reconcile-state",
+      "type": "capability",
+      "name": "Reconcile Broken State",
+      "description": "Detect and repair inconsistent state by comparing source-of-truth with derived state.",
+      "risk_tier": "high",
+      "tags": [
+        "repair",
+        "reconcile",
+        "consistency"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 3,
+        "network": 1,
+        "financial": 1,
+        "time": 2,
+        "reversibility": "partially-reversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.obs.structured-logging"
+      ],
+      "idempotency": "full",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "cap.repair.compensate-transaction",
+      "type": "capability",
+      "name": "Execute Compensating Transaction",
+      "description": "Execute a compensating transaction to undo a previously committed action.",
+      "risk_tier": "high",
+      "tags": [
+        "repair",
+        "saga",
+        "compensation"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 3,
+        "network": 2,
+        "financial": 2,
+        "time": 2,
+        "reversibility": "partially-reversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.obs.tracing-distributed"
+      ],
+      "idempotency": "full",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "wrk.dlq.janitor",
+      "type": "worker_species",
+      "name": "DLQ Janitor Worker",
+      "description": "Periodic worker that inspects, classifies, and routes DLQ messages \u2014 retry, escalate, or purge.",
+      "risk_tier": "medium",
+      "tags": [
+        "dlq",
+        "janitor",
+        "maintenance"
+      ],
+      "wcp_namespace": "reserved",
+      "serves_capabilities": [
+        "cap.dlq.inspect",
+        "cap.dlq.replay",
+        "cap.dlq.purge"
+      ],
+      "blast_radius_hint": {
+        "data": 2,
+        "network": 1,
+        "financial": 1,
+        "time": 1,
+        "reversibility": "partially-reversible"
+      },
+      "required_controls": [
+        "ctrl.obs.structured-logging",
+        "ctrl.dlq.max-replay-attempts"
+      ],
+      "idempotency": "partial",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "wrk.repair.state-reconciler",
+      "type": "worker_species",
+      "name": "State Reconciler Worker",
+      "description": "Scans entity state periodically, detects drift from authoritative source, and triggers repair.",
+      "risk_tier": "medium",
+      "tags": [
+        "repair",
+        "reconcile",
+        "drift"
+      ],
+      "wcp_namespace": "reserved",
+      "serves_capabilities": [
+        "cap.repair.reconcile-state"
+      ],
+      "blast_radius_hint": {
+        "data": 2,
+        "network": 1,
+        "financial": 0,
+        "time": 2,
+        "reversibility": "partially-reversible"
+      },
+      "required_controls": [
+        "ctrl.obs.structured-logging",
+        "ctrl.obs.audit-log-append-only"
+      ],
+      "idempotency": "full",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "ctrl.dlq.max-replay-attempts",
+      "type": "control",
+      "name": "Max Replay Attempts",
+      "description": "Policy control: maximum number of times a DLQ message may be replayed before permanent discard.",
+      "tags": [
+        "dlq",
+        "policy",
+        "control"
+      ],
+      "wcp_namespace": "reserved",
+      "enforcement_point": "worker",
+      "required_for_risk_tiers": [
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ]
+    },
+    {
+      "id": "cap.idempotency.check-key",
+      "type": "capability",
+      "name": "Check Idempotency Key",
+      "description": "Check whether an idempotency key has been seen and return cached result if present.",
+      "risk_tier": "low",
+      "tags": [
+        "idempotency",
+        "dedup"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 0,
+        "network": 0,
+        "financial": 0,
+        "time": 0,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.idempotency.key-ttl-seconds"
+      ],
+      "idempotency": "full",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "cap.idempotency.register-key",
+      "type": "capability",
+      "name": "Register Idempotency Key",
+      "description": "Register a new idempotency key and bind it to the current execution result.",
+      "risk_tier": "low",
+      "tags": [
+        "idempotency",
+        "registration"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 0,
+        "network": 0,
+        "financial": 0,
+        "time": 0,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.idempotency.key-ttl-seconds"
+      ],
+      "idempotency": "full",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "cap.idempotency.expire-key",
+      "type": "capability",
+      "name": "Expire Idempotency Key",
+      "description": "Force-expire an idempotency key before its TTL for maintenance purposes.",
+      "risk_tier": "low",
+      "tags": [
+        "idempotency",
+        "expiry",
+        "maintenance"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 0,
+        "network": 0,
+        "financial": 0,
+        "time": 0,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.idempotency.key-ttl-seconds"
+      ],
+      "idempotency": "full",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "cap.idempotency.atomic-write",
+      "type": "capability",
+      "name": "Atomic Idempotent Write",
+      "description": "Write a value atomically using check-and-set semantics tied to an idempotency key.",
+      "risk_tier": "medium",
+      "tags": [
+        "idempotency",
+        "atomic",
+        "writes"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 1,
+        "network": 0,
+        "financial": 0,
+        "time": 1,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.idempotency.key-ttl-seconds",
+        "ctrl.obs.structured-logging"
+      ],
+      "idempotency": "full",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "wrk.idempotency.guard",
+      "type": "worker_species",
+      "name": "Idempotency Guard Worker",
+      "description": "Middleware worker that intercepts job submissions, checks/registers idempotency keys, and short-circuits duplicates.",
+      "risk_tier": "low",
+      "tags": [
+        "idempotency",
+        "middleware",
+        "guard"
+      ],
+      "wcp_namespace": "reserved",
+      "serves_capabilities": [
+        "cap.idempotency.check-key",
+        "cap.idempotency.register-key",
+        "cap.idempotency.atomic-write"
+      ],
+      "blast_radius_hint": {
+        "data": 0,
+        "network": 0,
+        "financial": 0,
+        "time": 0,
+        "reversibility": "reversible"
+      },
+      "required_controls": [
+        "ctrl.idempotency.key-ttl-seconds",
+        "ctrl.obs.structured-logging"
+      ],
+      "idempotency": "full",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "wrk.idempotency.dedup-sweeper",
+      "type": "worker_species",
+      "name": "Dedup Sweeper Worker",
+      "description": "Periodic worker that removes expired idempotency keys from the store to control storage growth.",
+      "risk_tier": "low",
+      "tags": [
+        "idempotency",
+        "maintenance",
+        "expiry"
+      ],
+      "wcp_namespace": "reserved",
+      "serves_capabilities": [
+        "cap.idempotency.expire-key"
+      ],
+      "blast_radius_hint": {
+        "data": 0,
+        "network": 0,
+        "financial": 0,
+        "time": 1,
+        "reversibility": "reversible"
+      },
+      "required_controls": [
+        "ctrl.idempotency.key-ttl-seconds"
+      ],
+      "idempotency": "full",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "ctrl.idempotency.key-ttl-seconds",
+      "type": "control",
+      "name": "Idempotency Key TTL",
+      "description": "Policy control: time-to-live in seconds for idempotency keys in the dedup store.",
+      "tags": [
+        "idempotency",
+        "policy",
+        "ttl"
+      ],
+      "wcp_namespace": "reserved",
+      "enforcement_point": "worker",
+      "required_for_risk_tiers": [
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ]
+    },
+    {
+      "id": "cap.cost.track-token-usage",
+      "type": "capability",
+      "name": "Track Token Usage",
+      "description": "Record token consumption per worker call into the billing datastore.",
+      "risk_tier": "low",
+      "tags": [
+        "cost",
+        "tokens",
+        "billing"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 0,
+        "network": 0,
+        "financial": 1,
+        "time": 0,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.cost.monthly-token-budget",
+        "ctrl.obs.metrics-core"
+      ],
+      "idempotency": "partial",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "cap.cost.check-budget",
+      "type": "capability",
+      "name": "Check Cost Budget",
+      "description": "Check current spend against allocated budget before executing a cost-incurring operation.",
+      "risk_tier": "low",
+      "tags": [
+        "cost",
+        "budget",
+        "policy"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 0,
+        "network": 0,
+        "financial": 0,
+        "time": 0,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.cost.monthly-token-budget"
+      ],
+      "idempotency": "full",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "cap.cost.enforce-cap",
+      "type": "capability",
+      "name": "Enforce Spend Cap",
+      "description": "Hard-block a worker dispatch when accumulated spend exceeds the configured cap.",
+      "risk_tier": "medium",
+      "tags": [
+        "cost",
+        "enforcement",
+        "safety"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 0,
+        "network": 0,
+        "financial": 2,
+        "time": 1,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.cost.monthly-token-budget",
+        "ctrl.obs.structured-logging"
+      ],
+      "idempotency": "full",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "cap.cost.estimate-job",
+      "type": "capability",
+      "name": "Estimate Job Cost",
+      "description": "Produce a pre-execution cost estimate (tokens, compute, storage) for a job.",
+      "risk_tier": "low",
+      "tags": [
+        "cost",
+        "estimation",
+        "planning"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 0,
+        "network": 0,
+        "financial": 0,
+        "time": 0,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.cost.monthly-token-budget"
+      ],
+      "idempotency": "full",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "cap.cost.generate-report",
+      "type": "capability",
+      "name": "Generate Cost Report",
+      "description": "Generate a cost usage report for a tenant, project, or time period.",
+      "risk_tier": "low",
+      "tags": [
+        "cost",
+        "reporting",
+        "billing"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 0,
+        "network": 0,
+        "financial": 0,
+        "time": 1,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.structured-logging"
+      ],
+      "idempotency": "full",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "wrk.cost.budget-enforcer",
+      "type": "worker_species",
+      "name": "Budget Enforcer Worker",
+      "description": "Policy gate worker that intercepts dispatches and denies jobs when cost budgets would be exceeded.",
+      "risk_tier": "medium",
+      "tags": [
+        "cost",
+        "enforcement",
+        "policy-gate"
+      ],
+      "wcp_namespace": "reserved",
+      "serves_capabilities": [
+        "cap.cost.check-budget",
+        "cap.cost.enforce-cap"
+      ],
+      "blast_radius_hint": {
+        "data": 0,
+        "network": 0,
+        "financial": 2,
+        "time": 1,
+        "reversibility": "reversible"
+      },
+      "required_controls": [
+        "ctrl.cost.monthly-token-budget",
+        "ctrl.obs.structured-logging"
+      ],
+      "idempotency": "full",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "wrk.cost.usage-aggregator",
+      "type": "worker_species",
+      "name": "Usage Aggregator Worker",
+      "description": "Collects token/compute usage events from workers and aggregates into the billing data store.",
+      "risk_tier": "low",
+      "tags": [
+        "cost",
+        "aggregation",
+        "billing"
+      ],
+      "wcp_namespace": "reserved",
+      "serves_capabilities": [
+        "cap.cost.track-token-usage",
+        "cap.cost.generate-report"
+      ],
+      "blast_radius_hint": {
+        "data": 0,
+        "network": 0,
+        "financial": 1,
+        "time": 0,
+        "reversibility": "reversible"
+      },
+      "required_controls": [
+        "ctrl.obs.metrics-core",
+        "ctrl.obs.structured-logging"
+      ],
+      "idempotency": "partial",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "ctrl.cost.monthly-token-budget",
+      "type": "control",
+      "name": "Monthly Token Budget",
+      "description": "Policy control: maximum token spend per tenant per calendar month before hard cap triggers.",
+      "tags": [
+        "cost",
+        "policy",
+        "budget"
+      ],
+      "wcp_namespace": "reserved",
+      "enforcement_point": "hall",
+      "required_for_risk_tiers": [
+        "medium",
+        "high",
+        "critical"
+      ]
+    },
+    {
+      "id": "cap.data.classify",
+      "type": "capability",
+      "name": "Classify Data",
+      "description": "Classify data by sensitivity label (e.g., public, internal, restricted, top-secret).",
+      "risk_tier": "medium",
+      "tags": [
+        "data-governance",
+        "classification",
+        "compliance"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 1,
+        "network": 0,
+        "financial": 0,
+        "time": 0,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.structured-logging",
+        "ctrl.obs.audit-log-append-only"
+      ],
+      "idempotency": "full",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "cap.data.route.by-sensitivity",
+      "type": "capability",
+      "name": "Route Data by Sensitivity",
+      "description": "Route data to appropriate storage or processing tier based on sensitivity classification.",
+      "risk_tier": "high",
+      "tags": [
+        "data-governance",
+        "routing",
+        "compliance"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 3,
+        "network": 1,
+        "financial": 1,
+        "time": 1,
+        "reversibility": "partially-reversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.sandbox.no-egress-default-deny"
+      ],
+      "idempotency": "full",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "cap.data.delete",
+      "type": "capability",
+      "name": "Delete Data",
+      "description": "Permanently delete data records in compliance with retention policies (e.g., GDPR right-to-erasure).",
+      "risk_tier": "high",
+      "tags": [
+        "data-governance",
+        "deletion",
+        "compliance",
+        "gdpr"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 4,
+        "network": 0,
+        "financial": 1,
+        "time": 1,
+        "reversibility": "irreversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.obs.structured-logging"
+      ],
+      "idempotency": "full",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "cap.data.redact",
+      "type": "capability",
+      "name": "Redact Data",
+      "description": "Redact sensitive fields (PII, PCI, PHI) from data artifacts before downstream processing.",
+      "risk_tier": "high",
+      "tags": [
+        "data-governance",
+        "redaction",
+        "privacy"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 2,
+        "network": 0,
+        "financial": 0,
+        "time": 1,
+        "reversibility": "irreversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.sandbox.workspace-mounts-only"
+      ],
+      "idempotency": "full",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "cap.stream.consume",
+      "type": "capability",
+      "name": "Consume Stream",
+      "description": "Consume messages from a streaming topic with configurable delivery semantics (at-least-once, exactly-once).",
+      "risk_tier": "medium",
+      "tags": [
+        "streaming",
+        "events",
+        "consumer"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 1,
+        "network": 1,
+        "financial": 0,
+        "time": 1,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.structured-logging",
+        "ctrl.obs.metrics-core"
+      ],
+      "idempotency": "partial",
+      "determinism": "captured"
+    },
+    {
+      "id": "cap.stream.produce",
+      "type": "capability",
+      "name": "Produce to Stream",
+      "description": "Publish messages to a streaming topic with idempotency and ordering guarantees.",
+      "risk_tier": "medium",
+      "tags": [
+        "streaming",
+        "events",
+        "producer"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 1,
+        "network": 2,
+        "financial": 0,
+        "time": 1,
+        "reversibility": "partially-reversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.structured-logging",
+        "ctrl.obs.tracing-distributed"
+      ],
+      "idempotency": "partial",
+      "determinism": "captured"
+    },
+    {
+      "id": "cap.stream.replay",
+      "type": "capability",
+      "name": "Replay Stream",
+      "description": "Replay a stream from a specified offset or timestamp for reprocessing or recovery.",
+      "risk_tier": "high",
+      "tags": [
+        "streaming",
+        "replay",
+        "recovery"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 2,
+        "network": 2,
+        "financial": 1,
+        "time": 3,
+        "reversibility": "partially-reversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.obs.tracing-distributed"
+      ],
+      "idempotency": "partial",
+      "determinism": "captured"
+    },
+    {
+      "id": "cap.projection.rebuild",
+      "type": "capability",
+      "name": "Rebuild Projection",
+      "description": "Rebuild a read-model projection by replaying events from source stream.",
+      "risk_tier": "medium",
+      "tags": [
+        "streaming",
+        "cqrs",
+        "projection"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 2,
+        "network": 1,
+        "financial": 0,
+        "time": 3,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.structured-logging",
+        "ctrl.obs.metrics-core"
+      ],
+      "idempotency": "full",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "cap.deploy.canary-shift",
+      "type": "capability",
+      "name": "Shift Canary Traffic",
+      "description": "Shift a percentage of traffic to a new worker version for canary evaluation.",
+      "risk_tier": "high",
+      "tags": [
+        "deploy",
+        "canary",
+        "traffic"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 1,
+        "network": 2,
+        "financial": 1,
+        "time": 2,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.deploy.canary-error-threshold",
+        "ctrl.obs.metrics-core"
+      ],
+      "idempotency": "partial",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "cap.deploy.rollback",
+      "type": "capability",
+      "name": "Rollback Worker Version",
+      "description": "Roll back a worker to the previous stable version immediately.",
+      "risk_tier": "high",
+      "tags": [
+        "deploy",
+        "rollback",
+        "safety"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 1,
+        "network": 2,
+        "financial": 1,
+        "time": 2,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.deploy.canary-error-threshold"
+      ],
+      "idempotency": "full",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "cap.deploy.promote-canary",
+      "type": "capability",
+      "name": "Promote Canary to Stable",
+      "description": "Promote a validated canary version to receive 100% of production traffic.",
+      "risk_tier": "high",
+      "tags": [
+        "deploy",
+        "canary",
+        "promotion"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 1,
+        "network": 3,
+        "financial": 1,
+        "time": 2,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.deploy.canary-error-threshold",
+        "ctrl.obs.metrics-core"
+      ],
+      "idempotency": "full",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "cap.deploy.drain-worker",
+      "type": "capability",
+      "name": "Drain Worker",
+      "description": "Gracefully drain in-flight work from a worker before shutdown or version change.",
+      "risk_tier": "medium",
+      "tags": [
+        "deploy",
+        "drain",
+        "lifecycle"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 0,
+        "network": 1,
+        "financial": 0,
+        "time": 2,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.structured-logging",
+        "ctrl.obs.metrics-core"
+      ],
+      "idempotency": "full",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "cap.deploy.feature-flag",
+      "type": "capability",
+      "name": "Toggle Feature Flag",
+      "description": "Enable or disable a feature flag to control worker behavior without redeployment.",
+      "risk_tier": "medium",
+      "tags": [
+        "deploy",
+        "feature-flags",
+        "configuration"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 0,
+        "network": 1,
+        "financial": 0,
+        "time": 1,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.obs.structured-logging"
+      ],
+      "idempotency": "full",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "wrk.deploy.canary-controller",
+      "type": "worker_species",
+      "name": "Canary Controller Worker",
+      "description": "Manages canary deployments \u2014 traffic splitting, health evaluation, auto-promote or auto-rollback.",
+      "risk_tier": "high",
+      "tags": [
+        "deploy",
+        "canary",
+        "automation"
+      ],
+      "wcp_namespace": "reserved",
+      "serves_capabilities": [
+        "cap.deploy.canary-shift",
+        "cap.deploy.promote-canary"
+      ],
+      "blast_radius_hint": {
+        "data": 1,
+        "network": 3,
+        "financial": 1,
+        "time": 3,
+        "reversibility": "reversible"
+      },
+      "required_controls": [
+        "ctrl.deploy.canary-error-threshold",
+        "ctrl.obs.metrics-core",
+        "ctrl.obs.audit-log-append-only"
+      ],
+      "idempotency": "partial",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "wrk.deploy.rollback-guard",
+      "type": "worker_species",
+      "name": "Rollback Guard Worker",
+      "description": "Monitors error rates and latency for new worker versions and triggers automatic rollback on threshold breach.",
+      "risk_tier": "high",
+      "tags": [
+        "deploy",
+        "rollback",
+        "guard"
+      ],
+      "wcp_namespace": "reserved",
+      "serves_capabilities": [
+        "cap.deploy.rollback",
+        "cap.deploy.drain-worker"
+      ],
+      "blast_radius_hint": {
+        "data": 0,
+        "network": 2,
+        "financial": 1,
+        "time": 2,
+        "reversibility": "reversible"
+      },
+      "required_controls": [
+        "ctrl.deploy.canary-error-threshold",
+        "ctrl.obs.slo-alerting"
+      ],
+      "idempotency": "full",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "ctrl.deploy.canary-error-threshold",
+      "type": "control",
+      "name": "Canary Error Rate Threshold",
+      "description": "Policy control: maximum allowable error rate (%) for a canary before automatic rollback triggers.",
+      "tags": [
+        "deploy",
+        "canary",
+        "policy"
+      ],
+      "wcp_namespace": "reserved",
+      "enforcement_point": "hall",
+      "required_for_risk_tiers": [
+        "medium",
+        "high",
+        "critical"
+      ]
+    },
+    {
+      "id": "cap.doc.ingest",
+      "type": "capability",
+      "name": "Ingest Document",
+      "description": "Ingest a document artifact into the pipeline, validate format, and register provenance.",
+      "risk_tier": "medium",
+      "tags": [
+        "docs",
+        "ingest",
+        "pipeline"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 1,
+        "network": 1,
+        "financial": 0,
+        "time": 1,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.structured-logging",
+        "ctrl.obs.run-metadata-store"
+      ],
+      "idempotency": "partial",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "cap.doc.ocr",
+      "type": "capability",
+      "name": "OCR Document",
+      "description": "Extract text and layout from a document using optical character recognition.",
+      "risk_tier": "medium",
+      "tags": [
+        "docs",
+        "ocr",
+        "ml"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 1,
+        "network": 0,
+        "financial": 1,
+        "time": 2,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.structured-logging",
+        "ctrl.obs.metrics-core"
+      ],
+      "idempotency": "partial",
+      "determinism": "non-deterministic"
+    },
+    {
+      "id": "cap.doc.classify",
+      "type": "capability",
+      "name": "Classify Document",
+      "description": "Classify a document by type, sensitivity, and routing category.",
+      "risk_tier": "medium",
+      "tags": [
+        "docs",
+        "classification",
+        "ml"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 1,
+        "network": 0,
+        "financial": 0,
+        "time": 1,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.structured-logging"
+      ],
+      "idempotency": "full",
+      "determinism": "captured"
+    },
+    {
+      "id": "cap.doc.redact",
+      "type": "capability",
+      "name": "Redact Document",
+      "description": "Apply PII/PHI/PCI redactions to a document using rule or ML-based detection.",
+      "risk_tier": "high",
+      "tags": [
+        "docs",
+        "redaction",
+        "privacy"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 3,
+        "network": 0,
+        "financial": 1,
+        "time": 2,
+        "reversibility": "irreversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.sandbox.workspace-mounts-only"
+      ],
+      "idempotency": "full",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "cap.doc.stamp",
+      "type": "capability",
+      "name": "Stamp Document",
+      "description": "Apply a visible or invisible processing stamp (watermark, classification label) to a document.",
+      "risk_tier": "medium",
+      "tags": [
+        "docs",
+        "stamping",
+        "provenance"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 1,
+        "network": 0,
+        "financial": 0,
+        "time": 1,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.structured-logging"
+      ],
+      "idempotency": "full",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "cap.doc.sign",
+      "type": "capability",
+      "name": "Sign Document",
+      "description": "Apply a cryptographic digital signature to a document artifact using an isolated key.",
+      "risk_tier": "critical",
+      "tags": [
+        "docs",
+        "signing",
+        "security"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 2,
+        "network": 0,
+        "financial": 2,
+        "time": 1,
+        "reversibility": "irreversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.sandbox.secrets-denied-by-default"
+      ],
+      "idempotency": "full",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "cap.doc.hash-artifact",
+      "type": "capability",
+      "name": "Hash Document Artifact",
+      "description": "Compute and record the cryptographic hash of a document artifact for integrity verification.",
+      "risk_tier": "medium",
+      "tags": [
+        "docs",
+        "hashing",
+        "integrity"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 0,
+        "network": 0,
+        "financial": 0,
+        "time": 0,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.run-metadata-store"
+      ],
+      "idempotency": "full",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "wrk.doc.pipeline.orchestrator",
+      "type": "worker_species",
+      "name": "Document Pipeline Orchestrator",
+      "description": "Orchestrate multi-step document pipeline with resumability and audit.",
+      "risk_tier": "high",
+      "determinism": "captured-deterministic",
+      "required_controls": [
+        "ctrl.obs.structured-logging",
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.sandbox.flight-recorder"
+      ],
+      "tags": [
+        "docs",
+        "orchestration"
+      ],
+      "serves_capabilities": [
+        "cap.doc.ingest",
+        "cap.doc.ocr",
+        "cap.doc.classify",
+        "cap.doc.stamp"
+      ],
+      "blast_radius_hint": {
+        "data": 3,
+        "network": 1,
+        "financial": 1,
+        "time": 3,
+        "reversibility": "partially-reversible"
+      },
+      "idempotency": "partial",
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "wrk.doc.ocr.worker",
+      "type": "worker_species",
+      "name": "OCR Worker",
+      "description": "Run OCR and return text and layout with confidence metrics.",
+      "risk_tier": "medium",
+      "determinism": "nondeterministic",
+      "required_controls": [
+        "ctrl.obs.structured-logging",
+        "ctrl.obs.metrics-core"
+      ],
+      "tags": [
+        "docs",
+        "ocr",
+        "ml"
+      ],
+      "serves_capabilities": [
+        "cap.doc.ocr"
+      ],
+      "blast_radius_hint": {
+        "data": 1,
+        "network": 0,
+        "financial": 1,
+        "time": 2,
+        "reversibility": "reversible"
+      },
+      "idempotency": "partial",
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "wrk.doc.redaction.worker",
+      "type": "worker_species",
+      "name": "Document Redaction Worker",
+      "description": "Apply redactions using templates/rules; emit redaction report.",
+      "risk_tier": "high",
+      "determinism": "deterministic",
+      "required_controls": [
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.sandbox.workspace-mounts-only"
+      ],
+      "tags": [
+        "docs",
+        "redaction"
+      ],
+      "serves_capabilities": [
+        "cap.doc.redact"
+      ],
+      "blast_radius_hint": {
+        "data": 3,
+        "network": 0,
+        "financial": 1,
+        "time": 2,
+        "reversibility": "irreversible"
+      },
+      "idempotency": "full",
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "wrk.doc.signing.worker",
+      "type": "worker_species",
+      "name": "Document Signing Worker",
+      "description": "Apply digital signatures using isolated keys; verify signatures.",
+      "risk_tier": "critical",
+      "determinism": "deterministic",
+      "required_controls": [
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.sandbox.secrets-denied-by-default"
+      ],
+      "tags": [
+        "docs",
+        "signing",
+        "security"
+      ],
+      "serves_capabilities": [
+        "cap.doc.sign",
+        "cap.doc.hash-artifact"
+      ],
+      "blast_radius_hint": {
+        "data": 2,
+        "network": 0,
+        "financial": 2,
+        "time": 1,
+        "reversibility": "irreversible"
+      },
+      "idempotency": "full",
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "prof.doc.untrusted-sandboxed",
+      "type": "profile",
+      "name": "Untrusted Sandboxed Document Profile",
+      "description": "Process untrusted/external documents in strict sandboxed environment.",
+      "tags": [
+        "docs",
+        "sandbox",
+        "security"
+      ],
+      "controls_required": [
+        "ctrl.sandbox.no-egress-default-deny",
+        "ctrl.sandbox.workspace-mounts-only",
+        "ctrl.sandbox.resource-limits-strict",
+        "ctrl.obs.structured-logging"
+      ],
+      "recommended_for_risk_tiers": [
+        "medium",
+        "high",
+        "critical"
+      ],
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "prof.doc.signed-highrisk",
+      "type": "profile",
+      "name": "High-Risk Signed Document Profile",
+      "description": "Process high-risk documents with mandatory signing, audit, and isolation.",
+      "tags": [
+        "docs",
+        "signing",
+        "security"
+      ],
+      "controls_required": [
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.sandbox.secrets-denied-by-default",
+        "ctrl.obs.flight-recorder-bundle"
+      ],
+      "recommended_for_risk_tiers": [
+        "high",
+        "critical"
+      ],
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "prof.doc.restricted-redaction",
+      "type": "profile",
+      "name": "Restricted Redaction Document Profile",
+      "description": "Process documents with restricted data requiring redaction before sharing.",
+      "tags": [
+        "docs",
+        "redaction",
+        "compliance"
+      ],
+      "controls_required": [
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.sandbox.workspace-mounts-only",
+        "ctrl.obs.structured-logging"
+      ],
+      "recommended_for_risk_tiers": [
+        "high",
+        "critical"
+      ],
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "cap.notify.send-email",
+      "type": "capability",
+      "name": "Send Email",
+      "description": "Send a transactional or notification email via configured email provider.",
+      "risk_tier": "medium",
+      "tags": [
+        "notifications",
+        "email",
+        "egress"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 1,
+        "network": 2,
+        "financial": 1,
+        "time": 1,
+        "reversibility": "irreversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.structured-logging",
+        "ctrl.obs.metrics-core"
+      ],
+      "idempotency": "partial",
+      "determinism": "captured"
+    },
+    {
+      "id": "cap.notify.send-sms",
+      "type": "capability",
+      "name": "Send SMS",
+      "description": "Send an SMS notification via configured telephony provider.",
+      "risk_tier": "medium",
+      "tags": [
+        "notifications",
+        "sms",
+        "egress"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 1,
+        "network": 2,
+        "financial": 2,
+        "time": 1,
+        "reversibility": "irreversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.structured-logging",
+        "ctrl.obs.metrics-core"
+      ],
+      "idempotency": "partial",
+      "determinism": "captured"
+    },
+    {
+      "id": "cap.notify.send-push",
+      "type": "capability",
+      "name": "Send Push Notification",
+      "description": "Send a push notification to a mobile/web device via push provider.",
+      "risk_tier": "low",
+      "tags": [
+        "notifications",
+        "push",
+        "egress"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 0,
+        "network": 2,
+        "financial": 0,
+        "time": 1,
+        "reversibility": "irreversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.structured-logging"
+      ],
+      "idempotency": "partial",
+      "determinism": "captured"
+    },
+    {
+      "id": "cap.notify.manage-suppression",
+      "type": "capability",
+      "name": "Manage Suppression Lists",
+      "description": "Add, remove, or query suppression list entries (unsubscribes, bounces, complaints).",
+      "risk_tier": "medium",
+      "tags": [
+        "notifications",
+        "suppression",
+        "compliance"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 1,
+        "network": 0,
+        "financial": 0,
+        "time": 0,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.obs.structured-logging"
+      ],
+      "idempotency": "full",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "wrk.notify.delivery.worker",
+      "type": "worker_species",
+      "name": "Notification Delivery Worker",
+      "description": "Send email/SMS/push with deliverability controls and idempotency.",
+      "risk_tier": "medium",
+      "determinism": "captured-deterministic",
+      "required_controls": [
+        "ctrl.obs.structured-logging",
+        "ctrl.obs.metrics-core"
+      ],
+      "tags": [
+        "notifications",
+        "egress"
+      ],
+      "serves_capabilities": [
+        "cap.notify.send-email",
+        "cap.notify.send-sms",
+        "cap.notify.send-push"
+      ],
+      "blast_radius_hint": {
+        "data": 1,
+        "network": 2,
+        "financial": 2,
+        "time": 1,
+        "reversibility": "irreversible"
+      },
+      "idempotency": "partial",
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "wrk.notify.webhook.ingest",
+      "type": "worker_species",
+      "name": "Notification Webhook Ingest Worker",
+      "description": "Ingest provider webhooks (bounces/complaints), update suppression.",
+      "risk_tier": "medium",
+      "determinism": "deterministic",
+      "required_controls": [
+        "ctrl.obs.structured-logging"
+      ],
+      "tags": [
+        "notifications",
+        "webhooks"
+      ],
+      "serves_capabilities": [
+        "cap.notify.manage-suppression"
+      ],
+      "blast_radius_hint": {
+        "data": 1,
+        "network": 1,
+        "financial": 0,
+        "time": 0,
+        "reversibility": "reversible"
+      },
+      "idempotency": "full",
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "prof.notify.standard",
+      "type": "profile",
+      "name": "Standard Notification Profile",
+      "description": "Standard notification posture with deliverability logging and suppression checks.",
+      "tags": [
+        "notifications",
+        "standard"
+      ],
+      "controls_required": [
+        "ctrl.obs.structured-logging",
+        "ctrl.obs.metrics-core"
+      ],
+      "recommended_for_risk_tiers": [
+        "low",
+        "medium"
+      ],
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "prof.notify.compliance-strict",
+      "type": "profile",
+      "name": "Strict Compliance Notification Profile",
+      "description": "Strict notification posture for regulated channels: audit, suppression, and consent enforcement.",
+      "tags": [
+        "notifications",
+        "compliance",
+        "strict"
+      ],
+      "controls_required": [
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.obs.structured-logging",
+        "ctrl.obs.metrics-core"
+      ],
+      "recommended_for_risk_tiers": [
+        "high",
+        "critical"
+      ],
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "cap.scan.sast",
+      "type": "capability",
+      "name": "SAST Scan",
+      "description": "Run static application security testing scan on source code or compiled artifacts.",
+      "risk_tier": "medium",
+      "tags": [
+        "security",
+        "sast",
+        "scanning"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 0,
+        "network": 0,
+        "financial": 0,
+        "time": 2,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.sandbox.no-egress-default-deny",
+        "ctrl.obs.structured-logging"
+      ],
+      "idempotency": "full",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "cap.scan.deps",
+      "type": "capability",
+      "name": "Dependency Scan",
+      "description": "Scan project dependencies for known CVEs and risky licenses.",
+      "risk_tier": "medium",
+      "tags": [
+        "security",
+        "supply-chain",
+        "dependencies"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 0,
+        "network": 1,
+        "financial": 0,
+        "time": 1,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.structured-logging"
+      ],
+      "idempotency": "full",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "cap.scan.sbom.generate",
+      "type": "capability",
+      "name": "Generate SBOM",
+      "description": "Generate a Software Bill of Materials (SBOM) in SPDX or CycloneDX format.",
+      "risk_tier": "low",
+      "tags": [
+        "security",
+        "sbom",
+        "supply-chain"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 0,
+        "network": 0,
+        "financial": 0,
+        "time": 1,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.run-metadata-store"
+      ],
+      "idempotency": "full",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "cap.scan.dast",
+      "type": "capability",
+      "name": "DAST Scan",
+      "description": "Run dynamic application security testing against a live endpoint.",
+      "risk_tier": "high",
+      "tags": [
+        "security",
+        "dast",
+        "scanning"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 1,
+        "network": 3,
+        "financial": 1,
+        "time": 3,
+        "reversibility": "partially-reversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.structured-logging",
+        "ctrl.obs.audit-log-append-only"
+      ],
+      "idempotency": "partial",
+      "determinism": "non-deterministic"
+    },
+    {
+      "id": "cap.verify.artifact-integrity",
+      "type": "capability",
+      "name": "Verify Artifact Integrity",
+      "description": "Verify cryptographic digest and/or signature of a build artifact before execution.",
+      "risk_tier": "high",
+      "tags": [
+        "security",
+        "signing",
+        "supply-chain"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 0,
+        "network": 0,
+        "financial": 0,
+        "time": 0,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.audit-log-append-only"
+      ],
+      "idempotency": "full",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "wrk.sec.sast.scanner",
+      "type": "worker_species",
+      "name": "SAST Scanner Worker",
+      "description": "Run static code scans; normalize findings; gate build.",
+      "risk_tier": "medium",
+      "determinism": "deterministic",
+      "required_controls": [
+        "ctrl.obs.structured-logging",
+        "ctrl.sandbox.no-egress-default-deny"
+      ],
+      "tags": [
+        "security",
+        "sast",
+        "supply-chain"
+      ],
+      "serves_capabilities": [
+        "cap.scan.sast"
+      ],
+      "blast_radius_hint": {
+        "data": 0,
+        "network": 0,
+        "financial": 0,
+        "time": 2,
+        "reversibility": "reversible"
+      },
+      "idempotency": "full",
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "wrk.sec.deps.scanner",
+      "type": "worker_species",
+      "name": "Dependency Scanner Worker",
+      "description": "Scan dependencies for CVEs and risky licenses; generate SBOM.",
+      "risk_tier": "medium",
+      "determinism": "deterministic",
+      "required_controls": [
+        "ctrl.obs.structured-logging"
+      ],
+      "tags": [
+        "security",
+        "supply-chain",
+        "sbom"
+      ],
+      "serves_capabilities": [
+        "cap.scan.deps",
+        "cap.scan.sbom.generate"
+      ],
+      "blast_radius_hint": {
+        "data": 0,
+        "network": 1,
+        "financial": 0,
+        "time": 1,
+        "reversibility": "reversible"
+      },
+      "idempotency": "full",
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "wrk.sec.artifact.verifier",
+      "type": "worker_species",
+      "name": "Artifact Verifier Worker",
+      "description": "Verify artifact digests/signatures before execution.",
+      "risk_tier": "high",
+      "determinism": "deterministic",
+      "required_controls": [
+        "ctrl.obs.audit-log-append-only"
+      ],
+      "tags": [
+        "security",
+        "supply-chain",
+        "signing"
+      ],
+      "serves_capabilities": [
+        "cap.verify.artifact-integrity"
+      ],
+      "blast_radius_hint": {
+        "data": 0,
+        "network": 0,
+        "financial": 0,
+        "time": 0,
+        "reversibility": "reversible"
+      },
+      "idempotency": "full",
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "prof.sec.ci-gated",
+      "type": "profile",
+      "name": "CI-Gated Security Profile",
+      "description": "CI pipeline security posture: SAST, dependency scan, and SBOM on every build.",
+      "tags": [
+        "security",
+        "ci",
+        "supply-chain"
+      ],
+      "controls_required": [
+        "ctrl.obs.structured-logging",
+        "ctrl.sandbox.no-egress-default-deny"
+      ],
+      "recommended_for_risk_tiers": [
+        "medium",
+        "high",
+        "critical"
+      ],
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "prof.sec.artifact-strict",
+      "type": "profile",
+      "name": "Strict Artifact Security Profile",
+      "description": "Strict artifact security posture: mandatory signature verification and full audit trail before execution.",
+      "tags": [
+        "security",
+        "signing",
+        "supply-chain"
+      ],
+      "controls_required": [
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.obs.structured-logging"
+      ],
+      "recommended_for_risk_tiers": [
+        "high",
+        "critical"
+      ],
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "cap.chaos.inject-latency",
+      "type": "capability",
+      "name": "Inject Latency",
+      "description": "Inject artificial latency into specified service paths for resilience testing.",
+      "risk_tier": "high",
+      "tags": [
+        "chaos",
+        "latency",
+        "resilience"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 0,
+        "network": 3,
+        "financial": 1,
+        "time": 3,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.slo-alerting",
+        "ctrl.obs.metrics-core"
+      ],
+      "idempotency": "partial",
+      "determinism": "non-deterministic"
+    },
+    {
+      "id": "cap.chaos.inject-errors",
+      "type": "capability",
+      "name": "Inject Errors",
+      "description": "Inject controlled error responses into service paths for failure mode testing.",
+      "risk_tier": "high",
+      "tags": [
+        "chaos",
+        "errors",
+        "resilience"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 1,
+        "network": 2,
+        "financial": 1,
+        "time": 2,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.slo-alerting",
+        "ctrl.obs.structured-logging"
+      ],
+      "idempotency": "partial",
+      "determinism": "non-deterministic"
+    },
+    {
+      "id": "cap.chaos.disable-dependency",
+      "type": "capability",
+      "name": "Disable Dependency",
+      "description": "Temporarily disable or throttle an upstream dependency to test degraded-mode behavior.",
+      "risk_tier": "high",
+      "tags": [
+        "chaos",
+        "dependencies",
+        "resilience"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 1,
+        "network": 3,
+        "financial": 2,
+        "time": 3,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.slo-alerting",
+        "ctrl.obs.metrics-core"
+      ],
+      "idempotency": "partial",
+      "determinism": "non-deterministic"
+    },
+    {
+      "id": "cap.chaos.poison-messages",
+      "type": "capability",
+      "name": "Poison Queue Messages",
+      "description": "Inject malformed or poison-pill messages into a queue to test DLQ and error handling.",
+      "risk_tier": "high",
+      "tags": [
+        "chaos",
+        "queues",
+        "dlq"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 2,
+        "network": 1,
+        "financial": 1,
+        "time": 2,
+        "reversibility": "partially-reversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.obs.structured-logging"
+      ],
+      "idempotency": "partial",
+      "determinism": "non-deterministic"
+    },
+    {
+      "id": "wrk.chaos.injector",
+      "type": "worker_species",
+      "name": "Chaos Injector Worker",
+      "description": "Apply controlled fault injection per experiment plans and guardrails.",
+      "risk_tier": "high",
+      "determinism": "nondeterministic",
+      "required_controls": [
+        "ctrl.obs.structured-logging",
+        "ctrl.obs.slo-alerting"
+      ],
+      "tags": [
+        "chaos",
+        "resilience"
+      ],
+      "serves_capabilities": [
+        "cap.chaos.inject-latency",
+        "cap.chaos.inject-errors",
+        "cap.chaos.poison-messages"
+      ],
+      "blast_radius_hint": {
+        "data": 2,
+        "network": 3,
+        "financial": 2,
+        "time": 3,
+        "reversibility": "reversible"
+      },
+      "idempotency": "none",
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "wrk.chaos.observer",
+      "type": "worker_species",
+      "name": "Chaos Observer Worker",
+      "description": "Collect metrics during experiments; generate reports vs SLO criteria.",
+      "risk_tier": "medium",
+      "determinism": "nondeterministic",
+      "required_controls": [
+        "ctrl.obs.metrics-core",
+        "ctrl.obs.slo-alerting"
+      ],
+      "tags": [
+        "chaos",
+        "observability"
+      ],
+      "serves_capabilities": [],
+      "blast_radius_hint": {
+        "data": 0,
+        "network": 1,
+        "financial": 0,
+        "time": 1,
+        "reversibility": "reversible"
+      },
+      "idempotency": "partial",
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "prof.chaos.canary-scoped",
+      "type": "profile",
+      "name": "Canary-Scoped Chaos Profile",
+      "description": "Chaos experiments scoped strictly to canary traffic with SLO guardrails.",
+      "tags": [
+        "chaos",
+        "canary",
+        "resilience"
+      ],
+      "controls_required": [
+        "ctrl.obs.slo-alerting",
+        "ctrl.obs.metrics-core",
+        "ctrl.obs.structured-logging"
+      ],
+      "recommended_for_risk_tiers": [
+        "medium",
+        "high"
+      ],
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "cap.sched.set-priority",
+      "type": "capability",
+      "name": "Set Job Priority",
+      "description": "Assign or update the scheduling priority of a job in the dispatch queue.",
+      "risk_tier": "medium",
+      "tags": [
+        "scheduler",
+        "priority",
+        "qos"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 0,
+        "network": 0,
+        "financial": 1,
+        "time": 1,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.structured-logging"
+      ],
+      "idempotency": "full",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "cap.sched.preempt",
+      "type": "capability",
+      "name": "Preempt Job",
+      "description": "Preempt a lower-priority job to make capacity available for a higher-priority one.",
+      "risk_tier": "medium",
+      "tags": [
+        "scheduler",
+        "preemption",
+        "qos"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 1,
+        "network": 0,
+        "financial": 1,
+        "time": 2,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.structured-logging",
+        "ctrl.obs.metrics-core"
+      ],
+      "idempotency": "partial",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "cap.sched.reserve-capacity",
+      "type": "capability",
+      "name": "Reserve Capacity",
+      "description": "Reserve compute capacity for a tenant or workload class ahead of scheduled execution.",
+      "risk_tier": "medium",
+      "tags": [
+        "scheduler",
+        "capacity",
+        "qos"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 0,
+        "network": 0,
+        "financial": 2,
+        "time": 1,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.structured-logging"
+      ],
+      "idempotency": "full",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "cap.sched.rate-limit-tenant",
+      "type": "capability",
+      "name": "Rate Limit Tenant",
+      "description": "Apply per-tenant rate limiting to prevent one tenant from starving shared resources.",
+      "risk_tier": "medium",
+      "tags": [
+        "scheduler",
+        "rate-limiting",
+        "fairness"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 0,
+        "network": 1,
+        "financial": 1,
+        "time": 1,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.metrics-core",
+        "ctrl.obs.structured-logging"
+      ],
+      "idempotency": "full",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "wrk.sched.dispatcher",
+      "type": "worker_species",
+      "name": "Scheduler Dispatcher Worker",
+      "description": "Select from priority queues, enforce fairness/QoS, dispatch to pools.",
+      "risk_tier": "medium",
+      "determinism": "deterministic",
+      "required_controls": [
+        "ctrl.obs.metrics-core",
+        "ctrl.obs.structured-logging"
+      ],
+      "tags": [
+        "scheduler",
+        "qos"
+      ],
+      "serves_capabilities": [
+        "cap.sched.set-priority",
+        "cap.sched.preempt",
+        "cap.sched.reserve-capacity",
+        "cap.sched.rate-limit-tenant"
+      ],
+      "blast_radius_hint": {
+        "data": 0,
+        "network": 1,
+        "financial": 2,
+        "time": 2,
+        "reversibility": "reversible"
+      },
+      "idempotency": "full",
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "prof.sched.critical-protected",
+      "type": "profile",
+      "name": "Critical Protected Scheduler Profile",
+      "description": "Protected scheduling posture for critical workloads: reserved capacity, preemption rights, SLO alerting.",
+      "tags": [
+        "scheduler",
+        "critical",
+        "qos"
+      ],
+      "controls_required": [
+        "ctrl.obs.metrics-core",
+        "ctrl.obs.slo-alerting",
+        "ctrl.obs.structured-logging"
+      ],
+      "recommended_for_risk_tiers": [
+        "high",
+        "critical"
+      ],
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "cap.policy.evaluate",
+      "type": "capability",
+      "name": "Evaluate Policy",
+      "description": "Evaluate an action against loaded policy rules and return allow/deny with rationale.",
+      "risk_tier": "high",
+      "tags": [
+        "policy",
+        "authorization",
+        "governance"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 0,
+        "network": 0,
+        "financial": 0,
+        "time": 0,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.pol.policy-engine-runtime",
+        "ctrl.pol.default-deny",
+        "ctrl.pol.audit-policy-decisions"
+      ],
+      "idempotency": "full",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "cap.policy.update",
+      "type": "capability",
+      "name": "Update Policy",
+      "description": "Publish a new versioned policy to the policy engine for enforcement.",
+      "risk_tier": "high",
+      "tags": [
+        "policy",
+        "governance",
+        "change-control"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 1,
+        "network": 1,
+        "financial": 2,
+        "time": 2,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.pol.policy-versioning",
+        "ctrl.obs.audit-log-append-only"
+      ],
+      "idempotency": "partial",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "cap.policy.canary",
+      "type": "capability",
+      "name": "Canary Policy Rollout",
+      "description": "Activate a new policy version for a canary percentage of traffic before full rollout.",
+      "risk_tier": "high",
+      "tags": [
+        "policy",
+        "canary",
+        "governance"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 0,
+        "network": 1,
+        "financial": 2,
+        "time": 2,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.pol.policy-versioning",
+        "ctrl.obs.audit-log-append-only"
+      ],
+      "idempotency": "partial",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "wrk.pol.policy-gate",
+      "type": "worker_species",
+      "name": "Policy Gate Worker",
+      "description": "Evaluate actions against policy; emit allow/deny decisions and audit trail.",
+      "risk_tier": "high",
+      "determinism": "deterministic",
+      "required_controls": [
+        "ctrl.pol.policy-engine-runtime",
+        "ctrl.pol.default-deny",
+        "ctrl.pol.audit-policy-decisions",
+        "ctrl.pol.policy-versioning"
+      ],
+      "tags": [
+        "policy",
+        "authorization",
+        "governance"
+      ],
+      "serves_capabilities": [
+        "cap.policy.evaluate"
+      ],
+      "blast_radius_hint": {
+        "data": 0,
+        "network": 0,
+        "financial": 2,
+        "time": 0,
+        "reversibility": "reversible"
+      },
+      "idempotency": "full",
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "ctrl.pol.policy-engine-runtime",
+      "type": "control",
+      "name": "Policy Engine Runtime",
+      "description": "Policy engine must be running and reachable before any guarded action executes.",
+      "tags": [
+        "policy",
+        "governance"
+      ],
+      "enforcement_point": "platform",
+      "required_for_risk_tiers": [
+        "medium",
+        "high",
+        "critical"
+      ],
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "ctrl.pol.default-deny",
+      "type": "control",
+      "name": "Default Deny",
+      "description": "Deny any capability not explicitly allowed by policy.",
+      "tags": [
+        "policy",
+        "safety"
+      ],
+      "enforcement_point": "hall",
+      "required_for_risk_tiers": [
+        "high",
+        "critical"
+      ],
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "ctrl.pol.audit-policy-decisions",
+      "type": "control",
+      "name": "Audit Policy Decisions",
+      "description": "Log every policy allow/deny decision to the append-only audit ledger.",
+      "tags": [
+        "policy",
+        "audit",
+        "observability"
+      ],
+      "enforcement_point": "worker",
+      "required_for_risk_tiers": [
+        "medium",
+        "high",
+        "critical"
+      ],
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "ctrl.pol.policy-versioning",
+      "type": "control",
+      "name": "Policy Versioning",
+      "description": "Policies must be versioned artifacts; unversioned policies cannot be enforced.",
+      "tags": [
+        "policy",
+        "governance"
+      ],
+      "enforcement_point": "hall",
+      "required_for_risk_tiers": [
+        "medium",
+        "high",
+        "critical"
+      ],
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "prof.pol.default-deny-strict",
+      "type": "profile",
+      "name": "Strict Default Deny Policy Profile",
+      "description": "Strict policy posture: default-deny everything, versioned policies, full audit trail.",
+      "tags": [
+        "policy",
+        "strict",
+        "governance"
+      ],
+      "controls_required": [
+        "ctrl.pol.policy-engine-runtime",
+        "ctrl.pol.default-deny",
+        "ctrl.pol.audit-policy-decisions",
+        "ctrl.pol.policy-versioning"
+      ],
+      "recommended_for_risk_tiers": [
+        "high",
+        "critical"
+      ],
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "cap.prov.sign-artifact",
+      "type": "capability",
+      "name": "Sign Artifact",
+      "description": "Apply a cryptographic signature to a build or data artifact using a managed key.",
+      "risk_tier": "critical",
+      "tags": [
+        "provenance",
+        "signing",
+        "supply-chain"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 1,
+        "network": 0,
+        "financial": 2,
+        "time": 1,
+        "reversibility": "irreversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.sandbox.secrets-denied-by-default"
+      ],
+      "idempotency": "full",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "cap.prov.verify-signature",
+      "type": "capability",
+      "name": "Verify Signature",
+      "description": "Verify the cryptographic signature of an artifact against known public keys.",
+      "risk_tier": "high",
+      "tags": [
+        "provenance",
+        "signing",
+        "supply-chain"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 0,
+        "network": 0,
+        "financial": 0,
+        "time": 0,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.audit-log-append-only"
+      ],
+      "idempotency": "full",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "cap.prov.issue-attestation",
+      "type": "capability",
+      "name": "Issue Attestation",
+      "description": "Issue a signed attestation statement (e.g., SLSA provenance, SBOM attestation).",
+      "risk_tier": "critical",
+      "tags": [
+        "provenance",
+        "attestation",
+        "supply-chain"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 1,
+        "network": 0,
+        "financial": 2,
+        "time": 1,
+        "reversibility": "irreversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.sandbox.secrets-denied-by-default"
+      ],
+      "idempotency": "full",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "cap.prov.verify-attestation",
+      "type": "capability",
+      "name": "Verify Attestation",
+      "description": "Verify a signed attestation statement before trusting an artifact.",
+      "risk_tier": "high",
+      "tags": [
+        "provenance",
+        "attestation",
+        "supply-chain"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 0,
+        "network": 0,
+        "financial": 0,
+        "time": 0,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.audit-log-append-only"
+      ],
+      "idempotency": "full",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "cap.prov.generate-provenance-chain",
+      "type": "capability",
+      "name": "Generate Provenance Chain",
+      "description": "Assemble complete provenance chain: source \u2192 build \u2192 scan \u2192 SBOM \u2192 signatures.",
+      "risk_tier": "high",
+      "tags": [
+        "provenance",
+        "supply-chain",
+        "audit"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 1,
+        "network": 1,
+        "financial": 0,
+        "time": 2,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.structured-logging",
+        "ctrl.obs.run-metadata-store"
+      ],
+      "idempotency": "full",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "wrk.prov.signer",
+      "type": "worker_species",
+      "name": "Provenance Signer Worker",
+      "description": "Sign build artifacts; emit signature and provenance metadata.",
+      "risk_tier": "critical",
+      "determinism": "deterministic",
+      "required_controls": [
+        "ctrl.obs.audit-log-append-only"
+      ],
+      "tags": [
+        "provenance",
+        "signing"
+      ],
+      "serves_capabilities": [
+        "cap.prov.sign-artifact",
+        "cap.prov.issue-attestation"
+      ],
+      "blast_radius_hint": {
+        "data": 1,
+        "network": 0,
+        "financial": 2,
+        "time": 1,
+        "reversibility": "irreversible"
+      },
+      "idempotency": "full",
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "wrk.prov.verifier",
+      "type": "worker_species",
+      "name": "Provenance Verifier Worker",
+      "description": "Verify signatures and attestations; enforce fail-closed semantics.",
+      "risk_tier": "high",
+      "determinism": "deterministic",
+      "required_controls": [
+        "ctrl.obs.audit-log-append-only"
+      ],
+      "tags": [
+        "provenance",
+        "signing"
+      ],
+      "serves_capabilities": [
+        "cap.prov.verify-signature",
+        "cap.prov.verify-attestation"
+      ],
+      "blast_radius_hint": {
+        "data": 0,
+        "network": 0,
+        "financial": 0,
+        "time": 0,
+        "reversibility": "reversible"
+      },
+      "idempotency": "full",
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "wrk.prov.provenance-assembler",
+      "type": "worker_species",
+      "name": "Provenance Assembler Worker",
+      "description": "Assemble provenance chain (source, build, scan, SBOM, signatures).",
+      "risk_tier": "high",
+      "determinism": "deterministic",
+      "required_controls": [
+        "ctrl.obs.structured-logging"
+      ],
+      "tags": [
+        "provenance",
+        "supply-chain"
+      ],
+      "serves_capabilities": [
+        "cap.prov.generate-provenance-chain"
+      ],
+      "blast_radius_hint": {
+        "data": 1,
+        "network": 1,
+        "financial": 0,
+        "time": 2,
+        "reversibility": "reversible"
+      },
+      "idempotency": "full",
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "prof.prov.prod-strict",
+      "type": "profile",
+      "name": "Production Strict Provenance Profile",
+      "description": "Strict production provenance posture: mandatory signing, attestation, and full provenance chain.",
+      "tags": [
+        "provenance",
+        "production",
+        "supply-chain"
+      ],
+      "controls_required": [
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.obs.structured-logging",
+        "ctrl.sandbox.secrets-denied-by-default"
+      ],
+      "recommended_for_risk_tiers": [
+        "high",
+        "critical"
+      ],
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "cap.ops.approve",
+      "type": "capability",
+      "name": "Approve Change",
+      "description": "Collect and record a human approval decision for a proposed change or action.",
+      "risk_tier": "high",
+      "tags": [
+        "ops",
+        "change-control",
+        "human-in-loop"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 0,
+        "network": 0,
+        "financial": 1,
+        "time": 1,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.audit-log-append-only"
+      ],
+      "idempotency": "partial",
+      "determinism": "non-deterministic"
+    },
+    {
+      "id": "cap.ops.break-glass",
+      "type": "capability",
+      "name": "Break Glass",
+      "description": "Invoke emergency break-glass access with mandatory audit logging and time-limited elevation.",
+      "risk_tier": "critical",
+      "tags": [
+        "ops",
+        "emergency",
+        "break-glass"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 4,
+        "network": 3,
+        "financial": 3,
+        "time": 3,
+        "reversibility": "partially-reversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.obs.flight-recorder-bundle"
+      ],
+      "idempotency": "partial",
+      "determinism": "non-deterministic"
+    },
+    {
+      "id": "cap.ops.execute-runbook",
+      "type": "capability",
+      "name": "Execute Runbook",
+      "description": "Execute a named operational runbook with step-level audit and rollback checkpoints.",
+      "risk_tier": "high",
+      "tags": [
+        "ops",
+        "runbooks",
+        "automation"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 2,
+        "network": 2,
+        "financial": 2,
+        "time": 2,
+        "reversibility": "partially-reversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.obs.tracing-distributed"
+      ],
+      "idempotency": "partial",
+      "determinism": "captured"
+    },
+    {
+      "id": "cap.ops.postmortem",
+      "type": "capability",
+      "name": "Generate Postmortem",
+      "description": "Generate a structured postmortem report from incident timeline and evidence.",
+      "risk_tier": "low",
+      "tags": [
+        "ops",
+        "postmortem",
+        "incident"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 0,
+        "network": 0,
+        "financial": 0,
+        "time": 1,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.structured-logging"
+      ],
+      "idempotency": "full",
+      "determinism": "non-deterministic"
+    },
+    {
+      "id": "wrk.ops.oncall.supervisor",
+      "type": "worker_species",
+      "name": "On-Call Supervisor Worker",
+      "description": "Coordinate incident response; enforce kill switches and runbooks.",
+      "risk_tier": "critical",
+      "determinism": "nondeterministic",
+      "required_controls": [
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.obs.slo-alerting"
+      ],
+      "tags": [
+        "ops",
+        "incident",
+        "emergency"
+      ],
+      "serves_capabilities": [
+        "cap.ops.break-glass",
+        "cap.ops.execute-runbook"
+      ],
+      "blast_radius_hint": {
+        "data": 4,
+        "network": 3,
+        "financial": 3,
+        "time": 3,
+        "reversibility": "partially-reversible"
+      },
+      "idempotency": "partial",
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "wrk.ops.approval.coordinator",
+      "type": "worker_species",
+      "name": "Approval Coordinator Worker",
+      "description": "Route approval requests; enforce two-person rule; track decisions.",
+      "risk_tier": "high",
+      "determinism": "deterministic",
+      "required_controls": [
+        "ctrl.obs.audit-log-append-only"
+      ],
+      "tags": [
+        "ops",
+        "change-control",
+        "human-in-loop"
+      ],
+      "serves_capabilities": [
+        "cap.ops.approve"
+      ],
+      "blast_radius_hint": {
+        "data": 0,
+        "network": 0,
+        "financial": 1,
+        "time": 1,
+        "reversibility": "reversible"
+      },
+      "idempotency": "partial",
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "prof.ops.incident-mode",
+      "type": "profile",
+      "name": "Incident Mode Ops Profile",
+      "description": "Incident response posture: flight recorder, kill switches, runbook execution, break-glass controls.",
+      "tags": [
+        "ops",
+        "incident",
+        "emergency"
+      ],
+      "controls_required": [
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.obs.flight-recorder-bundle",
+        "ctrl.obs.slo-alerting"
+      ],
+      "recommended_for_risk_tiers": [
+        "high",
+        "critical"
+      ],
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "prof.ops.approval-strict",
+      "type": "profile",
+      "name": "Strict Approval Ops Profile",
+      "description": "Strict change control posture: mandatory human approval, two-person rule, full audit trail.",
+      "tags": [
+        "ops",
+        "change-control",
+        "compliance"
+      ],
+      "controls_required": [
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.pol.audit-policy-decisions"
+      ],
+      "recommended_for_risk_tiers": [
+        "high",
+        "critical"
+      ],
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "cap.fed.accept-external-identity",
+      "type": "capability",
+      "name": "Accept External Identity",
+      "description": "Accept and validate an identity token from a trusted external organization.",
+      "risk_tier": "high",
+      "tags": [
+        "federation",
+        "identity",
+        "multi-org"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 2,
+        "network": 2,
+        "financial": 1,
+        "time": 0,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.obs.structured-logging"
+      ],
+      "idempotency": "full",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "cap.fed.exchange-tokens",
+      "type": "capability",
+      "name": "Exchange Federation Tokens",
+      "description": "Exchange a partner token for a scoped local token via federation handshake.",
+      "risk_tier": "high",
+      "tags": [
+        "federation",
+        "tokens",
+        "identity"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 1,
+        "network": 2,
+        "financial": 1,
+        "time": 1,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.audit-log-append-only"
+      ],
+      "idempotency": "partial",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "cap.fed.enforce-data-contract",
+      "type": "capability",
+      "name": "Enforce Data Contract",
+      "description": "Validate inbound/outbound data against the partner data contract before processing.",
+      "risk_tier": "high",
+      "tags": [
+        "federation",
+        "contracts",
+        "data-governance"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 2,
+        "network": 1,
+        "financial": 1,
+        "time": 0,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.obs.structured-logging"
+      ],
+      "idempotency": "full",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "cap.fed.isolate-guest-workers",
+      "type": "capability",
+      "name": "Isolate Guest Workers",
+      "description": "Run partner/guest workers in isolated execution pools with default-deny capabilities.",
+      "risk_tier": "high",
+      "tags": [
+        "federation",
+        "sandbox",
+        "isolation"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 2,
+        "network": 1,
+        "financial": 1,
+        "time": 1,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.sandbox.no-egress-default-deny",
+        "ctrl.sandbox.workspace-mounts-only"
+      ],
+      "idempotency": "full",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "wrk.fed.gateway",
+      "type": "worker_species",
+      "name": "Federation Gateway Worker",
+      "description": "Front-door for partner integrations; validate identity; issue scoped tokens.",
+      "risk_tier": "high",
+      "determinism": "deterministic",
+      "required_controls": [
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.obs.structured-logging"
+      ],
+      "tags": [
+        "federation",
+        "identity"
+      ],
+      "serves_capabilities": [
+        "cap.fed.accept-external-identity",
+        "cap.fed.exchange-tokens",
+        "cap.fed.enforce-data-contract"
+      ],
+      "blast_radius_hint": {
+        "data": 2,
+        "network": 2,
+        "financial": 1,
+        "time": 1,
+        "reversibility": "reversible"
+      },
+      "idempotency": "partial",
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "wrk.fed.guest-pool.worker",
+      "type": "worker_species",
+      "name": "Guest Pool Worker",
+      "description": "Execute partner workloads in isolated pools with default-deny capabilities.",
+      "risk_tier": "high",
+      "determinism": "nondeterministic",
+      "required_controls": [
+        "ctrl.sandbox.no-egress-default-deny",
+        "ctrl.sandbox.workspace-mounts-only"
+      ],
+      "tags": [
+        "federation",
+        "sandbox"
+      ],
+      "serves_capabilities": [
+        "cap.fed.isolate-guest-workers"
+      ],
+      "blast_radius_hint": {
+        "data": 2,
+        "network": 0,
+        "financial": 1,
+        "time": 1,
+        "reversibility": "reversible"
+      },
+      "idempotency": "partial",
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "prof.fed.partner-strict",
+      "type": "profile",
+      "name": "Strict Partner Federation Profile",
+      "description": "Strict federation posture: validated identity, scoped tokens, data contract enforcement, full audit.",
+      "tags": [
+        "federation",
+        "partner",
+        "security"
+      ],
+      "controls_required": [
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.obs.structured-logging",
+        "ctrl.sandbox.no-egress-default-deny"
+      ],
+      "recommended_for_risk_tiers": [
+        "high",
+        "critical"
+      ],
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "prof.fed.guest-isolated",
+      "type": "profile",
+      "name": "Guest Isolated Federation Profile",
+      "description": "Guest workload isolation posture: sandboxed execution, no egress, workspace-only access.",
+      "tags": [
+        "federation",
+        "sandbox",
+        "isolation"
+      ],
+      "controls_required": [
+        "ctrl.sandbox.no-egress-default-deny",
+        "ctrl.sandbox.workspace-mounts-only",
+        "ctrl.sandbox.resource-limits-strict"
+      ],
+      "recommended_for_risk_tiers": [
+        "medium",
+        "high",
+        "critical"
+      ],
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "cap.model.eval.run",
+      "type": "capability",
+      "name": "Run Model Eval",
+      "description": "Execute an evaluation suite against a model, prompt, or tool version and publish scores.",
+      "risk_tier": "medium",
+      "tags": [
+        "mlops",
+        "eval",
+        "quality"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 0,
+        "network": 1,
+        "financial": 2,
+        "time": 3,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.metrics-core",
+        "ctrl.obs.structured-logging"
+      ],
+      "idempotency": "partial",
+      "determinism": "non-deterministic"
+    },
+    {
+      "id": "cap.model.prompts.update",
+      "type": "capability",
+      "name": "Update Prompt Templates",
+      "description": "Update versioned prompt templates after safety eval and approval gate.",
+      "risk_tier": "high",
+      "tags": [
+        "mlops",
+        "prompts",
+        "change-control"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 1,
+        "network": 1,
+        "financial": 2,
+        "time": 1,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.pol.policy-versioning"
+      ],
+      "idempotency": "partial",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "cap.model.tools.update",
+      "type": "capability",
+      "name": "Update Tool Definitions",
+      "description": "Update versioned tool definitions (function specs, schemas) after QA gate.",
+      "risk_tier": "high",
+      "tags": [
+        "mlops",
+        "tools",
+        "change-control"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 1,
+        "network": 1,
+        "financial": 2,
+        "time": 1,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.pol.policy-versioning"
+      ],
+      "idempotency": "partial",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "cap.model.drift.detect",
+      "type": "capability",
+      "name": "Detect Model Drift",
+      "description": "Detect statistical drift in model output quality, safety, or cost over time.",
+      "risk_tier": "medium",
+      "tags": [
+        "mlops",
+        "drift",
+        "observability"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 0,
+        "network": 0,
+        "financial": 0,
+        "time": 0,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.metrics-core",
+        "ctrl.obs.slo-alerting"
+      ],
+      "idempotency": "full",
+      "determinism": "non-deterministic"
+    },
+    {
+      "id": "cap.model.prompt-injection-test",
+      "type": "capability",
+      "name": "Prompt Injection Test",
+      "description": "Run prompt injection attack vectors against a model to validate safety guardrails.",
+      "risk_tier": "medium",
+      "tags": [
+        "mlops",
+        "safety",
+        "security"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 0,
+        "network": 1,
+        "financial": 1,
+        "time": 2,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.structured-logging",
+        "ctrl.sandbox.no-egress-default-deny"
+      ],
+      "idempotency": "partial",
+      "determinism": "non-deterministic"
+    },
+    {
+      "id": "wrk.model.eval.runner",
+      "type": "worker_species",
+      "name": "Model Eval Runner Worker",
+      "description": "Run eval suites against model/prompt/tool versions; publish scores.",
+      "risk_tier": "medium",
+      "determinism": "nondeterministic",
+      "required_controls": [
+        "ctrl.obs.metrics-core",
+        "ctrl.obs.structured-logging"
+      ],
+      "tags": [
+        "mlops",
+        "eval"
+      ],
+      "serves_capabilities": [
+        "cap.model.eval.run",
+        "cap.model.prompt-injection-test"
+      ],
+      "blast_radius_hint": {
+        "data": 0,
+        "network": 1,
+        "financial": 2,
+        "time": 3,
+        "reversibility": "reversible"
+      },
+      "idempotency": "partial",
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "wrk.model.drift.monitor",
+      "type": "worker_species",
+      "name": "Model Drift Monitor Worker",
+      "description": "Monitor production for drift in quality/safety/cost; trigger alerts.",
+      "risk_tier": "medium",
+      "determinism": "nondeterministic",
+      "required_controls": [
+        "ctrl.obs.metrics-core",
+        "ctrl.obs.slo-alerting"
+      ],
+      "tags": [
+        "mlops",
+        "drift",
+        "observability"
+      ],
+      "serves_capabilities": [
+        "cap.model.drift.detect"
+      ],
+      "blast_radius_hint": {
+        "data": 0,
+        "network": 0,
+        "financial": 0,
+        "time": 0,
+        "reversibility": "reversible"
+      },
+      "idempotency": "full",
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "wrk.model.prompt-qa.gate",
+      "type": "worker_species",
+      "name": "Prompt QA Gate Worker",
+      "description": "Gate prompt/tool changes via safety evals, approvals, and canary rollout.",
+      "risk_tier": "high",
+      "determinism": "deterministic",
+      "required_controls": [
+        "ctrl.obs.audit-log-append-only"
+      ],
+      "tags": [
+        "mlops",
+        "prompts",
+        "safety"
+      ],
+      "serves_capabilities": [
+        "cap.model.prompts.update",
+        "cap.model.tools.update"
+      ],
+      "blast_radius_hint": {
+        "data": 1,
+        "network": 1,
+        "financial": 2,
+        "time": 1,
+        "reversibility": "reversible"
+      },
+      "idempotency": "partial",
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "prof.model.release-gated",
+      "type": "profile",
+      "name": "Release-Gated Model Profile",
+      "description": "Release gate posture: mandatory eval, safety tests, and approval before model/prompt/tool promotion.",
+      "tags": [
+        "mlops",
+        "release",
+        "safety"
+      ],
+      "controls_required": [
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.obs.metrics-core",
+        "ctrl.pol.policy-versioning"
+      ],
+      "recommended_for_risk_tiers": [
+        "medium",
+        "high",
+        "critical"
+      ],
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "prof.model.drift-strict",
+      "type": "profile",
+      "name": "Strict Drift Monitoring Model Profile",
+      "description": "Strict drift monitoring posture: continuous SLO-based alerting and automated remediation triggers.",
+      "tags": [
+        "mlops",
+        "drift",
+        "observability"
+      ],
+      "controls_required": [
+        "ctrl.obs.metrics-core",
+        "ctrl.obs.slo-alerting",
+        "ctrl.obs.structured-logging"
+      ],
+      "recommended_for_risk_tiers": [
+        "medium",
+        "high",
+        "critical"
+      ],
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "cap.mem.write",
+      "type": "capability",
+      "name": "Write Memory",
+      "description": "Store a memory artifact (embedding, document, structured record) under a scoped key.",
+      "risk_tier": "medium",
+      "tags": [
+        "memory",
+        "storage",
+        "context"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 2,
+        "network": 0,
+        "financial": 0,
+        "time": 0,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.obs.structured-logging"
+      ],
+      "idempotency": "partial",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "cap.mem.read",
+      "type": "capability",
+      "name": "Read Memory",
+      "description": "Retrieve a memory artifact by key or query within scope and access controls.",
+      "risk_tier": "low",
+      "tags": [
+        "memory",
+        "retrieval",
+        "context"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 1,
+        "network": 0,
+        "financial": 0,
+        "time": 0,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.structured-logging"
+      ],
+      "idempotency": "full",
+      "determinism": "non-deterministic"
+    },
+    {
+      "id": "cap.mem.delete",
+      "type": "capability",
+      "name": "Delete Memory",
+      "description": "Delete one or more memory artifacts; emit deletion audit record.",
+      "risk_tier": "high",
+      "tags": [
+        "memory",
+        "deletion",
+        "privacy"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 3,
+        "network": 0,
+        "financial": 0,
+        "time": 0,
+        "reversibility": "irreversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.audit-log-append-only"
+      ],
+      "idempotency": "full",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "cap.mem.embed",
+      "type": "capability",
+      "name": "Embed Text",
+      "description": "Convert text to a vector embedding using a configured embedding model.",
+      "risk_tier": "low",
+      "tags": [
+        "memory",
+        "embeddings",
+        "ml"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 0,
+        "network": 1,
+        "financial": 1,
+        "time": 1,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.structured-logging"
+      ],
+      "idempotency": "full",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "cap.mem.summarize",
+      "type": "capability",
+      "name": "Summarize Context",
+      "description": "Summarize a long context window to a bounded token representation preserving provenance.",
+      "risk_tier": "low",
+      "tags": [
+        "memory",
+        "summarization",
+        "context"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 1,
+        "network": 1,
+        "financial": 1,
+        "time": 1,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.structured-logging"
+      ],
+      "idempotency": "partial",
+      "determinism": "non-deterministic"
+    },
+    {
+      "id": "cap.mem.retrieve.rag",
+      "type": "capability",
+      "name": "RAG Retrieval",
+      "description": "Retrieve relevant memory chunks via hybrid vector + keyword search for RAG pipelines.",
+      "risk_tier": "low",
+      "tags": [
+        "memory",
+        "rag",
+        "retrieval"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 1,
+        "network": 1,
+        "financial": 1,
+        "time": 1,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.structured-logging"
+      ],
+      "idempotency": "full",
+      "determinism": "non-deterministic"
+    },
+    {
+      "id": "wrk.mem.retriever",
+      "type": "worker_species",
+      "name": "Memory Retriever Worker",
+      "description": "Retrieve memory/document chunks under scope filters and token budgets.",
+      "risk_tier": "low",
+      "determinism": "nondeterministic",
+      "required_controls": [
+        "ctrl.obs.structured-logging"
+      ],
+      "tags": [
+        "memory",
+        "rag",
+        "retrieval"
+      ],
+      "serves_capabilities": [
+        "cap.mem.retrieve.rag",
+        "cap.mem.read"
+      ],
+      "blast_radius_hint": {
+        "data": 1,
+        "network": 1,
+        "financial": 1,
+        "time": 1,
+        "reversibility": "reversible"
+      },
+      "idempotency": "full",
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "wrk.mem.curator",
+      "type": "worker_species",
+      "name": "Memory Curator Worker",
+      "description": "Decide what gets stored; apply redaction, TTL, provenance; prevent poisoning.",
+      "risk_tier": "high",
+      "determinism": "deterministic",
+      "required_controls": [
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.obs.structured-logging"
+      ],
+      "tags": [
+        "memory",
+        "privacy",
+        "safety"
+      ],
+      "serves_capabilities": [
+        "cap.mem.write",
+        "cap.mem.delete"
+      ],
+      "blast_radius_hint": {
+        "data": 3,
+        "network": 0,
+        "financial": 0,
+        "time": 1,
+        "reversibility": "partially-reversible"
+      },
+      "idempotency": "partial",
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "wrk.mem.summarizer",
+      "type": "worker_species",
+      "name": "Memory Summarizer Worker",
+      "description": "Summarize long context to bounded tokens preserving provenance.",
+      "risk_tier": "low",
+      "determinism": "nondeterministic",
+      "required_controls": [
+        "ctrl.obs.structured-logging"
+      ],
+      "tags": [
+        "memory",
+        "summarization",
+        "ml"
+      ],
+      "serves_capabilities": [
+        "cap.mem.summarize",
+        "cap.mem.embed"
+      ],
+      "blast_radius_hint": {
+        "data": 1,
+        "network": 1,
+        "financial": 1,
+        "time": 1,
+        "reversibility": "reversible"
+      },
+      "idempotency": "partial",
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "prof.mem.rag-strict-scoped",
+      "type": "profile",
+      "name": "Strict Scoped RAG Profile",
+      "description": "Strict RAG posture: scoped retrieval, token budget enforcement, no cross-tenant leakage.",
+      "tags": [
+        "memory",
+        "rag",
+        "privacy"
+      ],
+      "controls_required": [
+        "ctrl.obs.structured-logging",
+        "ctrl.cost.monthly-token-budget"
+      ],
+      "recommended_for_risk_tiers": [
+        "medium",
+        "high",
+        "critical"
+      ],
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "prof.mem.privacy-conservative",
+      "type": "profile",
+      "name": "Privacy-Conservative Memory Profile",
+      "description": "Privacy-conservative memory posture: minimal retention, aggressive TTLs, deletion audit.",
+      "tags": [
+        "memory",
+        "privacy",
+        "gdpr"
+      ],
+      "controls_required": [
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.obs.structured-logging"
+      ],
+      "recommended_for_risk_tiers": [
+        "high",
+        "critical"
+      ],
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "prof.mem.budgeted-summaries",
+      "type": "profile",
+      "name": "Budgeted Summaries Memory Profile",
+      "description": "Cost-conscious memory posture: summarization-first, token budget enforcement.",
+      "tags": [
+        "memory",
+        "cost",
+        "summarization"
+      ],
+      "controls_required": [
+        "ctrl.obs.structured-logging",
+        "ctrl.cost.monthly-token-budget"
+      ],
+      "recommended_for_risk_tiers": [
+        "low",
+        "medium"
+      ],
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "cap.wf.define-dag",
+      "type": "capability",
+      "name": "Define Workflow DAG",
+      "description": "Define a directed acyclic graph of workflow steps with dependencies and data flows.",
+      "risk_tier": "medium",
+      "tags": [
+        "workflows",
+        "dag",
+        "orchestration"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 0,
+        "network": 0,
+        "financial": 0,
+        "time": 0,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.structured-logging"
+      ],
+      "idempotency": "full",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "cap.wf.checkpoint",
+      "type": "capability",
+      "name": "Checkpoint Workflow",
+      "description": "Persist workflow execution state at a checkpoint for durable resumption.",
+      "risk_tier": "medium",
+      "tags": [
+        "workflows",
+        "checkpoints",
+        "durability"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 1,
+        "network": 0,
+        "financial": 0,
+        "time": 0,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.structured-logging",
+        "ctrl.obs.run-metadata-store"
+      ],
+      "idempotency": "full",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "cap.wf.compensate",
+      "type": "capability",
+      "name": "Compensate Workflow",
+      "description": "Execute compensation steps to undo committed actions in a failed saga.",
+      "risk_tier": "high",
+      "tags": [
+        "workflows",
+        "saga",
+        "compensation"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 3,
+        "network": 2,
+        "financial": 2,
+        "time": 3,
+        "reversibility": "partially-reversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.obs.tracing-distributed"
+      ],
+      "idempotency": "full",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "cap.wf.replay-deterministic",
+      "type": "capability",
+      "name": "Replay Deterministic Workflow",
+      "description": "Replay a workflow from a checkpoint with deterministic step execution for recovery.",
+      "risk_tier": "medium",
+      "tags": [
+        "workflows",
+        "replay",
+        "recovery"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 2,
+        "network": 1,
+        "financial": 1,
+        "time": 2,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.tracing-distributed",
+        "ctrl.obs.structured-logging"
+      ],
+      "idempotency": "full",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "cap.wf.fanout-fanin",
+      "type": "capability",
+      "name": "Fan-Out / Fan-In",
+      "description": "Parallelize workflow steps across multiple workers and aggregate results.",
+      "risk_tier": "medium",
+      "tags": [
+        "workflows",
+        "parallelism",
+        "aggregation"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 1,
+        "network": 2,
+        "financial": 2,
+        "time": 2,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.tracing-distributed",
+        "ctrl.obs.metrics-core"
+      ],
+      "idempotency": "partial",
+      "determinism": "captured"
+    },
+    {
+      "id": "wrk.wf.orchestrator",
+      "type": "worker_species",
+      "name": "Workflow Orchestrator Worker",
+      "description": "Execute durable workflows: schedule steps, checkpoint, retry, compensate.",
+      "risk_tier": "high",
+      "determinism": "captured-deterministic",
+      "required_controls": [
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.obs.tracing-distributed"
+      ],
+      "tags": [
+        "workflows",
+        "orchestration",
+        "sagas"
+      ],
+      "serves_capabilities": [
+        "cap.wf.define-dag",
+        "cap.wf.checkpoint",
+        "cap.wf.compensate",
+        "cap.wf.fanout-fanin"
+      ],
+      "blast_radius_hint": {
+        "data": 3,
+        "network": 2,
+        "financial": 2,
+        "time": 3,
+        "reversibility": "partially-reversible"
+      },
+      "idempotency": "partial",
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "wrk.wf.step.executor",
+      "type": "worker_species",
+      "name": "Workflow Step Executor Worker",
+      "description": "Execute a single workflow step under idempotency keys.",
+      "risk_tier": "medium",
+      "determinism": "deterministic",
+      "required_controls": [
+        "ctrl.obs.structured-logging"
+      ],
+      "tags": [
+        "workflows",
+        "idempotency"
+      ],
+      "serves_capabilities": [
+        "cap.wf.replay-deterministic"
+      ],
+      "blast_radius_hint": {
+        "data": 1,
+        "network": 1,
+        "financial": 1,
+        "time": 1,
+        "reversibility": "reversible"
+      },
+      "idempotency": "full",
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "prof.wf.durable-saga",
+      "type": "profile",
+      "name": "Durable Saga Workflow Profile",
+      "description": "Durable saga posture: checkpoints, compensations, exactly-once semantics, distributed tracing.",
+      "tags": [
+        "workflows",
+        "saga",
+        "durability"
+      ],
+      "controls_required": [
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.obs.tracing-distributed",
+        "ctrl.obs.run-metadata-store"
+      ],
+      "recommended_for_risk_tiers": [
+        "medium",
+        "high",
+        "critical"
+      ],
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "cap.db.read",
+      "type": "capability",
+      "name": "Database Read",
+      "description": "Read data from a database within scope and tenant isolation boundaries.",
+      "risk_tier": "low",
+      "tags": [
+        "database",
+        "read",
+        "data-plane"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 1,
+        "network": 0,
+        "financial": 0,
+        "time": 0,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.structured-logging"
+      ],
+      "idempotency": "full",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "cap.db.write",
+      "type": "capability",
+      "name": "Database Write",
+      "description": "Write or update data in a database with transaction and audit guarantees.",
+      "risk_tier": "medium",
+      "tags": [
+        "database",
+        "write",
+        "data-plane"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 2,
+        "network": 0,
+        "financial": 1,
+        "time": 1,
+        "reversibility": "partially-reversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.structured-logging",
+        "ctrl.obs.audit-log-append-only"
+      ],
+      "idempotency": "partial",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "cap.db.migrate",
+      "type": "capability",
+      "name": "Database Migration",
+      "description": "Apply a versioned schema migration with dry-run, canary, and rollback support.",
+      "risk_tier": "critical",
+      "tags": [
+        "database",
+        "migrations",
+        "schema"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 4,
+        "network": 0,
+        "financial": 2,
+        "time": 4,
+        "reversibility": "partially-reversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.obs.structured-logging"
+      ],
+      "idempotency": "full",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "cap.db.backfill",
+      "type": "capability",
+      "name": "Database Backfill",
+      "description": "Backfill existing records with new computed fields using throttled, resumable batch processing.",
+      "risk_tier": "high",
+      "tags": [
+        "database",
+        "backfill",
+        "migrations"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 3,
+        "network": 0,
+        "financial": 1,
+        "time": 4,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.structured-logging",
+        "ctrl.obs.metrics-core"
+      ],
+      "idempotency": "full",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "cap.db.reconcile",
+      "type": "capability",
+      "name": "Database Reconcile",
+      "description": "Compare source-of-truth against derived projections and repair inconsistencies.",
+      "risk_tier": "high",
+      "tags": [
+        "database",
+        "consistency",
+        "reconcile"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 3,
+        "network": 0,
+        "financial": 1,
+        "time": 2,
+        "reversibility": "partially-reversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.obs.structured-logging"
+      ],
+      "idempotency": "full",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "wrk.db.migration.worker",
+      "type": "worker_species",
+      "name": "Database Migration Worker",
+      "description": "Schema migrations/backfills with canary, throttling, and checkpoints.",
+      "risk_tier": "critical",
+      "determinism": "deterministic",
+      "required_controls": [
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.obs.structured-logging"
+      ],
+      "tags": [
+        "database",
+        "migrations"
+      ],
+      "serves_capabilities": [
+        "cap.db.migrate",
+        "cap.db.backfill"
+      ],
+      "blast_radius_hint": {
+        "data": 4,
+        "network": 0,
+        "financial": 2,
+        "time": 4,
+        "reversibility": "partially-reversible"
+      },
+      "idempotency": "full",
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "wrk.db.reconciler",
+      "type": "worker_species",
+      "name": "Database Reconciler Worker",
+      "description": "Compare source-of-truth vs derived projections; repair drift with audit.",
+      "risk_tier": "medium",
+      "determinism": "deterministic",
+      "required_controls": [
+        "ctrl.obs.structured-logging"
+      ],
+      "tags": [
+        "database",
+        "consistency"
+      ],
+      "serves_capabilities": [
+        "cap.db.reconcile"
+      ],
+      "blast_radius_hint": {
+        "data": 2,
+        "network": 0,
+        "financial": 0,
+        "time": 2,
+        "reversibility": "partially-reversible"
+      },
+      "idempotency": "full",
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "prof.db.migration-safe",
+      "type": "profile",
+      "name": "Safe DB Migration Profile",
+      "description": "Safe migration posture: dry-run first, canary rollout, full audit, rollback checkpoint.",
+      "tags": [
+        "database",
+        "migrations",
+        "safety"
+      ],
+      "controls_required": [
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.obs.structured-logging",
+        "ctrl.obs.run-metadata-store"
+      ],
+      "recommended_for_risk_tiers": [
+        "medium",
+        "high",
+        "critical"
+      ],
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "prof.db.reconciliation-strict",
+      "type": "profile",
+      "name": "Strict Reconciliation DB Profile",
+      "description": "Strict reconciliation posture: continuous drift detection, repair-on-detect, full audit.",
+      "tags": [
+        "database",
+        "consistency",
+        "strict"
+      ],
+      "controls_required": [
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.obs.structured-logging",
+        "ctrl.obs.metrics-core"
+      ],
+      "recommended_for_risk_tiers": [
+        "high",
+        "critical"
+      ],
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "cap.int.webhook.verify",
+      "type": "capability",
+      "name": "Verify Inbound Webhook",
+      "description": "Verify the signature and authenticity of an inbound webhook before processing.",
+      "risk_tier": "medium",
+      "tags": [
+        "integrations",
+        "webhooks",
+        "security"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 0,
+        "network": 1,
+        "financial": 0,
+        "time": 0,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.structured-logging"
+      ],
+      "idempotency": "full",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "cap.int.api.call",
+      "type": "capability",
+      "name": "Call External API",
+      "description": "Call a third-party API with backoff, circuit breakers, and rate limiting.",
+      "risk_tier": "medium",
+      "tags": [
+        "integrations",
+        "egress",
+        "resilience"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 1,
+        "network": 3,
+        "financial": 2,
+        "time": 1,
+        "reversibility": "partially-reversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.structured-logging",
+        "ctrl.obs.metrics-core"
+      ],
+      "idempotency": "partial",
+      "determinism": "non-deterministic"
+    },
+    {
+      "id": "cap.int.contract.validate",
+      "type": "capability",
+      "name": "Validate Data Contract",
+      "description": "Validate a data payload against a versioned data contract schema.",
+      "risk_tier": "medium",
+      "tags": [
+        "integrations",
+        "contracts",
+        "validation"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 0,
+        "network": 0,
+        "financial": 0,
+        "time": 0,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.structured-logging"
+      ],
+      "idempotency": "full",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "cap.int.replay-webhook",
+      "type": "capability",
+      "name": "Replay Webhook",
+      "description": "Replay a previously received webhook event for recovery or re-processing.",
+      "risk_tier": "medium",
+      "tags": [
+        "integrations",
+        "webhooks",
+        "replay"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 1,
+        "network": 1,
+        "financial": 1,
+        "time": 1,
+        "reversibility": "partially-reversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.structured-logging",
+        "ctrl.obs.audit-log-append-only"
+      ],
+      "idempotency": "partial",
+      "determinism": "captured"
+    },
+    {
+      "id": "cap.int.rotate-credentials",
+      "type": "capability",
+      "name": "Rotate Integration Credentials",
+      "description": "Rotate API keys, OAuth tokens, or other credentials for a third-party integration.",
+      "risk_tier": "high",
+      "tags": [
+        "integrations",
+        "credentials",
+        "rotation"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 1,
+        "network": 2,
+        "financial": 2,
+        "time": 2,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.sandbox.secrets-denied-by-default"
+      ],
+      "idempotency": "partial",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "wrk.int.webhook-ingest",
+      "type": "worker_species",
+      "name": "Webhook Ingest Worker",
+      "description": "Ingest external webhooks; verify signatures; validate contracts; enqueue.",
+      "risk_tier": "medium",
+      "determinism": "deterministic",
+      "required_controls": [
+        "ctrl.obs.structured-logging"
+      ],
+      "tags": [
+        "integrations",
+        "webhooks"
+      ],
+      "serves_capabilities": [
+        "cap.int.webhook.verify",
+        "cap.int.replay-webhook",
+        "cap.int.contract.validate"
+      ],
+      "blast_radius_hint": {
+        "data": 1,
+        "network": 1,
+        "financial": 0,
+        "time": 0,
+        "reversibility": "reversible"
+      },
+      "idempotency": "full",
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "wrk.int.api-adapter",
+      "type": "worker_species",
+      "name": "API Adapter Worker",
+      "description": "Call external APIs with backoff, circuit breakers, rate limits, and idempotency.",
+      "risk_tier": "medium",
+      "determinism": "captured-deterministic",
+      "required_controls": [
+        "ctrl.obs.structured-logging",
+        "ctrl.obs.metrics-core"
+      ],
+      "tags": [
+        "integrations",
+        "egress",
+        "resilience"
+      ],
+      "serves_capabilities": [
+        "cap.int.api.call"
+      ],
+      "blast_radius_hint": {
+        "data": 1,
+        "network": 3,
+        "financial": 2,
+        "time": 1,
+        "reversibility": "partially-reversible"
+      },
+      "idempotency": "partial",
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "prof.int.webhook-strict",
+      "type": "profile",
+      "name": "Strict Webhook Integration Profile",
+      "description": "Strict webhook posture: signature verification, contract validation, replay idempotency.",
+      "tags": [
+        "integrations",
+        "webhooks",
+        "strict"
+      ],
+      "controls_required": [
+        "ctrl.obs.structured-logging",
+        "ctrl.obs.audit-log-append-only"
+      ],
+      "recommended_for_risk_tiers": [
+        "medium",
+        "high",
+        "critical"
+      ],
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "prof.int.resilient-adapter",
+      "type": "profile",
+      "name": "Resilient Adapter Integration Profile",
+      "description": "Resilient API adapter posture: circuit breakers, backoff, rate limits, metrics.",
+      "tags": [
+        "integrations",
+        "resilience",
+        "egress"
+      ],
+      "controls_required": [
+        "ctrl.obs.metrics-core",
+        "ctrl.obs.structured-logging"
+      ],
+      "recommended_for_risk_tiers": [
+        "medium",
+        "high"
+      ],
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "cap.ui.review.queue",
+      "type": "capability",
+      "name": "Route to Review Queue",
+      "description": "Route a task or decision to a human review queue with explainability bundles.",
+      "risk_tier": "medium",
+      "tags": [
+        "ui",
+        "human-in-loop",
+        "review"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 0,
+        "network": 0,
+        "financial": 0,
+        "time": 1,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.structured-logging"
+      ],
+      "idempotency": "partial",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "cap.ui.form.collect",
+      "type": "capability",
+      "name": "Collect Form Input",
+      "description": "Present a structured form to a human user and collect validated input.",
+      "risk_tier": "low",
+      "tags": [
+        "ui",
+        "forms",
+        "human-in-loop"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 0,
+        "network": 0,
+        "financial": 0,
+        "time": 1,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.structured-logging"
+      ],
+      "idempotency": "partial",
+      "determinism": "non-deterministic"
+    },
+    {
+      "id": "cap.ui.show-diff",
+      "type": "capability",
+      "name": "Show Diff for Review",
+      "description": "Display a structured diff of proposed changes to a human reviewer.",
+      "risk_tier": "low",
+      "tags": [
+        "ui",
+        "diff",
+        "review"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 0,
+        "network": 0,
+        "financial": 0,
+        "time": 0,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [],
+      "idempotency": "full",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "cap.ui.capture-feedback",
+      "type": "capability",
+      "name": "Capture Human Feedback",
+      "description": "Collect structured feedback (thumbs, ratings, corrections) from a human user.",
+      "risk_tier": "low",
+      "tags": [
+        "ui",
+        "feedback",
+        "rlhf"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 0,
+        "network": 0,
+        "financial": 0,
+        "time": 0,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.structured-logging"
+      ],
+      "idempotency": "partial",
+      "determinism": "non-deterministic"
+    },
+    {
+      "id": "cap.ui.escalate-to-human",
+      "type": "capability",
+      "name": "Escalate to Human",
+      "description": "Interrupt automated processing and escalate to a human operator with full context.",
+      "risk_tier": "medium",
+      "tags": [
+        "ui",
+        "escalation",
+        "human-in-loop"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 0,
+        "network": 0,
+        "financial": 1,
+        "time": 2,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.obs.structured-logging"
+      ],
+      "idempotency": "partial",
+      "determinism": "non-deterministic"
+    },
+    {
+      "id": "wrk.ui.review-router",
+      "type": "worker_species",
+      "name": "Review Router Worker",
+      "description": "Route tasks to review queues with explainability bundles and SLAs.",
+      "risk_tier": "medium",
+      "determinism": "deterministic",
+      "required_controls": [
+        "ctrl.obs.structured-logging"
+      ],
+      "tags": [
+        "ui",
+        "human-in-loop"
+      ],
+      "serves_capabilities": [
+        "cap.ui.review.queue",
+        "cap.ui.escalate-to-human"
+      ],
+      "blast_radius_hint": {
+        "data": 0,
+        "network": 0,
+        "financial": 0,
+        "time": 1,
+        "reversibility": "reversible"
+      },
+      "idempotency": "partial",
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "wrk.ui.feedback-collector",
+      "type": "worker_species",
+      "name": "Feedback Collector Worker",
+      "description": "Collect structured human feedback tied to outcomes.",
+      "risk_tier": "low",
+      "determinism": "nondeterministic",
+      "required_controls": [
+        "ctrl.obs.structured-logging"
+      ],
+      "tags": [
+        "ui",
+        "feedback"
+      ],
+      "serves_capabilities": [
+        "cap.ui.capture-feedback",
+        "cap.ui.form.collect"
+      ],
+      "blast_radius_hint": {
+        "data": 0,
+        "network": 0,
+        "financial": 0,
+        "time": 0,
+        "reversibility": "reversible"
+      },
+      "idempotency": "partial",
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "prof.ui.review-strict",
+      "type": "profile",
+      "name": "Strict Review Queue UI Profile",
+      "description": "Strict review queue posture: mandatory human review for all high-stakes decisions, SLA tracking.",
+      "tags": [
+        "ui",
+        "review",
+        "compliance"
+      ],
+      "controls_required": [
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.obs.structured-logging"
+      ],
+      "recommended_for_risk_tiers": [
+        "high",
+        "critical"
+      ],
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "cap.edge.local-store",
+      "type": "capability",
+      "name": "Edge Local Store",
+      "description": "Write data to local edge storage with TTL, size limits, and sync markers.",
+      "risk_tier": "medium",
+      "tags": [
+        "edge",
+        "storage",
+        "offline"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 2,
+        "network": 0,
+        "financial": 0,
+        "time": 0,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.sandbox.resource-limits-strict",
+        "ctrl.obs.structured-logging"
+      ],
+      "idempotency": "partial",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "cap.edge.sync",
+      "type": "capability",
+      "name": "Edge Sync",
+      "description": "Sync local edge events and artifacts to cloud with conflict resolution.",
+      "risk_tier": "medium",
+      "tags": [
+        "edge",
+        "sync",
+        "cloud"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 2,
+        "network": 3,
+        "financial": 1,
+        "time": 2,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.structured-logging",
+        "ctrl.obs.tracing-distributed"
+      ],
+      "idempotency": "partial",
+      "determinism": "captured"
+    },
+    {
+      "id": "cap.edge.device-attest",
+      "type": "capability",
+      "name": "Device Attestation",
+      "description": "Attest the integrity and identity of an edge device using TPM or hardware root of trust.",
+      "risk_tier": "high",
+      "tags": [
+        "edge",
+        "security",
+        "attestation"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 0,
+        "network": 1,
+        "financial": 0,
+        "time": 0,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.audit-log-append-only"
+      ],
+      "idempotency": "full",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "cap.edge.update-agent",
+      "type": "capability",
+      "name": "Update Edge Agent",
+      "description": "Apply a signed software update to an edge agent in a ring-based rollout.",
+      "risk_tier": "critical",
+      "tags": [
+        "edge",
+        "updates",
+        "supply-chain"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 1,
+        "network": 2,
+        "financial": 1,
+        "time": 3,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.sandbox.resource-limits-strict"
+      ],
+      "idempotency": "full",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "cap.edge.local-inference",
+      "type": "capability",
+      "name": "Edge Local Inference",
+      "description": "Run ML inference locally on the edge device without cloud connectivity.",
+      "risk_tier": "medium",
+      "tags": [
+        "edge",
+        "ml",
+        "inference"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 0,
+        "network": 0,
+        "financial": 1,
+        "time": 2,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.sandbox.resource-limits-strict"
+      ],
+      "idempotency": "partial",
+      "determinism": "non-deterministic"
+    },
+    {
+      "id": "wrk.edge.sync.agent",
+      "type": "worker_species",
+      "name": "Edge Sync Agent Worker",
+      "description": "Sync local events/artifacts to cloud with conflict resolution and bandwidth budgets.",
+      "risk_tier": "medium",
+      "determinism": "captured-deterministic",
+      "required_controls": [
+        "ctrl.obs.structured-logging"
+      ],
+      "tags": [
+        "edge",
+        "sync"
+      ],
+      "serves_capabilities": [
+        "cap.edge.sync",
+        "cap.edge.local-store"
+      ],
+      "blast_radius_hint": {
+        "data": 2,
+        "network": 3,
+        "financial": 1,
+        "time": 2,
+        "reversibility": "reversible"
+      },
+      "idempotency": "partial",
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "wrk.edge.update.manager",
+      "type": "worker_species",
+      "name": "Edge Update Manager Worker",
+      "description": "Apply signed updates in rings; verify integrity; rollback on failures.",
+      "risk_tier": "critical",
+      "determinism": "deterministic",
+      "required_controls": [
+        "ctrl.obs.audit-log-append-only"
+      ],
+      "tags": [
+        "edge",
+        "updates",
+        "supply-chain"
+      ],
+      "serves_capabilities": [
+        "cap.edge.update-agent"
+      ],
+      "blast_radius_hint": {
+        "data": 1,
+        "network": 2,
+        "financial": 1,
+        "time": 3,
+        "reversibility": "reversible"
+      },
+      "idempotency": "full",
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "wrk.edge.local-inference.worker",
+      "type": "worker_species",
+      "name": "Edge Local Inference Worker",
+      "description": "Run local inference under constrained compute with strict sandboxing.",
+      "risk_tier": "medium",
+      "determinism": "nondeterministic",
+      "required_controls": [
+        "ctrl.sandbox.resource-limits-strict"
+      ],
+      "tags": [
+        "edge",
+        "ml",
+        "inference"
+      ],
+      "serves_capabilities": [
+        "cap.edge.local-inference"
+      ],
+      "blast_radius_hint": {
+        "data": 0,
+        "network": 0,
+        "financial": 1,
+        "time": 2,
+        "reversibility": "reversible"
+      },
+      "idempotency": "partial",
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "prof.edge.offline-strict",
+      "type": "profile",
+      "name": "Strict Offline Edge Profile",
+      "description": "Strict offline-capable edge posture: local store, device attestation, no cloud dependency.",
+      "tags": [
+        "edge",
+        "offline",
+        "security"
+      ],
+      "controls_required": [
+        "ctrl.sandbox.resource-limits-strict",
+        "ctrl.obs.structured-logging"
+      ],
+      "recommended_for_risk_tiers": [
+        "medium",
+        "high"
+      ],
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "prof.edge.update-rings",
+      "type": "profile",
+      "name": "Ring-Based Update Edge Profile",
+      "description": "Ring-based update posture: signed updates, ring rollout, integrity verification, audit trail.",
+      "tags": [
+        "edge",
+        "updates",
+        "supply-chain"
+      ],
+      "controls_required": [
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.sandbox.resource-limits-strict"
+      ],
+      "recommended_for_risk_tiers": [
+        "high",
+        "critical"
+      ],
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "cap.os.register-worker",
+      "type": "capability",
+      "name": "Register Worker",
+      "description": "Enroll a worker into the workforce registry with validated controls and provenance.",
+      "risk_tier": "high",
+      "tags": [
+        "workforce-os",
+        "registry",
+        "governance"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 1,
+        "network": 0,
+        "financial": 0,
+        "time": 0,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.os.worker-registry",
+        "ctrl.obs.audit-log-append-only"
+      ],
+      "idempotency": "full",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "cap.os.route-task",
+      "type": "capability",
+      "name": "Route Task",
+      "description": "Route a task to the appropriate worker using deterministic routing rules.",
+      "risk_tier": "high",
+      "tags": [
+        "workforce-os",
+        "routing",
+        "orchestration"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 1,
+        "network": 1,
+        "financial": 1,
+        "time": 1,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.os.routing-rules",
+        "ctrl.os.policy-gate-every-step"
+      ],
+      "idempotency": "full",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "cap.os.compose-workflow",
+      "type": "capability",
+      "name": "Compose Workflow",
+      "description": "Compose multi-worker workflows with policy gates, cost controls, and provenance.",
+      "risk_tier": "high",
+      "tags": [
+        "workforce-os",
+        "composition",
+        "orchestration"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 2,
+        "network": 2,
+        "financial": 2,
+        "time": 2,
+        "reversibility": "partially-reversible"
+      },
+      "typical_controls": [
+        "ctrl.os.routing-rules",
+        "ctrl.os.end-to-end-correlation"
+      ],
+      "idempotency": "partial",
+      "determinism": "captured"
+    },
+    {
+      "id": "cap.os.enforce-policies",
+      "type": "capability",
+      "name": "Enforce Policies",
+      "description": "Enforce workforce-wide policies (budget, data label, QoS, privileges) at every routing step.",
+      "risk_tier": "critical",
+      "tags": [
+        "workforce-os",
+        "policy",
+        "governance"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 1,
+        "network": 1,
+        "financial": 2,
+        "time": 0,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.os.policy-gate-every-step",
+        "ctrl.pol.default-deny"
+      ],
+      "idempotency": "full",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "cap.os.observe-end-to-end",
+      "type": "capability",
+      "name": "Observe End-to-End",
+      "description": "Collect end-to-end telemetry with correlation_id across all workers in a request.",
+      "risk_tier": "medium",
+      "tags": [
+        "workforce-os",
+        "observability",
+        "tracing"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 0,
+        "network": 0,
+        "financial": 0,
+        "time": 0,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.os.end-to-end-correlation",
+        "ctrl.obs.tracing-distributed"
+      ],
+      "idempotency": "full",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "cap.os.emergency-controls",
+      "type": "capability",
+      "name": "Emergency Controls",
+      "description": "Activate global or per-worker kill switches for emergency shutdown or quarantine.",
+      "risk_tier": "critical",
+      "tags": [
+        "workforce-os",
+        "emergency",
+        "safety"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 0,
+        "network": 4,
+        "financial": 3,
+        "time": 3,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.os.global-kill-switches",
+        "ctrl.obs.audit-log-append-only"
+      ],
+      "idempotency": "full",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "cap.os.govern-worker-lifecycle",
+      "type": "capability",
+      "name": "Govern Worker Lifecycle",
+      "description": "Manage worker enrollment, suspension, retirement, and version transitions.",
+      "risk_tier": "high",
+      "tags": [
+        "workforce-os",
+        "lifecycle",
+        "governance"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 1,
+        "network": 1,
+        "financial": 1,
+        "time": 2,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.os.worker-registry",
+        "ctrl.obs.audit-log-append-only"
+      ],
+      "idempotency": "partial",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "cap.os.memory-and-context-service",
+      "type": "capability",
+      "name": "Memory and Context Service",
+      "description": "Provide memory and context services to workers (scoped retrieval, embedding, summarization).",
+      "risk_tier": "medium",
+      "tags": [
+        "workforce-os",
+        "memory",
+        "context"
+      ],
+      "wcp_namespace": "reserved",
+      "blast_radius_hint": {
+        "data": 1,
+        "network": 1,
+        "financial": 1,
+        "time": 1,
+        "reversibility": "reversible"
+      },
+      "typical_controls": [
+        "ctrl.obs.structured-logging",
+        "ctrl.cost.monthly-token-budget"
+      ],
+      "idempotency": "partial",
+      "determinism": "non-deterministic"
+    },
+    {
+      "id": "wrk.os.workforce-router",
+      "type": "worker_species",
+      "name": "Workforce Router Worker",
+      "description": "Route, compose, and govern across all workers; enforce policies, budgets, QoS, and provenance.",
+      "risk_tier": "critical",
+      "determinism": "deterministic",
+      "required_controls": [
+        "ctrl.os.worker-registry",
+        "ctrl.os.routing-rules",
+        "ctrl.os.policy-gate-every-step",
+        "ctrl.os.end-to-end-correlation",
+        "ctrl.os.global-kill-switches"
+      ],
+      "tags": [
+        "workforce-os",
+        "routing",
+        "governance"
+      ],
+      "serves_capabilities": [
+        "cap.os.route-task",
+        "cap.os.compose-workflow",
+        "cap.os.enforce-policies"
+      ],
+      "blast_radius_hint": {
+        "data": 2,
+        "network": 4,
+        "financial": 3,
+        "time": 3,
+        "reversibility": "partially-reversible"
+      },
+      "idempotency": "full",
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "wrk.os.registry-manager",
+      "type": "worker_species",
+      "name": "Registry Manager Worker",
+      "description": "Maintain worker registry; enroll/retire; validate controls and provenance.",
+      "risk_tier": "high",
+      "determinism": "deterministic",
+      "required_controls": [
+        "ctrl.os.worker-registry",
+        "ctrl.obs.audit-log-append-only"
+      ],
+      "tags": [
+        "workforce-os",
+        "registry"
+      ],
+      "serves_capabilities": [
+        "cap.os.register-worker",
+        "cap.os.govern-worker-lifecycle"
+      ],
+      "blast_radius_hint": {
+        "data": 1,
+        "network": 0,
+        "financial": 0,
+        "time": 1,
+        "reversibility": "reversible"
+      },
+      "idempotency": "full",
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "wrk.os.incident-commander",
+      "type": "worker_species",
+      "name": "Incident Commander Worker",
+      "description": "Coordinate incident mode: kill switches, quarantine, runbooks, evidence bundles.",
+      "risk_tier": "critical",
+      "determinism": "nondeterministic",
+      "required_controls": [
+        "ctrl.os.global-kill-switches",
+        "ctrl.obs.audit-log-append-only"
+      ],
+      "tags": [
+        "workforce-os",
+        "incident",
+        "emergency"
+      ],
+      "serves_capabilities": [
+        "cap.os.emergency-controls"
+      ],
+      "blast_radius_hint": {
+        "data": 0,
+        "network": 4,
+        "financial": 3,
+        "time": 3,
+        "reversibility": "reversible"
+      },
+      "idempotency": "full",
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "ctrl.os.worker-registry",
+      "type": "control",
+      "name": "Worker Registry",
+      "description": "Maintain an enrolled worker registry; deny execution for unregistered workers.",
+      "tags": [
+        "workforce-os",
+        "registry",
+        "governance"
+      ],
+      "enforcement_point": "hall",
+      "required_for_risk_tiers": [
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ],
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "ctrl.os.routing-rules",
+      "type": "control",
+      "name": "Deterministic Routing Rules",
+      "description": "Enforce deterministic, versioned routing rules (first-match-wins).",
+      "tags": [
+        "workforce-os",
+        "routing"
+      ],
+      "enforcement_point": "hall",
+      "required_for_risk_tiers": [
+        "medium",
+        "high",
+        "critical"
+      ],
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "ctrl.os.policy-gate-every-step",
+      "type": "control",
+      "name": "Policy Gate Every Step",
+      "description": "Apply policy gate at every routing step, not just pre-run.",
+      "tags": [
+        "workforce-os",
+        "policy",
+        "governance"
+      ],
+      "enforcement_point": "hall",
+      "required_for_risk_tiers": [
+        "high",
+        "critical"
+      ],
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "ctrl.os.end-to-end-correlation",
+      "type": "control",
+      "name": "End-to-End Correlation",
+      "description": "Propagate correlation_id across every worker call, tool call, and telemetry event.",
+      "tags": [
+        "workforce-os",
+        "observability",
+        "tracing"
+      ],
+      "enforcement_point": "worker",
+      "required_for_risk_tiers": [
+        "medium",
+        "high",
+        "critical"
+      ],
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "ctrl.os.global-kill-switches",
+      "type": "control",
+      "name": "Global Kill Switches",
+      "description": "Global and per-worker kill switches for emergency shutdown.",
+      "tags": [
+        "workforce-os",
+        "emergency",
+        "safety"
+      ],
+      "enforcement_point": "platform",
+      "required_for_risk_tiers": [
+        "medium",
+        "high",
+        "critical"
+      ],
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "ctrl.os.budget-and-cost-enforcement",
+      "type": "control",
+      "name": "Budget and Cost Enforcement",
+      "description": "Enforce per-agent, per-tenant cost caps and budgets.",
+      "tags": [
+        "workforce-os",
+        "cost",
+        "governance"
+      ],
+      "enforcement_point": "hall",
+      "required_for_risk_tiers": [
+        "medium",
+        "high",
+        "critical"
+      ],
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "ctrl.os.provenance-requirements",
+      "type": "control",
+      "name": "Provenance Requirements",
+      "description": "Require signed provenance for all production worker executions.",
+      "tags": [
+        "workforce-os",
+        "provenance",
+        "supply-chain"
+      ],
+      "enforcement_point": "hall",
+      "required_for_risk_tiers": [
+        "high",
+        "critical"
+      ],
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "prof.os.production-control-plane",
+      "type": "profile",
+      "name": "Production Control Plane Profile",
+      "description": "Production workforce OS posture: registry, routing, policy gates, cost enforcement, provenance.",
+      "tags": [
+        "workforce-os",
+        "production",
+        "governance"
+      ],
+      "controls_required": [
+        "ctrl.os.worker-registry",
+        "ctrl.os.routing-rules",
+        "ctrl.os.policy-gate-every-step",
+        "ctrl.os.end-to-end-correlation",
+        "ctrl.os.budget-and-cost-enforcement",
+        "ctrl.os.provenance-requirements"
+      ],
+      "recommended_for_risk_tiers": [
+        "high",
+        "critical"
+      ],
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "prof.os.incident-mode",
+      "type": "profile",
+      "name": "OS Incident Mode Profile",
+      "description": "Incident mode workforce OS posture: kill switches active, forensic logging, restricted routing.",
+      "tags": [
+        "workforce-os",
+        "incident",
+        "emergency"
+      ],
+      "controls_required": [
+        "ctrl.os.global-kill-switches",
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.obs.flight-recorder-bundle"
+      ],
+      "recommended_for_risk_tiers": [
+        "high",
+        "critical"
+      ],
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "ctrl.blast-radius-scoring",
+      "type": "control",
+      "name": "Blast Radius Scoring",
+      "description": "Compute blast score (0-100) from env, data_label, QoS, and request hints; gate actions with score >= 85 in prod.",
+      "tags": [
+        "blast-radius",
+        "governance",
+        "safety"
+      ],
+      "enforcement_point": "hall",
+      "required_for_risk_tiers": [
+        "high",
+        "critical"
+      ],
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "ctrl.privilege-envelopes-required",
+      "type": "control",
+      "name": "Privilege Envelopes Required",
+      "description": "Workers must declare a privilege envelope (secrets, egress, writes, tools) before execution.",
+      "tags": [
+        "blast-radius",
+        "least-privilege",
+        "security"
+      ],
+      "enforcement_point": "hall",
+      "required_for_risk_tiers": [
+        "medium",
+        "high",
+        "critical"
+      ],
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "pol.egress-allowlist-policy",
+      "type": "policy",
+      "name": "Egress Allowlist Policy",
+      "description": "In prod/edge with RESTRICTED data, any egress destinations must be explicitly allowlisted.",
+      "tags": [
+        "blast-radius",
+        "egress",
+        "policy"
+      ],
+      "controls_required": [
+        "ctrl.sandbox.no-egress-default-deny",
+        "ctrl.sandbox.path-allowlists",
+        "ctrl.blast-radius-scoring"
+      ],
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "pol.replay-safety-policy",
+      "type": "policy",
+      "name": "Replay Safety Policy",
+      "description": "Nondeterministic workers require checkpoints and approvals before replay.",
+      "tags": [
+        "blast-radius",
+        "replay",
+        "policy"
+      ],
+      "controls_required": [
+        "ctrl.obs.audit-log-append-only",
+        "ctrl.blast-radius-scoring"
+      ],
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "pol.sandbox.default-deny",
+      "type": "policy",
+      "name": "Sandbox Default Deny Policy",
+      "description": "All workers must operate in sandbox default-deny posture unless explicitly exempted.",
+      "tags": [
+        "blast-radius",
+        "sandbox",
+        "policy"
+      ],
+      "controls_required": [
+        "ctrl.sandbox.no-egress-default-deny",
+        "ctrl.sandbox.secrets-denied-by-default",
+        "ctrl.privilege-envelopes-required"
+      ],
+      "wcp_namespace": "reserved"
+    },
+    {
+      "id": "pol.default-deny",
+      "type": "policy",
+      "name": "Policy Default Deny",
+      "description": "Policy engine must default-deny all capability requests not covered by explicit policy.",
+      "tags": [
+        "blast-radius",
+        "policy",
+        "authorization"
+      ],
+      "controls_required": [
+        "ctrl.pol.default-deny",
+        "ctrl.pol.policy-engine-runtime",
+        "ctrl.blast-radius-scoring"
+      ],
+      "wcp_namespace": "reserved"
+    }
+  ]
+}
