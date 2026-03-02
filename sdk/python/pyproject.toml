@@ -34,7 +34,7 @@ dev = [
     "pytest-cov>=4.0",
 ]
 discord = [
-    "discord.py>=2.4",
+    "discord-py>=2.4",
 ]
 
 [project.urls]
