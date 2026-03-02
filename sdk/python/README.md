@@ -23,7 +23,7 @@ PyHall is the Hall.
 ## Install
 
 ```bash
-pip install pyhall
+pip install pyhall-wcp
 ```
 
 ## Quick Start
