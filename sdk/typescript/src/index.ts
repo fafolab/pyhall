@@ -59,8 +59,12 @@ export {
 } from "./rules.js";
 export type { Rule, RulesDocument } from "./rules.js";
 
-// Registry
+// Registry (local WCP registry)
 export { Registry } from "./registry.js";
+
+// Registry API client (pyhall.dev HTTP API)
+export { RegistryClient, RegistryRateLimitError } from "./registryClient.js";
+export type { VerifyResponse, BanEntry, RegistryClientOptions } from "./registryClient.js";
 
 // Policy gate
 export { PolicyGate } from "./policyGate.js";
