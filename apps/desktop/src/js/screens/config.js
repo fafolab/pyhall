@@ -22,6 +22,9 @@ window.ConfigScreen = (() => {
     const urlEl = document.getElementById('cfg-hall-url');
     if (urlEl) urlEl.value = cfg.hall_url || 'http://localhost:8765';
 
+    const regUrlEl = document.getElementById('cfg-registry-url');
+    if (regUrlEl) regUrlEl.value = cfg.registry_url || 'https://api.pyhall.dev';
+
     const profileEl = document.getElementById('cfg-profile');
     if (profileEl) profileEl.value = cfg.default_profile || 'prof.dev.permissive';
 
@@ -60,6 +63,7 @@ window.ConfigScreen = (() => {
 
     return {
       hall_url: document.getElementById('cfg-hall-url')?.value || 'http://localhost:8765',
+      registry_url: document.getElementById('cfg-registry-url')?.value || 'https://api.pyhall.dev',
       poll_interval: pollVal,
       auth_token: window.AppState.config?.auth_token || null,
       default_profile: document.getElementById('cfg-profile')?.value || 'prof.dev.permissive',
