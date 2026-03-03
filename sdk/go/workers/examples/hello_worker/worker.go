@@ -17,7 +17,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/fafolab/pyhall-go/wcp"
+	"github.com/fafolab/pyhall/sdk/go/wcp"
 )
 
 // HelloWorker implements the "cap.example.greet" capability.
