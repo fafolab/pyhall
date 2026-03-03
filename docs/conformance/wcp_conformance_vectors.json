@@ -1,0 +1,426 @@
+{
+  "_meta": {
+    "version": "1.0",
+    "patch": "PATCH-XSDK-001",
+    "description": "WCP cross-SDK governance conformance test vectors. All SDKs that do NOT appear in skip_sdks for a given vector MUST produce the declared denied outcome and deny_code.",
+    "deny_code_notes": {
+      "MISSING_CORRELATION_ID": "Go uses this code without the DENY_ prefix. Equivalent to Python/TS DENY_MISSING_CORRELATION_ID.",
+      "NO_AVAILABLE_WORKER": "Go uses this code without the DENY_ prefix. Equivalent to Python/TS DENY_NO_AVAILABLE_WORKER.",
+      "INVALID_BLAST_SCORE": "Go uses this for blast_score range errors. Python does not validate blast_score range at make_decision() level. TS uses DENY_INVALID_INPUT."
+    },
+    "parity_gaps": [
+      "CV-003: CLOSED. Python now validates blast_score range in make_decision() step 0.25. All SDKs agree.",
+      "CV-004: CLOSED. Python now validates blast_score range in make_decision() step 0.25. All SDKs agree.",
+      "CV-007: Go uses per-worker RequiredControls checked at candidate selection (NO_AVAILABLE_WORKER). Python/TS use rule-level required_controls_suggested enforced at step 3 (DENY_MISSING_REQUIRED_CONTROLS).",
+      "CV-009/CV-010: Go enforces AllowedEnvironments per-worker in the registry. Python/TS enforce via rule match conditions — no per-worker env filter exists in those SDKs.",
+      "CV-012: Go rejects the input (INVALID_CAPABILITY_ID). Python/TS sanitize and route normally (no match since capability_id with newline wont match any rule)."
+    ]
+  },
+  "vectors": [
+    {
+      "id": "CV-001",
+      "description": "Empty correlation_id must be denied",
+      "skip_sdks": [],
+      "input": {
+        "capability_id": "cap.doc.summarize",
+        "env": "dev",
+        "data_label": "INTERNAL",
+        "tenant_risk": "low",
+        "qos_class": "P2",
+        "tenant_id": "tenant-1",
+        "correlation_id": "",
+        "request": {}
+      },
+      "rule": {
+        "rule_id": "cv-rule-match-all",
+        "match": { "capability_id": { "any": true } },
+        "decision": {
+          "candidate_workers_ranked": [
+            { "worker_species_id": "wrk.test.worker", "score_hint": 1.0 }
+          ],
+          "required_controls_suggested": [],
+          "escalation": {},
+          "preconditions": {}
+        }
+      },
+      "expect": {
+        "denied": true,
+        "deny_code": "DENY_MISSING_CORRELATION_ID",
+        "deny_code_go": "MISSING_CORRELATION_ID"
+      }
+    },
+    {
+      "id": "CV-002",
+      "description": "No available worker for capability — no workers enrolled — must be denied",
+      "skip_sdks": [],
+      "notes": "Python/TS: no candidates in rule decision -> DENY_NO_AVAILABLE_WORKER. Go: empty registry -> NO_WORKER_FOR_CAPABILITY then deny. For cross-SDK parity: Python/TS use rule with empty candidate list; Go uses empty registry.",
+      "input": {
+        "capability_id": "cap.doc.summarize",
+        "env": "dev",
+        "data_label": "INTERNAL",
+        "tenant_risk": "low",
+        "qos_class": "P2",
+        "tenant_id": "tenant-1",
+        "correlation_id": "test-corr-cv002",
+        "request": {}
+      },
+      "rule": {
+        "rule_id": "cv-rule-no-candidates",
+        "match": { "capability_id": { "any": true } },
+        "decision": {
+          "candidate_workers_ranked": [],
+          "required_controls_suggested": [],
+          "escalation": {},
+          "preconditions": {}
+        }
+      },
+      "setup": {
+        "no_workers": true
+      },
+      "expect": {
+        "denied": true,
+        "deny_code": "DENY_NO_AVAILABLE_WORKER",
+        "deny_code_go": "NO_WORKER_FOR_CAPABILITY"
+      }
+    },
+    {
+      "id": "CV-003",
+      "description": "blast_score=-1 (below valid range) must be denied as invalid input",
+      "skip_sdks": [],
+      "skip_reason": "Parity gap closed: Python now validates blast_score range [0,100] in make_decision() step 0.25. All three SDKs (Python, TypeScript, Go) correctly reject out-of-range blast_score values.",
+      "input": {
+        "capability_id": "cap.doc.summarize",
+        "env": "dev",
+        "data_label": "INTERNAL",
+        "tenant_risk": "low",
+        "qos_class": "P2",
+        "tenant_id": "tenant-1",
+        "correlation_id": "test-corr-cv003",
+        "blast_score": -1,
+        "request": {}
+      },
+      "rule": {
+        "rule_id": "cv-rule-match-all",
+        "match": { "capability_id": { "any": true } },
+        "decision": {
+          "candidate_workers_ranked": [
+            { "worker_species_id": "wrk.test.worker", "score_hint": 1.0 }
+          ],
+          "required_controls_suggested": [],
+          "escalation": {},
+          "preconditions": {}
+        }
+      },
+      "expect": {
+        "denied": true,
+        "deny_code": "DENY_INVALID_INPUT",
+        "deny_code_go": "INVALID_BLAST_SCORE"
+      }
+    },
+    {
+      "id": "CV-004",
+      "description": "blast_score=101 (above valid range) must be denied as invalid input",
+      "skip_sdks": [],
+      "skip_reason": "Parity gap closed: Python now validates blast_score range [0,100] in make_decision() step 0.25. All three SDKs (Python, TypeScript, Go) correctly reject out-of-range blast_score values.",
+      "input": {
+        "capability_id": "cap.doc.summarize",
+        "env": "dev",
+        "data_label": "INTERNAL",
+        "tenant_risk": "low",
+        "qos_class": "P2",
+        "tenant_id": "tenant-1",
+        "correlation_id": "test-corr-cv004",
+        "blast_score": 101,
+        "request": {}
+      },
+      "rule": {
+        "rule_id": "cv-rule-match-all",
+        "match": { "capability_id": { "any": true } },
+        "decision": {
+          "candidate_workers_ranked": [
+            { "worker_species_id": "wrk.test.worker", "score_hint": 1.0 }
+          ],
+          "required_controls_suggested": [],
+          "escalation": {},
+          "preconditions": {}
+        }
+      },
+      "expect": {
+        "denied": true,
+        "deny_code": "DENY_INVALID_INPUT",
+        "deny_code_go": "INVALID_BLAST_SCORE"
+      }
+    },
+    {
+      "id": "CV-005",
+      "description": "blast_score=0 is the valid lower boundary — must be allowed (denied=false)",
+      "skip_sdks": [],
+      "input": {
+        "capability_id": "cap.doc.summarize",
+        "env": "dev",
+        "data_label": "INTERNAL",
+        "tenant_risk": "low",
+        "qos_class": "P2",
+        "tenant_id": "tenant-1",
+        "correlation_id": "test-corr-cv005",
+        "blast_score": 0,
+        "request": {}
+      },
+      "rule": {
+        "rule_id": "cv-rule-match-all",
+        "match": { "capability_id": { "any": true } },
+        "decision": {
+          "candidate_workers_ranked": [
+            { "worker_species_id": "wrk.test.worker", "score_hint": 1.0 }
+          ],
+          "required_controls_suggested": [],
+          "escalation": {},
+          "preconditions": {}
+        }
+      },
+      "expect": {
+        "denied": false,
+        "deny_code": null
+      }
+    },
+    {
+      "id": "CV-006",
+      "description": "blast_score=100 in dev env — valid upper boundary below the deny-threshold — must be allowed",
+      "skip_sdks": [],
+      "notes": "In dev blast gate is not active by default (no hall floor for dev). blast_score=100 is a valid value and must not be rejected. The blast gate only denies >=85 in prod/edge.",
+      "input": {
+        "capability_id": "cap.doc.summarize",
+        "env": "dev",
+        "data_label": "INTERNAL",
+        "tenant_risk": "low",
+        "qos_class": "P2",
+        "tenant_id": "tenant-1",
+        "correlation_id": "test-corr-cv006",
+        "blast_score": 100,
+        "request": {}
+      },
+      "rule": {
+        "rule_id": "cv-rule-match-all",
+        "match": { "capability_id": { "any": true } },
+        "decision": {
+          "candidate_workers_ranked": [
+            { "worker_species_id": "wrk.test.worker", "score_hint": 1.0 }
+          ],
+          "required_controls_suggested": [],
+          "escalation": {},
+          "preconditions": {}
+        }
+      },
+      "expect": {
+        "denied": false,
+        "deny_code": null
+      }
+    },
+    {
+      "id": "CV-007",
+      "description": "Required control declared by rule but absent from registry — must be denied",
+      "skip_sdks": [],
+      "notes": "Python/TS: rule declares required_controls_suggested=[ctrl.obs.audit-log-append-only], registry has no such control -> DENY_MISSING_REQUIRED_CONTROLS. Go: worker declares RequiredControls=[ctrl.obs.audit-log-append-only] but no other worker provides it via CurrentlyImplements -> candidate skipped with required_controls_missing -> NO_AVAILABLE_WORKER. Both SDKs deny — different code path, same governance outcome.",
+      "input": {
+        "capability_id": "cap.doc.summarize",
+        "env": "dev",
+        "data_label": "INTERNAL",
+        "tenant_risk": "low",
+        "qos_class": "P2",
+        "tenant_id": "tenant-1",
+        "correlation_id": "test-corr-cv007",
+        "request": {}
+      },
+      "rule": {
+        "rule_id": "cv-rule-needs-control",
+        "match": { "capability_id": { "any": true } },
+        "decision": {
+          "candidate_workers_ranked": [
+            { "worker_species_id": "wrk.test.worker", "score_hint": 1.0 }
+          ],
+          "required_controls_suggested": ["ctrl.obs.audit-log-append-only"],
+          "escalation": {},
+          "preconditions": {}
+        }
+      },
+      "setup": {
+        "required_control": "ctrl.obs.audit-log-append-only",
+        "control_present": false
+      },
+      "expect": {
+        "denied": true,
+        "deny_code": "DENY_MISSING_REQUIRED_CONTROLS",
+        "deny_code_go": "NO_AVAILABLE_WORKER"
+      }
+    },
+    {
+      "id": "CV-008",
+      "description": "Required control declared by rule and present in registry — must be allowed",
+      "skip_sdks": [],
+      "notes": "Python/TS: rule declares required_controls_suggested=[ctrl.obs.audit-log-append-only], registry has it -> allowed. Go: worker declares RequiredControls=[ctrl.obs.audit-log-append-only] and a second enrolled worker provides it via CurrentlyImplements -> allowed.",
+      "input": {
+        "capability_id": "cap.doc.summarize",
+        "env": "dev",
+        "data_label": "INTERNAL",
+        "tenant_risk": "low",
+        "qos_class": "P2",
+        "tenant_id": "tenant-1",
+        "correlation_id": "test-corr-cv008",
+        "request": {}
+      },
+      "rule": {
+        "rule_id": "cv-rule-needs-control",
+        "match": { "capability_id": { "any": true } },
+        "decision": {
+          "candidate_workers_ranked": [
+            { "worker_species_id": "wrk.test.worker", "score_hint": 1.0 }
+          ],
+          "required_controls_suggested": ["ctrl.obs.audit-log-append-only"],
+          "escalation": {},
+          "preconditions": {}
+        }
+      },
+      "setup": {
+        "required_control": "ctrl.obs.audit-log-append-only",
+        "control_present": true
+      },
+      "expect": {
+        "denied": false,
+        "deny_code": null
+      }
+    },
+    {
+      "id": "CV-009",
+      "description": "Worker with AllowedEnvironments=[dev] requested in prod — must be denied",
+      "skip_sdks": ["python", "typescript"],
+      "skip_reason": "Go enforces AllowedEnvironments per-worker in the registry at candidate selection. Python and TypeScript use JSON routing rules for environment filtering — no per-worker AllowedEnvironments concept exists in those SDKs. Env restriction in Python/TS is enforced by the rule match condition (env field), not post-selection. This vector tests Go-only behavior.",
+      "input": {
+        "capability_id": "cap.doc.devonly",
+        "env": "prod",
+        "data_label": "INTERNAL",
+        "tenant_risk": "low",
+        "qos_class": "P2",
+        "tenant_id": "tenant-1",
+        "correlation_id": "test-corr-cv009",
+        "request": {}
+      },
+      "setup": {
+        "worker_allowed_envs": ["dev"],
+        "worker_species_id": "wrk.test.devonly",
+        "worker_capability": "cap.doc.devonly"
+      },
+      "expect": {
+        "denied": true,
+        "deny_code": "DENY_NO_AVAILABLE_WORKER",
+        "deny_code_go": "NO_AVAILABLE_WORKER"
+      }
+    },
+    {
+      "id": "CV-010",
+      "description": "Worker with AllowedEnvironments=[dev] requested in dev — must be allowed",
+      "skip_sdks": ["python", "typescript"],
+      "skip_reason": "Go-only AllowedEnvironments enforcement. See CV-009.",
+      "input": {
+        "capability_id": "cap.doc.devonly",
+        "env": "dev",
+        "data_label": "INTERNAL",
+        "tenant_risk": "low",
+        "qos_class": "P2",
+        "tenant_id": "tenant-1",
+        "correlation_id": "test-corr-cv010",
+        "request": {}
+      },
+      "setup": {
+        "worker_allowed_envs": ["dev"],
+        "worker_species_id": "wrk.test.devonly",
+        "worker_capability": "cap.doc.devonly"
+      },
+      "expect": {
+        "denied": false,
+        "deny_code": null
+      }
+    },
+    {
+      "id": "CV-011",
+      "description": "Valid request — all checks pass — must be allowed (denied=false)",
+      "skip_sdks": [],
+      "input": {
+        "capability_id": "cap.doc.summarize",
+        "env": "dev",
+        "data_label": "INTERNAL",
+        "tenant_risk": "low",
+        "qos_class": "P2",
+        "tenant_id": "tenant-1",
+        "correlation_id": "test-corr-cv011",
+        "request": {}
+      },
+      "rule": {
+        "rule_id": "cv-rule-match-all",
+        "match": { "capability_id": { "any": true } },
+        "decision": {
+          "candidate_workers_ranked": [
+            { "worker_species_id": "wrk.test.worker", "score_hint": 1.0 }
+          ],
+          "required_controls_suggested": [],
+          "escalation": {},
+          "preconditions": {}
+        }
+      },
+      "expect": {
+        "denied": false,
+        "deny_code": null
+      }
+    },
+    {
+      "id": "CV-012",
+      "description": "capability_id with embedded newline (control character) — telemetry sanitization invariant: no control chars in capability_id field in any emitted telemetry",
+      "skip_sdks": ["go"],
+      "skip_reason": "Go rejects the request at validateRouteInput (INVALID_CAPABILITY_ID, denied=true) before any telemetry is emitted with the mangled capability_id. The invariant test (no control chars in telemetry) is vacuously satisfied on Go's deny path because the capability_id is sanitized in buildDenyTelemetry via SanitizeID. This vector focuses on the Python/TS sanitization path where the request MAY be routed.",
+      "notes": "Python and TypeScript: neither rejects capability_id containing a newline at the routing layer (Python's RouteInput and TS's validateRouteInput only check for null/empty, not control chars in capability_id). The wildcard rule matches, routing proceeds. Both SDKs sanitize the capability_id in telemetry output via their _CTRL_CHARS_RE / sanitizeID logic. The shared invariant: telemetry must not contain the raw newline. Go covers the deny path separately in router_test.go (TestCapabilityIDWithNewlineIsRejected).",
+      "input": {
+        "capability_id": "cap.doc.summarize\nevt.injected fake-entry",
+        "env": "dev",
+        "data_label": "INTERNAL",
+        "tenant_risk": "low",
+        "qos_class": "P2",
+        "tenant_id": "tenant-1",
+        "correlation_id": "test-corr-cv012",
+        "request": {}
+      },
+      "rule": {
+        "rule_id": "cv-rule-match-all",
+        "match": { "capability_id": { "any": true } },
+        "decision": {
+          "candidate_workers_ranked": [
+            { "worker_species_id": "wrk.test.worker", "score_hint": 1.0 }
+          ],
+          "required_controls_suggested": [],
+          "escalation": {},
+          "preconditions": {}
+        }
+      },
+      "expect": {
+        "denied": false,
+        "deny_code": null,
+        "telemetry_invariant": "no_control_chars_in_capability_id_field_in_telemetry"
+      }
+    },
+    {
+      "id": "CV-013",
+      "description": "Worker attestation: enroll with hash, verify match, mutate file, verify DENY_WORKER_TAMPERED",
+      "category": "attestation",
+      "release_blocking": true,
+      "skip_sdks": ["all"],
+      "skip_reason": "CV-013 is a multi-step procedural test requiring file I/O — implemented as standalone test in each SDK test suite, not driven by the conformance vector loader",
+      "steps": [
+        "Enroll worker with attestation registered (SHA-256 of source file)",
+        "Dispatch capability → verify worker_attestation_valid=true, denied=false",
+        "Mutate the worker source file (change one byte)",
+        "Dispatch again → verify denied=true, code=DENY_WORKER_TAMPERED",
+        "Verify evidence receipt includes worker_attestation_checked=true, worker_attestation_valid=false"
+      ],
+      "expected_deny_code": "DENY_WORKER_TAMPERED",
+      "note": "Hash values (registered_hash, current_hash) are NOT in the deny payload — F4 security requirement prohibits leaking hash values to callers."
+    }
+  ]
+}

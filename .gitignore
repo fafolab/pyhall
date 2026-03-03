@@ -48,7 +48,8 @@ CHANGELOG.md
 sdk/*/CHANGELOG.md
 sdk/python/wcp_id_migration.py
 web/
-docs/
+docs/*
+!docs/conformance/
 research/
 taxonomy/
 tools/
