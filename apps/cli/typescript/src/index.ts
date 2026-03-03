@@ -12,6 +12,7 @@ import { runSearch } from './commands/search.js';
 import { runExplain } from './commands/explain.js';
 import { runBrowse } from './commands/browse.js';
 import { runScaffold } from './commands/scaffold.js';
+import { runRegistryVerify, runRegistryCheckHash, runRegistryBanList, runRegistryStatus } from './commands/registry.js';
 import { theme } from './theme.js';
 
 const CLI_VERSION = '0.1.0';
@@ -109,6 +110,42 @@ program
   .description('Interactive worker scaffold wizard — generates worker.ts, registry-record.json, README.md')
   .action(async () => {
     await runScaffold();
+  });
+
+// ---------------------------------------------------------------------------
+// registry
+// ---------------------------------------------------------------------------
+const registryCmd = program
+  .command('registry')
+  .description('pyhall.dev registry operations — verify workers, check hashes, view ban-list');
+
+registryCmd
+  .command('verify <worker-id>')
+  .description('Show current attestation status for a worker')
+  .action(async (workerId: string) => {
+    await runRegistryVerify(workerId);
+  });
+
+registryCmd
+  .command('check-hash <sha256>')
+  .description('Check if a SHA-256 hash appears on the confirmed ban-list')
+  .action(async (sha256: string) => {
+    await runRegistryCheckHash(sha256);
+  });
+
+registryCmd
+  .command('ban-list')
+  .description('Show the confirmed ban-list')
+  .option('--limit <n>', 'Maximum entries to show', '20')
+  .action(async (opts: { limit?: string }) => {
+    await runRegistryBanList(opts);
+  });
+
+registryCmd
+  .command('status')
+  .description('Check registry API health and version')
+  .action(async () => {
+    await runRegistryStatus();
   });
 
 // ---------------------------------------------------------------------------

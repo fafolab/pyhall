@@ -1,6 +1,6 @@
 {
   "name": "@pyhall/cli",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "pyhall CLI — Worker Class Protocol taxonomy browser, search, and worker scaffolder",
   "bin": {
     "pyhall": "./dist/index.js"
