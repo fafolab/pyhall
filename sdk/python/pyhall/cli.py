@@ -56,6 +56,7 @@ from .router import make_decision
 from .registry import Registry
 from .policy_gate import PolicyGate
 from .conformance import load_conformance_spec, check_worker_compliance
+from .registry_client import RegistryClient, RegistryRateLimitError
 
 app = typer.Typer(
     name="pyhall",
@@ -2566,6 +2567,135 @@ def discord_bootstrap(
 
     if write_env_file is not None:
         console.print(f"\n[green]Wrote env file:[/green] {write_env_file}")
+
+
+# ---------------------------------------------------------------------------
+# pyhall registry — pyhall.dev registry operations
+# ---------------------------------------------------------------------------
+
+registry_app = typer.Typer(name="registry", help="pyhall.dev registry operations — verify workers, check hashes, view ban-list")
+app.add_typer(registry_app)
+
+
+@registry_app.command("verify")
+def cmd_registry_verify(
+    worker_id: str = typer.Argument(..., help="Worker ID to look up"),
+    registry_url: str = typer.Option(
+        None, "--registry-url", help="Registry base URL (default: $PYHALL_REGISTRY_URL or https://api.pyhall.dev)"
+    ),
+) -> None:
+    """Show current attestation status for a worker."""
+    rc = RegistryClient(base_url=registry_url) if registry_url else RegistryClient()
+    try:
+        r = rc.verify(worker_id)
+    except RegistryRateLimitError:
+        console.print("[red]Rate limited — try again later[/red]")
+        raise typer.Exit(1)
+
+    status_color = "green" if r.status == "active" else "red" if r.status == "banned" else "yellow"
+    t = Table(show_header=False, box=None, padding=(0, 1))
+    t.add_column("key", style="dim")
+    t.add_column("value")
+    t.add_row("Worker:", f"[bold]{r.worker_id}[/bold]")
+    t.add_row("Status:", f"[bold {status_color}]{r.status.upper()}[/{status_color}]")
+    t.add_row("Current hash:", r.current_hash or "[dim]none[/dim]")
+    t.add_row("Banned:", "[red]yes[/red]" if r.banned else "[green]no[/green]")
+    if r.ban_reason:
+        t.add_row("Ban reason:", r.ban_reason)
+    t.add_row("Attested at:", r.attested_at or "[dim]never[/dim]")
+    t.add_row("AI generated:", "yes" if r.ai_generated else "no")
+    if r.ai_service:
+        t.add_row("AI service:", r.ai_service)
+    if r.ai_model:
+        t.add_row("AI model:", r.ai_model)
+    console.print()
+    console.print(t)
+    console.print()
+
+
+@registry_app.command("check-hash")
+def cmd_registry_check_hash(
+    sha256: str = typer.Argument(..., help="SHA-256 hash to check (64 hex chars)"),
+    registry_url: str = typer.Option(None, "--registry-url"),
+) -> None:
+    """Check if a SHA-256 hash appears on the confirmed ban-list."""
+    if not re.match(r'^[0-9a-f]{64}$', sha256, re.IGNORECASE):
+        console.print("[red]Invalid sha256: must be 64 hex characters[/red]")
+        raise typer.Exit(1)
+
+    rc = RegistryClient(base_url=registry_url) if registry_url else RegistryClient()
+    try:
+        banned = rc.is_hash_banned(sha256)
+    except RegistryRateLimitError:
+        console.print("[red]Rate limited — try again later[/red]")
+        raise typer.Exit(1)
+
+    console.print()
+    if banned:
+        console.print(f"  [bold red]BANNED[/bold red]   {sha256}")
+        entry = next((e for e in rc.get_ban_list() if e.sha256 == sha256), None)
+        if entry:
+            console.print(f"  [dim]Reason:[/dim]  {entry.reason}")
+            console.print(f"  [dim]Source:[/dim]  {entry.source}")
+    else:
+        console.print(f"  [bold green]CLEAN[/bold green]    {sha256}")
+        console.print("  [dim]Not found on the confirmed ban-list.[/dim]")
+    console.print()
+    raise typer.Exit(1 if banned else 0)
+
+
+@registry_app.command("ban-list")
+def cmd_registry_ban_list(
+    limit: int = typer.Option(20, "--limit", help="Maximum entries to show"),
+    registry_url: str = typer.Option(None, "--registry-url"),
+) -> None:
+    """Show the confirmed ban-list."""
+    rc = RegistryClient(base_url=registry_url) if registry_url else RegistryClient()
+    try:
+        entries = rc.get_ban_list(limit=limit)
+    except RegistryRateLimitError:
+        console.print("[red]Rate limited — try again later[/red]")
+        raise typer.Exit(1)
+
+    console.print()
+    if not entries:
+        console.print("[dim]  Ban-list is empty.[/dim]")
+        console.print()
+        return
+
+    t = Table(title=f"Confirmed ban-list ({len(entries)} entries)", show_header=True)
+    t.add_column("Hash (first 12)", style="red")
+    t.add_column("Date", style="dim")
+    t.add_column("Source", style="dim")
+    t.add_column("Reason")
+    for e in entries:
+        t.add_row(e.sha256[:12] + "…", e.reported_at[:10], e.source, e.reason[:60])
+    console.print(t)
+    console.print()
+
+
+@registry_app.command("status")
+def cmd_registry_status(
+    registry_url: str = typer.Option(None, "--registry-url"),
+) -> None:
+    """Check registry API health and version."""
+    rc = RegistryClient(base_url=registry_url) if registry_url else RegistryClient()
+    base = rc.base_url
+    try:
+        h = rc.health()
+        ok = h.get('ok', False)
+        version = h.get('version', 'unknown')
+        console.print()
+        console.print(f"  [dim]Registry:[/dim]  {base}")
+        console.print(f"  [{'green' if ok else 'yellow'}]Status:[/{'green' if ok else 'yellow'}]    {'ok' if ok else 'degraded'}")
+        console.print(f"  [dim]Version:[/dim]   {version}")
+        console.print()
+    except Exception as exc:
+        console.print()
+        console.print(f"  [dim]Registry:[/dim]  {base}")
+        console.print(f"  [red]Status:[/red]    unreachable ({exc})")
+        console.print()
+        raise typer.Exit(1)
 
 
 # ---------------------------------------------------------------------------

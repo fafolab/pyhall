@@ -33,6 +33,11 @@ from datetime import datetime, UTC
 
 from flask import Flask, g, jsonify, request
 
+import sys
+import os as _os
+sys.path.insert(0, _os.path.dirname(_os.path.dirname(__file__)))
+from pyhall.registry_client import RegistryClient, RegistryRateLimitError
+
 HALL_VERSION = "0.1.0"
 DB_PATH = os.environ.get("HALL_DB_PATH", "hall.db")
 
@@ -370,6 +375,36 @@ def create_app(testing: bool = False, db_path: str | None = None) -> Flask:
             return jsonify({"error": str(e)}), 500
 
         return jsonify({"recorded": True, "decision_id": decision_id}), 201
+
+    # ── Registry proxy (public endpoints, no auth required) ──────────────────
+
+    @app.route("/wcp/registry/ban-list", methods=["GET", "OPTIONS"])
+    def registry_ban_list_proxy():
+        if request.method == "OPTIONS":
+            return jsonify({}), 204
+        registry_url = os.environ.get("PYHALL_REGISTRY_URL", "https://api.pyhall.dev")
+        rc = RegistryClient(base_url=registry_url)
+        try:
+            entries = rc.get_ban_list()
+            return jsonify([e.__dict__ for e in entries])
+        except RegistryRateLimitError:
+            return jsonify({"error": "rate limited", "source": "pyhall-registry"}), 429
+        except Exception as exc:
+            return jsonify({"error": str(exc), "source": "local-only"}), 503
+
+    @app.route("/wcp/registry/verify/<worker_id>", methods=["GET", "OPTIONS"])
+    def registry_verify_proxy(worker_id: str):
+        if request.method == "OPTIONS":
+            return jsonify({}), 204
+        registry_url = os.environ.get("PYHALL_REGISTRY_URL", "https://api.pyhall.dev")
+        rc = RegistryClient(base_url=registry_url)
+        try:
+            r = rc.verify(worker_id)
+            return jsonify(r.__dict__)
+        except RegistryRateLimitError:
+            return jsonify({"error": "rate limited", "source": "pyhall-registry"}), 429
+        except Exception as exc:
+            return jsonify({"error": str(exc), "source": "local-only"}), 503
 
     return app
 

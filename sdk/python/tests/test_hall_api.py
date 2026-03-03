@@ -272,3 +272,73 @@ def test_verify_artifact_hash_missing():
     valid, expected = verify_artifact_hash(record)
     assert valid is False
     assert expected == ""
+
+
+# ---------------------------------------------------------------------------
+# Registry proxy endpoints (Tasks 3.5 / 3.6)
+# ---------------------------------------------------------------------------
+
+from unittest.mock import patch, MagicMock
+from pyhall.registry_client import BanEntry, VerifyResponse
+
+
+def _make_verify_response(**kwargs):
+    defaults = dict(
+        worker_id='x.test.w1', status='active', current_hash='a' * 64,
+        banned=False, ban_reason=None, attested_at='2026-03-03T00:00:00Z',
+        ai_generated=False, ai_service=None, ai_model=None,
+        ai_session_fingerprint=None,
+    )
+    defaults.update(kwargs)
+    return VerifyResponse(**defaults)
+
+
+def _make_ban_entry(**kwargs):
+    defaults = dict(
+        sha256='b' * 64, reason='malware',
+        reported_at='2026-03-01T00:00:00Z', source='community',
+        review_status='approved',
+    )
+    defaults.update(kwargs)
+    return BanEntry(**defaults)
+
+
+def test_registry_ban_list_proxy_returns_entries(client):
+    with patch('pyhall.registry_client.RegistryClient.get_ban_list', return_value=[_make_ban_entry()]):
+        res = client.get('/wcp/registry/ban-list')
+    assert res.status_code == 200
+    data = json.loads(res.data)
+    assert len(data) == 1
+    assert data[0]['sha256'] == 'b' * 64
+    assert data[0]['reason'] == 'malware'
+
+
+def test_registry_ban_list_proxy_empty(client):
+    with patch('pyhall.registry_client.RegistryClient.get_ban_list', return_value=[]):
+        res = client.get('/wcp/registry/ban-list')
+    assert res.status_code == 200
+    assert json.loads(res.data) == []
+
+
+def test_registry_ban_list_proxy_503_on_network_error(client):
+    with patch('pyhall.registry_client.RegistryClient.get_ban_list', side_effect=Exception('timeout')):
+        res = client.get('/wcp/registry/ban-list')
+    assert res.status_code == 503
+
+
+def test_registry_verify_proxy_returns_worker(client):
+    with patch('pyhall.registry_client.RegistryClient.verify', return_value=_make_verify_response()):
+        res = client.get('/wcp/registry/verify/x.test.w1')
+    assert res.status_code == 200
+    data = json.loads(res.data)
+    assert data['status'] == 'active'
+    assert data['current_hash'] == 'a' * 64
+
+
+def test_registry_verify_proxy_unknown_worker(client):
+    with patch('pyhall.registry_client.RegistryClient.verify',
+               return_value=_make_verify_response(worker_id='x.ghost', status='unknown', current_hash=None)):
+        res = client.get('/wcp/registry/verify/x.ghost')
+    assert res.status_code == 200
+    data = json.loads(res.data)
+    assert data['status'] == 'unknown'

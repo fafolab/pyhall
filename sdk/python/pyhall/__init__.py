@@ -32,7 +32,7 @@ Quick start:
     print(decision.selected_worker_species_id)  # "wrk.hello.greeter"
 """
 
-__version__ = "0.1.0b1"
+__version__ = "0.2.0"
 __wcp_version__ = "0.1"
 
 from .router import make_decision, detect_shadow_rules
@@ -40,6 +40,7 @@ from .models import RouteInput, RouteDecision, HallConfig
 from .registry import Registry
 from .policy_gate import PolicyGate
 from .rules import load_rules, load_rules_from_dict, Rule
+from .registry_client import RegistryClient, RegistryRateLimitError, VerifyResponse, BanEntry
 
 __all__ = [
     "make_decision",
@@ -52,4 +53,8 @@ __all__ = [
     "load_rules_from_dict",
     "Rule",
     "detect_shadow_rules",
+    "RegistryClient",
+    "RegistryRateLimitError",
+    "VerifyResponse",
+    "BanEntry",
 ]
