@@ -323,8 +323,8 @@ func writeReadme(outDir, workerID, workerSpeciesID, capID, guarantee, descriptio
 
 - Specification: [pyhall.dev](https://pyhall.dev)
 - WCP spec    — https://github.com/fafolab/wcp
-- Python SDK: `+"`pip install pyhall`"+`
-- Go SDK: `+"`go get github.com/fafolab/pyhall-go`"+`
+- Python SDK: `+"`pip install pyhall-wcp`"+`
+- Go SDK: `+"`go install github.com/fafolab/pyhall/sdk/go/cmd/pyhall@latest`"+`
 
 ## License
 

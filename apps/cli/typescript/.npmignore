@@ -1,0 +1,20 @@
+# Dev files
+*.txt
+*.log
+*.sh
+
+# Source
+src/
+tests/
+tsconfig.json
+jest.config.js
+
+# Node internals
+node_modules/
+.DS_Store
+.env
+*.local
+
+# CI/dev artifacts
+coverage/
+.nyc_output/
