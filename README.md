@@ -10,7 +10,7 @@ WCP defines how AI systems route capability requests to workers: which worker ha
 
 | Language | Package | Status |
 |----------|---------|--------|
-| Python | `pip install pyhall` | Reference implementation — production ready |
+| Python | `pip install pyhall-wcp` | Reference implementation — production ready |
 | TypeScript | `npm install @pyhall/core` | Full port |
 | Go | `go get github.com/fafolab/pyhall/sdk/go` | Scaffold / interfaces |
 
