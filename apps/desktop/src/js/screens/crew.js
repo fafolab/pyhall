@@ -75,6 +75,28 @@ window.CrewScreen = (() => {
         if (worker) showWorkerDetails(worker);
       });
     });
+
+    // Hydrate registry status badges for enrolled workers (async, non-blocking)
+    if (window.HallAPI && window.HallAPI.checkRegistryStatus) {
+      filtered.filter(w => w.status !== 'catalog').forEach(async (w) => {
+        const el = container.querySelector(`[data-registry-badge="${CSS.escape(w.species_id)}"]`);
+        if (!el) return;
+        try {
+          const r = await window.HallAPI.checkRegistryStatus(w.worker_id || w.species_id);
+          if (r.status === 'active') {
+            el.innerHTML = '<span class="badge-registry active" title="Attested in pyhall.dev registry">ACTIVE</span>';
+          } else if (r.status === 'banned') {
+            el.innerHTML = `<span class="badge-registry banned" title="${esc(r.ban_reason || 'banned')}">BANNED</span>`;
+          } else if (r.status === 'error') {
+            el.innerHTML = '<span class="badge-registry error" title="Registry unreachable">!</span>';
+          } else {
+            el.innerHTML = '<span class="badge-registry unknown" title="Not found in registry">?</span>';
+          }
+        } catch (_) {
+          el.innerHTML = '<span class="badge-registry error" title="Registry unreachable">!</span>';
+        }
+      });
+    }
   }
 
   function renderWorkerCard(w) {
@@ -96,6 +118,7 @@ window.CrewScreen = (() => {
         <div class="worker-card-header">
           <span class="worker-species-id">${esc(w.species_id)}</span>
           ${statusBadge}
+          ${!isCatalog ? `<span data-registry-badge="${esc(w.species_id)}" class="badge-registry-placeholder" title="Checking registry…">…</span>` : ''}
         </div>
         <div class="worker-card-meta">
           <span class="meta-label">Trade</span>

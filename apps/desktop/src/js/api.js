@@ -135,6 +135,17 @@ window.HallAPI = {
   async saveConfig(config) {
     return tauriInvoke('save_config', { config });
   },
+
+  /**
+   * Check a worker's attestation status via pyhall.dev registry API.
+   * @param {string} workerId - Worker ID to verify
+   * @param {string} [registryUrl] - Override registry base URL
+   * @returns {Promise<{status: string, current_hash: string|null, banned: boolean, ...}>}
+   */
+  async checkRegistryStatus(workerId, registryUrl) {
+    const url = (registryUrl || window.AppState?.config?.registry_url || 'https://api.pyhall.dev').replace(/\/$/, '');
+    return tauriInvoke('check_registry_status', { registry_url: url, worker_id: workerId });
+  },
 };
 
 // ─── Shared app state ──────────────────────────────────────────────────────

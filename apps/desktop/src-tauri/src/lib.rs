@@ -337,6 +337,41 @@ fn validate_registry_record(record_json: String) -> Result<serde_json::Value, St
     }))
 }
 
+/// Check a worker's registry status via pyhall.dev API.
+/// Returns VerifyResponse JSON or {status: "unknown"} on 404.
+/// Returns {status: "error", message: "..."} on network failure.
+#[tauri::command]
+async fn check_registry_status(registry_url: String, worker_id: String) -> Result<serde_json::Value, String> {
+    let base = registry_url.trim_end_matches('/');
+    let encoded = urlencoding::encode(&worker_id);
+    let url = format!("{}/api/v1/verify/{}", base, encoded);
+
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(10))
+        .build()
+        .map_err(|e| format!("Client build error: {}", e))?;
+
+    match client.get(&url).send().await {
+        Ok(resp) if resp.status() == 404 => {
+            Ok(serde_json::json!({ "worker_id": worker_id, "status": "unknown", "current_hash": null, "banned": false }))
+        }
+        Ok(resp) if resp.status() == 429 => {
+            Ok(serde_json::json!({ "status": "error", "message": "rate limited" }))
+        }
+        Ok(resp) if resp.status().is_success() => {
+            let body: serde_json::Value = resp.json().await
+                .map_err(|e| format!("Decode error: {}", e))?;
+            Ok(body)
+        }
+        Ok(resp) => {
+            Ok(serde_json::json!({ "status": "error", "message": format!("HTTP {}", resp.status()) }))
+        }
+        Err(e) => {
+            Ok(serde_json::json!({ "status": "error", "message": e.to_string() }))
+        }
+    }
+}
+
 // ─── App entry ────────────────────────────────────────────────────────────────
 
 pub fn run() {
@@ -422,6 +457,7 @@ pub fn run() {
             read_config,
             save_config,
             validate_registry_record,
+            check_registry_status,
         ])
         .run(tauri::generate_context!())
         .expect("error while running pyhall desktop");
