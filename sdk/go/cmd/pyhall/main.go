@@ -34,6 +34,7 @@ and scaffold new workers with pre-filled registry records.
 		newExplainCmd(),
 		newBrowseCmd(),
 		newScaffoldCmd(),
+		newRegistryCmd(),
 	)
 
 	if err := root.Execute(); err != nil {
