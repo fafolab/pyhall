@@ -20,8 +20,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-          # No registry-url: setup-node auto-sets NODE_AUTH_TOKEN=GITHUB_TOKEN
-          # which overrides OIDC trusted publishing auth.
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Upgrade npm (trusted publishing requires npm >= 11.5.1)
+        run: npm install -g npm@latest
 
       - name: Install and build
         working-directory: sdk/typescript
@@ -29,7 +31,7 @@ jobs:
 
       - name: Publish @pyhall/core
         working-directory: sdk/typescript
-        run: npm publish --provenance --access public
+        run: npm publish --access public
 
   publish-cli:
     if: startsWith(github.ref, 'refs/tags/apps/cli/typescript/')
@@ -44,7 +46,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-          # No registry-url: see publish-core comment above
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Upgrade npm (trusted publishing requires npm >= 11.5.1)
+        run: npm install -g npm@latest
 
       - name: Install SDK dep
         working-directory: sdk/typescript
@@ -56,4 +61,4 @@ jobs:
 
       - name: Publish @pyhall/cli
         working-directory: apps/cli/typescript
-        run: npm publish --provenance --access public
+        run: npm publish --access public
