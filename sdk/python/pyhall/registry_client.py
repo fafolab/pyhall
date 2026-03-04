@@ -25,6 +25,8 @@ import urllib.request
 from dataclasses import dataclass, field
 from typing import Callable, Dict, Optional, Tuple
 
+from pyhall import __version__
+
 
 # ── Data models ───────────────────────────────────────────────────────────────
 
@@ -150,7 +152,10 @@ class RegistryClient:
     # ── Internals ─────────────────────────────────────────────────────────────
 
     def _headers(self) -> dict[str, str]:
-        h: dict[str, str] = {'Accept': 'application/json'}
+        h: dict[str, str] = {
+            'Accept': 'application/json',
+            'User-Agent': f'pyhall-python/{__version__}',
+        }
         if self.session_token:
             h['Cookie'] = f'pyhall_session={self.session_token}'
         return h
