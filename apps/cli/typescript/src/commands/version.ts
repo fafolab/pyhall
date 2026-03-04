@@ -9,15 +9,14 @@ import { catalog } from '../catalog.js';
 
 // Package version injected at build time (from package.json)
 // We read it directly to avoid circular imports.
-const CLI_VERSION = '0.1.0';
+const CLI_VERSION = '0.2.0';
 // @pyhall/core version — kept in sync
-const CORE_VERSION = '0.1.0';
+const CORE_VERSION = '0.2.0';
 
 export function runVersion(): void {
   const wcpSpec = catalog._meta.wcp_spec;
   const catalogBuilt = catalog._meta.built;
   const totalEntities = catalog._meta.total_entities;
-  const totalPacks = catalog._meta.packs;
 
   console.log('');
   console.log(theme.primary.bold('pyhall') + theme.dim(' — Worker Class Protocol CLI'));
@@ -26,7 +25,7 @@ export function runVersion(): void {
   console.log(`  ${theme.subheading('@pyhall/core')}    ${CORE_VERSION}`);
   console.log(`  ${theme.subheading('WCP spec')}        ${wcpSpec}`);
   console.log('');
-  console.log(`  ${theme.dim('Catalog:')}         ${totalEntities} entities across ${totalPacks} packs`);
+  console.log(`  ${theme.dim('Catalog:')}         ${totalEntities} entities`);
   console.log(`  ${theme.dim('Catalog built:')}   ${catalogBuilt}`);
   console.log(`  ${theme.dim('Homepage:')}        https://pyhall.dev`);
   console.log(`  ${theme.dim('Spec:')}            https://pyhall.dev/spec`);

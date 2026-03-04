@@ -5,7 +5,7 @@
  * Displays ranked results with type, pack, score, and description.
  */
 
-import { searchCatalog, getPacks, Entity } from '../catalog.js';
+import { searchCatalog } from '../catalog.js';
 import { theme, BANNER } from '../theme.js';
 
 /** Map entity type to a short colored label */
@@ -45,9 +45,6 @@ export function runSearch(query: string, options: { limit?: string } = {}): void
   console.log(theme.dim('  ' + '─'.repeat(72)));
   console.log('');
 
-  const packs = getPacks();
-  const packMap = new Map(packs.map((p) => [p.id, p.name]));
-
   const results = searchCatalog(query, limit);
 
   if (results.length === 0) {
@@ -65,12 +62,10 @@ export function runSearch(query: string, options: { limit?: string } = {}): void
   console.log('');
 
   for (const { entity, score } of results) {
-    const packName = packMap.get(entity.pack_id) ?? entity.pack_id;
     const risk = entity.risk_tier ? `  risk=${riskLabel(entity.risk_tier)}` : '';
-    const level = entity.level ? `  level=${theme.dim(entity.level)}` : '';
 
     console.log(
-      `  ${typeLabel(entity.type)}  ${theme.primary.bold(entity.id)}${risk}${level}  ${theme.dim('score=' + score)}`
+      `  ${typeLabel(entity.type)}  ${theme.primary.bold(entity.id)}${risk}  ${theme.dim('score=' + score)}`
     );
     if (entity.name) {
       console.log(`         ${theme.bold(entity.name)}`);
@@ -78,7 +73,9 @@ export function runSearch(query: string, options: { limit?: string } = {}): void
     if (entity.description) {
       console.log(`         ${theme.dim(truncate(entity.description, 90))}`);
     }
-    console.log(theme.dim(`         pack: ${packName}`));
+    if (entity.wcp_namespace) {
+      console.log(theme.dim(`         ns: ${entity.wcp_namespace}`));
+    }
     if (entity.tags && entity.tags.length > 0) {
       console.log(theme.dim(`         tags: ${entity.tags.join(', ')}`));
     }
