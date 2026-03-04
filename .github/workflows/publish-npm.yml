@@ -20,7 +20,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-          registry-url: 'https://registry.npmjs.org'
+          # No registry-url: setup-node auto-sets NODE_AUTH_TOKEN=GITHUB_TOKEN
+          # which overrides OIDC trusted publishing auth.
 
       - name: Install and build
         working-directory: sdk/typescript
@@ -43,7 +44,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-          registry-url: 'https://registry.npmjs.org'
+          # No registry-url: see publish-core comment above
 
       - name: Install SDK dep
         working-directory: sdk/typescript
