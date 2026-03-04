@@ -19,7 +19,7 @@ WCP defines how AI systems route capability requests to workers: which worker ha
 ## Quick Start (Python)
 
 ```bash
-pip install pyhall
+pip install pyhall-wcp
 ```
 
 ```python
