@@ -782,6 +782,60 @@ class TestWorkerCodeAttestation:
         assert dec.denied is True
         assert dec.deny_reason_if_denied["code"] == "DENY_WORKER_ATTESTATION_MISSING"
 
+    def test_attestation_required_both_callables_none_denied(self):
+        """R5: require_worker_attestation=True with both callables omitted → DENY_ATTESTATION_UNCONFIGURED.
+
+        Previously silently passed because the None guard only fired at Step 6.5,
+        which was entered only when selected is not None — but the guard itself
+        must still fire when the callables are absent (the callable parameter is None,
+        not a callable that returns None).
+        """
+        from pyhall import HallConfig
+        rules, registry, inp = self._base()
+        cfg = HallConfig(require_worker_attestation=True)
+        dec = make_decision(
+            inp=inp, rules=rules,
+            registry_controls_present=registry.controls_present(),
+            registry_worker_available=registry.worker_available,
+            hall_config=cfg,
+            # registry_get_worker_hash omitted → defaults to None
+            # get_current_worker_hash omitted → defaults to None
+        )
+        assert dec.denied is True
+        assert dec.deny_reason_if_denied["code"] == "DENY_ATTESTATION_UNCONFIGURED"
+
+    def test_attestation_required_only_registry_callable_none_denied(self):
+        """R5 partial: registry callable None, current callable provided → DENY_ATTESTATION_UNCONFIGURED."""
+        from pyhall import HallConfig
+        rules, registry, inp = self._base()
+        cfg = HallConfig(require_worker_attestation=True)
+        dec = make_decision(
+            inp=inp, rules=rules,
+            registry_controls_present=registry.controls_present(),
+            registry_worker_available=registry.worker_available,
+            hall_config=cfg,
+            # registry_get_worker_hash omitted → None
+            get_current_worker_hash=lambda wid: self.GOOD_HASH,
+        )
+        assert dec.denied is True
+        assert dec.deny_reason_if_denied["code"] == "DENY_ATTESTATION_UNCONFIGURED"
+
+    def test_attestation_required_only_current_callable_none_denied(self):
+        """R5 partial: current callable None, registry callable provided → DENY_ATTESTATION_UNCONFIGURED."""
+        from pyhall import HallConfig
+        rules, registry, inp = self._base()
+        cfg = HallConfig(require_worker_attestation=True)
+        dec = make_decision(
+            inp=inp, rules=rules,
+            registry_controls_present=registry.controls_present(),
+            registry_worker_available=registry.worker_available,
+            hall_config=cfg,
+            registry_get_worker_hash=lambda wid: self.GOOD_HASH,
+            # get_current_worker_hash omitted → None
+        )
+        assert dec.denied is True
+        assert dec.deny_reason_if_denied["code"] == "DENY_ATTESTATION_UNCONFIGURED"
+
 
 # ---------------------------------------------------------------------------
 # Registry attestation methods (WCP §5.10)
