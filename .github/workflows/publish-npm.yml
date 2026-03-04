@@ -1,0 +1,54 @@
+name: Publish npm packages
+
+on:
+  push:
+    tags:
+      - 'sdk/typescript/v*'
+      - 'apps/cli/typescript/v*'
+
+jobs:
+  publish-core:
+    if: startsWith(github.ref, 'refs/tags/sdk/typescript/')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install and build
+        working-directory: sdk/typescript
+        run: npm ci && npm run build
+
+      - name: Publish @pyhall/core
+        working-directory: sdk/typescript
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  publish-cli:
+    if: startsWith(github.ref, 'refs/tags/apps/cli/typescript/')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install SDK dep
+        working-directory: sdk/typescript
+        run: npm ci && npm run build
+
+      - name: Install CLI deps
+        working-directory: apps/cli/typescript
+        run: npm ci && npm run build
+
+      - name: Publish @pyhall/cli
+        working-directory: apps/cli/typescript
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
