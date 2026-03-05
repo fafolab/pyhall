@@ -2,7 +2,7 @@
 
 **Status:** v0.1 scaffold — interfaces and stubs only.
 **Spec:** [WCP_SPEC.md](https://github.com/fafolab/wcp/blob/main/WCP_SPEC.md)
-**Production implementation:** [pip install pyhall](https://github.com/fafolab/pyhall)
+**Production implementation:** [pip install pyhall-wcp](https://github.com/fafolab/pyhall)
 
 ---
 
@@ -15,7 +15,7 @@ The Python reference implementation (`pyhall`) is the production-ready version. 
 **If you need production routing today:** use PyHall.
 
 ```bash
-pip install pyhall
+pip install pyhall-wcp
 pyhall route --capability cap.doc.summarize --env dev --data-label INTERNAL
 ```
 

@@ -46,7 +46,7 @@ The MCP server is a thin adapter layer.
 ### Prerequisites
 
 ```bash
-pip install pyhall
+pip install pyhall-wcp
 ```
 
 ### Run the MCP server

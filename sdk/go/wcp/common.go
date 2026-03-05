@@ -3,7 +3,7 @@
 // This is a v0.1 scaffolding — stubs and interfaces only.
 // For the production-ready reference implementation use PyHall:
 //
-//	pip install pyhall
+//	pip install pyhall-wcp
 //
 // WCP Spec: https://github.com/fafolab/wcp/blob/main/WCP_SPEC.md
 package wcp

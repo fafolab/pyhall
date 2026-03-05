@@ -15,7 +15,7 @@ WCP is an open concept — fork it, implement it, improve it.
 
 ```bash
 git clone https://github.com/fafolab/pyhall
-cd pyhall
+cd pyhall/sdk/python
 pip install -e ".[dev]"
 pytest tests/
 ```
@@ -79,4 +79,7 @@ To propose a spec change:
 ## License
 
 By contributing, you agree your contributions will be licensed under the
-MIT License. See LICENSE.
+Apache License 2.0. See LICENSE.
+
+Note: The WCP specification itself is licensed under MIT. The PyHall
+implementation (`pyhall-wcp` on PyPI) is Apache 2.0.
