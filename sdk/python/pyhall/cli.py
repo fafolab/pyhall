@@ -2341,20 +2341,19 @@ def _discord_webhook_url(webhook: dict) -> str:
 def _lab_discord_env_template(server_name: str, guild_id: str = "", client_id: str = "") -> str:
     oauth_url = _discord_oauth_url(client_id) if client_id else ""
     lines = [
-        "# FAFO Lab Discord secrets",
+        f"# {server_name} Discord secrets",
         f"# Server: {server_name}",
         "",
-        f"export DISCORD_GUILD_ID={guild_id or 'replace_me'}",
-        "export DISCORD_BOT_TOKEN=replace_me",
-        "export DISCORD_BULLETIN_CHANNEL_ID=replace_me",
+        f"export DISCORD_GUILD_ID={guild_id or 'YOUR_GUILD_ID'}",
+        "export DISCORD_BOT_TOKEN=YOUR_BOT_TOKEN",
+        "export DISCORD_BULLETIN_CHANNEL_ID=YOUR_CHANNEL_ID",
         "",
     ]
     for env_name in _LAB_DISCORD_WEBHOOKS.values():
-        lines.append(f"export {env_name}=https://discord.com/api/webhooks/replace_me/replace_me")
+        lines.append(f"export {env_name}=https://discord.com/api/webhooks/YOUR_WEBHOOK_ID/YOUR_WEBHOOK_TOKEN")
     lines.extend([
         "",
-        "export FAFOLAB_SECRETS_ENV=/home/fafo/secrets/fafo_secrets.env",
-        "export FAFOLAB_DISCORD_QUEUE=/tmp/fafolab_discord_queue.jsonl",
+        "export DISCORD_QUEUE=/tmp/discord_queue.jsonl",
     ])
     if oauth_url:
         lines.extend(["", f"# Bot invite URL", f"# {oauth_url}"])
@@ -2379,8 +2378,7 @@ def _lab_discord_exports_from_bootstrap(
     lines.extend(
         [
             "",
-            "export FAFOLAB_SECRETS_ENV=/home/fafo/secrets/fafo_secrets.env",
-            "export FAFOLAB_DISCORD_QUEUE=/tmp/fafolab_discord_queue.jsonl",
+            "export DISCORD_QUEUE=/tmp/discord_queue.jsonl",
         ]
     )
     return "\n".join(lines)
@@ -2388,25 +2386,25 @@ def _lab_discord_exports_from_bootstrap(
 
 @app.command("discord-lab")
 def discord_lab(
-    server_name: str = typer.Option("fafolab", "--server-name", help="Discord server name"),
+    server_name: str = typer.Option("my-lab", "--server-name", help="Discord server name"),
     client_id: Optional[str] = typer.Option(None, "--client-id", help="Discord application client ID"),
     guild_id: Optional[str] = typer.Option(None, "--guild-id", help="Discord guild/server ID"),
     write_env_template: Optional[Path] = typer.Option(
         None,
         "--write-env-template",
-        help="Write a ready-to-fill env template file for Big Sexy secrets",
+        help="Write a ready-to-fill env template file for your host secrets",
     ),
     output_json: bool = typer.Option(False, "--json", help="Output machine-readable JSON"),
     quiet: bool = typer.Option(False, "--quiet", help="Suppress banner"),
 ):
     """
-    Generate the exact private lab Discord setup plan for Big Sexy.
+    Generate a Discord setup plan for your lab.
 
     This does not call the Discord API. It gives you:
     - the channel list
     - the webhook env var map
     - the bot invite URL if a client ID is provided
-    - an optional secrets template file for Big Sexy
+    - an optional secrets template file
     """
     if not quiet and not output_json:
         _print_banner()
@@ -2429,8 +2427,8 @@ def discord_lab(
         "next_steps": [
             "Create the private lab channels in Discord",
             "Create one webhook per automation channel",
-            "Paste the webhook URLs and bot token into the Big Sexy secrets file",
-            "Sync the pyhall tree to Big Sexy and enable the Discord bot service",
+            "Paste the webhook URLs and bot token into your secrets file",
+            "Deploy pyhall to your host and enable the Discord bot service",
         ],
     }
 
@@ -2441,9 +2439,7 @@ def discord_lab(
     console.print(Panel.fit(
         Text.from_markup(
             f"[bold cyan]Lab Discord Setup[/bold cyan]\n"
-            f"Server: [bold]{server_name}[/bold]\n"
-            f"Runtime host: [bold]Big Sexy[/bold]\n"
-            f"Clients: Echo + phone"
+            f"Server: [bold]{server_name}[/bold]"
         ),
         border_style="cyan",
     ))
@@ -2472,7 +2468,7 @@ def discord_lab(
 def discord_bootstrap(
     guild_id: str = typer.Option(..., "--guild-id", help="Discord guild/server ID"),
     token_env: str = typer.Option("DISCORD_BOT_TOKEN", "--token-env", help="Env var holding the Discord bot token"),
-    webhook_name: str = typer.Option("fafolab-bot", "--webhook-name", help="Webhook name to create per channel"),
+    webhook_name: str = typer.Option("pyhall-bot", "--webhook-name", help="Webhook name to create per channel"),
     existing_only: bool = typer.Option(
         False,
         "--existing-only",

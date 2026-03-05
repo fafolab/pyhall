@@ -80,7 +80,7 @@ window.FeedScreen = (() => {
         <div class="ticket-row"><span class="ticket-label">ticket_id</span><span class="ticket-value">${e.id || '—'}</span></div>
         <div class="ticket-row"><span class="ticket-label">capability</span><span class="ticket-value">${esc(e.capability)}</span></div>
         <div class="ticket-row"><span class="ticket-label">worker</span><span class="ticket-value">${esc(e.worker) || '—'}</span></div>
-        <div class="ticket-row"><span class="ticket-label">tenant_id</span><span class="ticket-value">${esc(e.tenant_id) || 'fafolab'}</span></div>
+        <div class="ticket-row"><span class="ticket-label">tenant_id</span><span class="ticket-value">${esc(e.tenant_id) || 'unknown'}</span></div>
         <div class="ticket-row"><span class="ticket-label">env</span><span class="ticket-value">${esc(e.env) || 'prod'}</span></div>
         <div class="ticket-row"><span class="ticket-label">blast_score</span><span class="ticket-value">${e.blast_score} / 100</span></div>
         <div class="ticket-row"><span class="ticket-label">profile</span><span class="ticket-value">${esc(e.profile) || '—'}</span></div>

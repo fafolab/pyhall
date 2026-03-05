@@ -32,7 +32,7 @@ Quick start:
     print(decision.selected_worker_species_id)  # "wrk.hello.greeter"
 """
 
-__version__ = "0.2.1"
+__version__ = "0.2.2"
 __wcp_version__ = "0.1"
 
 from .router import make_decision, detect_shadow_rules
