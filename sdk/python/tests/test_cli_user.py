@@ -264,7 +264,7 @@ def test_discord_bootstrap_writes_env_file(monkeypatch, tmp_path):
 
     def fake_create_webhook(channel_id, token, name):
         assert token == "test-token"
-        assert name == "fafolab-bot"
+        assert name == "pyhall-bot"
         return {"id": f"wh-{channel_id}", "token": f"tok-{channel_id}"}
 
     monkeypatch.setattr(cli_mod, "_discord_ensure_text_channel", fake_ensure_text_channel)
@@ -286,7 +286,7 @@ def test_discord_bootstrap_writes_env_file(monkeypatch, tmp_path):
     assert "DISCORD_GUILD_ID=9876543210" in text
     assert "DISCORD_BULLETIN_CHANNEL_ID=id-agent-bulletin-board" in text
     assert "DISCORD_WEBHOOK_BULLETIN=https://discord.com/api/webhooks/wh-id-agent-bulletin-board/tok-id-agent-bulletin-board" in text
-    assert "FAFOLAB_DISCORD_QUEUE=/tmp/fafolab_discord_queue.jsonl" in text
+    assert "DISCORD_QUEUE=/tmp/discord_queue.jsonl" in text
 
 
 def test_discord_bootstrap_existing_only_missing_channel(monkeypatch):
