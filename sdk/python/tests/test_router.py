@@ -847,6 +847,9 @@ class TestWorkerCodeAttestation:
             def get_worker_hash(self, worker_id: str):
                 return KNOWN_HASH
 
+            def record_decision(self, worker_species_id: str) -> None:
+                pass
+
         rules, registry, inp = self._base()
         mock_client = MockRegistryClient()
 
@@ -875,6 +878,9 @@ class TestWorkerCodeAttestation:
         class MockRegistryClient:
             def get_worker_hash(self, worker_id: str):
                 return KNOWN_HASH
+
+            def record_decision(self, worker_species_id: str) -> None:
+                pass
 
         rules, registry, inp = self._base()
         mock_client = MockRegistryClient()
@@ -906,6 +912,9 @@ class TestWorkerCodeAttestation:
             def get_worker_hash(self, worker_id: str):
                 # Client would return DIFFERENT_HASH, but it should NOT be used
                 return DIFFERENT_HASH
+
+            def record_decision(self, worker_species_id: str) -> None:
+                pass
 
         rules, registry, inp = self._base()
         mock_client = MockRegistryClient()

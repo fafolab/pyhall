@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 )
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -296,5 +297,81 @@ func TestPrefetchNonFatalOn404(t *testing.T) {
 	err := c.Prefetch([]string{"x.nonexistent"})
 	if err != nil {
 		t.Errorf("prefetch should be non-fatal on 404, got: %v", err)
+	}
+}
+
+// ── RecordDecision / Prefetch flush ──────────────────────────────────────────
+
+func TestRecordDecision_FlushesOnPrefetch(t *testing.T) {
+	// Track which paths the test server receives.
+	var receivedTelemetry bool
+	var receivedDecisionCount int64
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.Method == http.MethodGet && r.URL.Path != "/api/v1/telemetry/decisions":
+			// Verify calls during Prefetch — return active worker JSON.
+			writeJSON(w, 200, activeWorkerJSON())
+		case r.Method == http.MethodPost && r.URL.Path == "/api/v1/telemetry/decisions":
+			receivedTelemetry = true
+			var body struct {
+				Decisions []struct {
+					WorkerID string `json:"worker_id"`
+					Count    int64  `json:"count"`
+				} `json:"decisions"`
+			}
+			if err := json.NewDecoder(r.Body).Decode(&body); err == nil && len(body.Decisions) > 0 {
+				for _, d := range body.Decisions {
+					if d.WorkerID == "wrk.test.worker" {
+						receivedDecisionCount = d.Count
+					}
+				}
+			}
+			writeJSON(w, 200, map[string]string{"ok": "true"})
+		default:
+			writeJSON(w, 404, map[string]string{"error": "not found"})
+		}
+	}))
+	defer srv.Close()
+
+	c := newTestClient(srv)
+
+	// Record 3 decisions for the same species.
+	c.RecordDecision("wrk.test.worker")
+	c.RecordDecision("wrk.test.worker")
+	c.RecordDecision("wrk.test.worker")
+
+	// Verify counts accumulated before flush.
+	c.decisionMu.Lock()
+	preFlushCount := c.decisionCounts["wrk.test.worker"]
+	c.decisionMu.Unlock()
+	if preFlushCount != 3 {
+		t.Errorf("expected decisionCounts[wrk.test.worker]=3 before flush, got %d", preFlushCount)
+	}
+
+	// Prefetch triggers flush (fire-and-forget goroutine).
+	if err := c.Prefetch([]string{"x.test.worker1"}); err != nil {
+		t.Fatalf("Prefetch returned unexpected error: %v", err)
+	}
+
+	// Counts must be reset synchronously (map swapped before goroutine launch).
+	c.decisionMu.Lock()
+	postFlushCount := c.decisionCounts["wrk.test.worker"]
+	c.decisionMu.Unlock()
+	if postFlushCount != 0 {
+		t.Errorf("expected decisionCounts reset to 0 after flush, got %d", postFlushCount)
+	}
+
+	// Give the goroutine time to deliver the telemetry POST (max 500ms).
+	// The goroutine hits localhost so it should complete within a few ms.
+	for i := 0; i < 500 && !receivedTelemetry; i++ {
+		time.Sleep(1 * time.Millisecond)
+	}
+
+	if !receivedTelemetry {
+		t.Error("expected telemetry POST to /api/v1/telemetry/decisions — never received")
+	}
+	if receivedDecisionCount != 3 {
+		t.Errorf("expected telemetry count=3, got %d", receivedDecisionCount)
 	}
 }

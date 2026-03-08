@@ -841,6 +841,10 @@ func MakeDecision(input RouteInput, registry *Registry, opts RouterOptions) Rout
 	artifactHash := artifactHashOf(input)
 	speciesID := selected.WorkerSpeciesID
 
+	if opts.RegistryClient != nil && speciesID != "" {
+		opts.RegistryClient.RecordDecision(speciesID)
+	}
+
 	// GO-F13 fix: selected.RequiredControls may be nil (omitempty field).
 	// RouteDecision.RequiredControlsEffective is typed as []string and consumers
 	// expect a JSON array, not null. Normalise nil → empty slice.

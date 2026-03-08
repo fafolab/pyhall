@@ -901,6 +901,12 @@ def make_decision(
         out.dry_run = True
 
     # -----------------------------------------------------------------------
+    # Step 9.8: Decision count telemetry (fire-and-forget via registry_client)
+    # -----------------------------------------------------------------------
+    if registry_client is not None and selected is not None:
+        registry_client.record_decision(selected)
+
+    # -----------------------------------------------------------------------
     # Step 10: Optional conformance check (CI only)
     # -----------------------------------------------------------------------
     if conformance_spec is not None:

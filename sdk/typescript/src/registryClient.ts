@@ -75,6 +75,7 @@ export class RegistryClient {
   private readonly timeout: number;
   private readonly cacheTtl: number;
   private readonly cache = new Map<string, CacheEntry>();
+  private readonly decisionCounts = new Map<string, number>();
 
   constructor(opts: RegistryClientOptions = {}) {
     this.baseUrl = (opts.baseUrl ?? 'https://api.pyhall.dev').replace(/\/$/, '');
@@ -190,6 +191,17 @@ export class RegistryClient {
         // Non-fatal: cache miss means callback returns null
       }
     }));
+
+    // Flush decision counts — never fail prefetch on telemetry error
+    if (this.decisionCounts.size > 0) {
+      const payload = Array.from(this.decisionCounts.entries()).map(([worker_id, count]) => ({ worker_id, count }));
+      this.decisionCounts.clear();
+      this._fetch('/api/v1/telemetry/decisions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...this._authHeaders() },
+        body: JSON.stringify({ decisions: payload }),
+      }).catch(() => {}); // fire-and-forget
+    }
   }
 
   /**
@@ -212,6 +224,11 @@ export class RegistryClient {
       if (status === 'active' && current_hash) return current_hash;
       return null;
     };
+  }
+
+  /** Record one routing decision for a worker species. Flushed on next prefetch(). */
+  recordDecision(workerSpeciesId: string): void {
+    this.decisionCounts.set(workerSpeciesId, (this.decisionCounts.get(workerSpeciesId) ?? 0) + 1);
   }
 
   // ── Attestation submission ─────────────────────────────────────────────────

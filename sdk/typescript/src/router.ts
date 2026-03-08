@@ -1173,6 +1173,10 @@ export function makeDecision(opts: MakeDecisionOptions): RouteDecision {
   // -------------------------------------------------------------------------
   // Step 8: Assemble decision
   // -------------------------------------------------------------------------
+  if (opts.registryClient != null && selected) {
+    opts.registryClient.recordDecision(selected);
+  }
+
   const out: RouteDecision = {
     decision_id: uuidV4(),
     timestamp: nowUtc(),

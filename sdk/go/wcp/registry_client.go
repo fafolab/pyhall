@@ -1,6 +1,7 @@
 package wcp
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -65,10 +66,12 @@ type cachedVerify struct {
 
 // RegistryClient is a thin HTTP client for the pyhall.dev worker registry API.
 type RegistryClient struct {
-	opts  RegistryClientOptions
-	http  *http.Client
-	mu    sync.RWMutex
-	cache map[string]cachedVerify
+	opts           RegistryClientOptions
+	http           *http.Client
+	mu             sync.RWMutex
+	cache          map[string]cachedVerify
+	decisionMu     sync.Mutex
+	decisionCounts map[string]int64 // species_id → count since last flush
 }
 
 // NewRegistryClient returns a configured RegistryClient.
@@ -193,6 +196,8 @@ func (c *RegistryClient) Health() (map[string]any, error) {
 // Prefetch pre-populates the verify cache for the given worker IDs.
 // Network errors for individual workers are silently ignored (non-fatal).
 // RegistryRateLimitError is propagated.
+// After verify calls complete, any accumulated decision counts are flushed to
+// the registry fire-and-forget — telemetry errors never fail Prefetch.
 func (c *RegistryClient) Prefetch(workerIDs []string) error {
 	for _, wid := range workerIDs {
 		if _, err := c.Verify(wid); err != nil {
@@ -202,7 +207,57 @@ func (c *RegistryClient) Prefetch(workerIDs []string) error {
 			// Other errors (404 already handled inside Verify) are non-fatal
 		}
 	}
+
+	// Flush decision counts — never fail Prefetch on telemetry error
+	c.decisionMu.Lock()
+	if len(c.decisionCounts) > 0 {
+		toFlush := c.decisionCounts
+		c.decisionCounts = make(map[string]int64)
+		c.decisionMu.Unlock()
+		go func() {
+			type entry struct {
+				WorkerID string `json:"worker_id"`
+				Count    int64  `json:"count"`
+			}
+			type payload struct {
+				Decisions []entry `json:"decisions"`
+			}
+			p := payload{}
+			for id, cnt := range toFlush {
+				p.Decisions = append(p.Decisions, entry{WorkerID: id, Count: cnt})
+			}
+			body, err := json.Marshal(p)
+			if err != nil {
+				return
+			}
+			req, err := http.NewRequest("POST", c.opts.BaseURL+"/api/v1/telemetry/decisions", bytes.NewReader(body))
+			if err != nil {
+				return
+			}
+			req.Header.Set("Content-Type", "application/json")
+			c.applyAuth(req, "")
+			resp, err := c.http.Do(req)
+			if err != nil {
+				return
+			}
+			resp.Body.Close()
+		}()
+	} else {
+		c.decisionMu.Unlock()
+	}
+
 	return nil
+}
+
+// RecordDecision records one routing decision for a worker species.
+// Counts are flushed to the registry on the next Prefetch() call.
+func (c *RegistryClient) RecordDecision(workerSpeciesID string) {
+	c.decisionMu.Lock()
+	defer c.decisionMu.Unlock()
+	if c.decisionCounts == nil {
+		c.decisionCounts = make(map[string]int64)
+	}
+	c.decisionCounts[workerSpeciesID]++
 }
 
 // BaseURL returns the configured registry base URL.

@@ -186,3 +186,66 @@ class TestPrefetch:
         with patch('urllib.request.urlopen', side_effect=_http_error(404)):
             client.prefetch(['x.nonexistent'])  # must not raise
         assert client.get_worker_hash('x.nonexistent') is None
+
+
+# ── record_decision() / decision count telemetry ─────────────────────────────
+
+class TestDecisionCountTelemetry:
+    def test_record_decision_increments_counter(self):
+        client = RegistryClient(base_url='https://api.pyhall.dev')
+        assert client._decision_counts == {}
+        client.record_decision('wrk.hello.greeter')
+        assert client._decision_counts == {'wrk.hello.greeter': 1}
+        client.record_decision('wrk.hello.greeter')
+        assert client._decision_counts == {'wrk.hello.greeter': 2}
+        client.record_decision('wrk.other.worker')
+        assert client._decision_counts == {'wrk.hello.greeter': 2, 'wrk.other.worker': 1}
+
+    def test_prefetch_flushes_decision_counts(self):
+        client = RegistryClient(base_url='https://api.pyhall.dev')
+        client.record_decision('wrk.hello.greeter')
+        client.record_decision('wrk.hello.greeter')
+        client.record_decision('wrk.other.worker')
+
+        # prefetch() calls verify() for each worker_id, then POST telemetry.
+        # Side-effect sequence: verify responses for the two prefetch IDs,
+        # then the telemetry POST response.
+        mock_verify_resp = _mock_response(ACTIVE_WORKER)
+        mock_telemetry_resp = _mock_response({'ok': True})
+
+        posted_bodies = []
+
+        def _urlopen_side_effect(req, timeout=None):
+            if req.get_method() == 'POST':
+                posted_bodies.append(json.loads(req.data))
+                return mock_telemetry_resp
+            return mock_verify_resp
+
+        with patch('urllib.request.urlopen', side_effect=_urlopen_side_effect):
+            client.prefetch(['x.test.worker1'])
+
+        # Counts must be cleared after flush
+        assert client._decision_counts == {}
+
+        # POST must have been called once with the correct payload
+        assert len(posted_bodies) == 1
+        payload = posted_bodies[0]
+        assert 'decisions' in payload
+        by_id = {d['worker_id']: d['count'] for d in payload['decisions']}
+        assert by_id == {'wrk.hello.greeter': 2, 'wrk.other.worker': 1}
+
+    def test_prefetch_flush_failure_does_not_raise(self):
+        """A POST error during flush must be silently swallowed."""
+        client = RegistryClient(base_url='https://api.pyhall.dev')
+        client.record_decision('wrk.hello.greeter')
+
+        def _urlopen_side_effect(req, timeout=None):
+            if req.get_method() == 'POST':
+                raise _http_error(500)
+            return _mock_response(ACTIVE_WORKER)
+
+        with patch('urllib.request.urlopen', side_effect=_urlopen_side_effect):
+            client.prefetch(['x.test.worker1'])  # must not raise
+
+        # Counts were cleared before the POST attempt
+        assert client._decision_counts == {}

@@ -103,6 +103,7 @@ class RegistryClient:
         self.timeout = timeout
         self._cache_ttl = cache_ttl
         self._cache: Dict[str, Tuple[VerifyResponse, float]] = {}
+        self._decision_counts: dict[str, int] = {}  # species_id → count since last flush
 
     # ── Public API ────────────────────────────────────────────────────────────
 
@@ -204,6 +205,10 @@ class RegistryClient:
             sha256=data.get('sha256', package_hash),
         )
 
+    def record_decision(self, worker_species_id: str) -> None:
+        """Record one routing decision for a worker species. Flushed on next prefetch()."""
+        self._decision_counts[worker_species_id] = self._decision_counts.get(worker_species_id, 0) + 1
+
     def prefetch(self, worker_ids: list[str]) -> None:
         """Pre-populate verify cache — non-fatal on 404 or rate limit."""
         for wid in worker_ids:
@@ -213,6 +218,20 @@ class RegistryClient:
                 raise
             except Exception:
                 pass
+
+        # Flush decision counts to registry (fire-and-forget, never fail prefetch)
+        if self._decision_counts:
+            counts_to_flush = self._decision_counts.copy()
+            self._decision_counts.clear()
+            try:
+                self._post('/api/v1/telemetry/decisions', {
+                    'decisions': [
+                        {'worker_id': k, 'count': v}
+                        for k, v in counts_to_flush.items()
+                    ]
+                })
+            except Exception:
+                pass  # telemetry never blocks routing
 
     def get_worker_hash(self, worker_id: str) -> Optional[str]:
         """Returns current_hash for active workers; None otherwise.
