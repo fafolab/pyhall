@@ -192,6 +192,7 @@ def make_decision(
     hall_config: Optional[HallConfig] = None,
     registry_get_worker_hash: Optional[Callable[[str], Optional[str]]] = None,
     get_current_worker_hash: Optional[Callable[[str], Optional[str]]] = None,
+    registry_client: Optional["RegistryClient"] = None,
 ) -> RouteDecision:
     """
     Make a WCP routing decision.
@@ -257,12 +258,44 @@ def make_decision(
             is True. Implementations compute this from the worker's file path,
             container image digest, or module source.
 
+        registry_client:
+            Optional RegistryClient instance. When provided:
+            - Automatically wires registry_get_worker_hash via the client's
+              get_worker_hash() method (uses the prefetch cache if populated).
+            - Forces hall_config.require_worker_attestation = True, so every
+              routing decision issues a standing receipt. This is the primary
+              integration path for Hall binaries — the registry client is
+              compiled in, making the attestation check non-bypassable without
+              changing the binary hash (which breaks the PackageAttestationVerifier
+              startup check).
+            Call registry_client.prefetch(worker_ids) before make_decision() to
+            populate the cache and avoid synchronous HTTP on the hot path.
+
     Returns:
         RouteDecision — never raises in normal operation.
             Exception: raises RuntimeError only when conformance_spec is provided
             and the decision fails conformance checks (CI/test-only mode).
             Do not pass conformance_spec in production code.
     """
+
+    # -----------------------------------------------------------------------
+    # registry_client auto-wiring: if provided, use it as the worker hash
+    # source and enable attestation enforcement. This is the primary path
+    # for Hall binaries — the registry client is baked in, so every decision
+    # issues a standing receipt.
+    # -----------------------------------------------------------------------
+    if registry_client is not None:
+        if registry_get_worker_hash is None:
+            registry_get_worker_hash = registry_client.get_worker_hash
+        if hall_config is None:
+            hall_config = HallConfig(require_worker_attestation=True)
+        elif not hall_config.require_worker_attestation:
+            # Create a new HallConfig with attestation enabled, preserving other fields
+            hall_config = HallConfig(
+                require_signatory=hall_config.require_signatory,
+                allowed_tenants=hall_config.allowed_tenants,
+                require_worker_attestation=True,
+            )
 
     # -----------------------------------------------------------------------
     # Step 0: Signatory tenant validation (WCP §5.9)

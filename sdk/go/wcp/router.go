@@ -53,6 +53,12 @@ type RouterOptions struct {
 	// Required when RequireWorkerAttestation is true.
 	// Signature: func(speciesID string) (hash string, ok bool)
 	GetCurrentWorkerHash func(speciesID string) (string, bool)
+
+	// RegistryClient, when provided, automatically wires GetWorkerHash via
+	// client.GetWorkerHash() and forces RequireWorkerAttestation = true.
+	// Hall binaries always set this — making attestation non-bypassable.
+	// Call client.Prefetch(workerIDs) before MakeDecision to populate the cache.
+	RegistryClient *RegistryClient
 }
 
 // denyDecision constructs a RouteDecision that denies the request.
@@ -338,6 +344,17 @@ func MakeDecision(input RouteInput, registry *Registry, opts RouterOptions) Rout
 	// registry.WorkersForCapability(). Convert to a deny decision instead.
 	if registry == nil {
 		return denyDecision(input, "registry must not be nil", "INVALID_CONFIGURATION")
+	}
+
+	// Auto-wire registry client attestation
+	if opts.RegistryClient != nil {
+		if opts.GetWorkerHash == nil {
+			client := opts.RegistryClient
+			opts.GetWorkerHash = func(speciesID string) (string, bool) {
+				return client.GetWorkerHash(speciesID)
+			}
+		}
+		opts.RequireWorkerAttestation = true
 	}
 
 	// Apply defaults

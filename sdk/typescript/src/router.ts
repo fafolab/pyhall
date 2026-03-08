@@ -53,6 +53,7 @@ import {
 } from "./conformance.js";
 import type { PrivilegeEnvelope } from "./models.js";
 import type { PolicyGateEvaluator, PolicyGateContext } from "./policyGate.js";
+import type { RegistryClient } from "./registryClient.js";
 
 const DEFAULT_POLICY_VERSION = "policy.v0";
 
@@ -457,6 +458,13 @@ export interface MakeDecisionOptions {
   registryGetWorkerHash?: ((speciesId: string) => string | null) | null;
   /** Callback to compute the current on-disk code hash for a worker species. Required when hallConfig.requireWorkerAttestation is true. */
   registryGetCurrentWorkerHash?: ((speciesId: string) => string | null) | null;
+  /**
+   * RegistryClient instance. When provided:
+   * - Automatically wires registryGetWorkerHash via client.getWorkerHashCallback()
+   * - Forces hallConfig.requireWorkerAttestation = true
+   * Call client.prefetch(workerIds) before makeDecision() to populate the cache.
+   */
+  registryClient?: RegistryClient | null;
 }
 
 /**
@@ -483,10 +491,30 @@ export function makeDecision(opts: MakeDecisionOptions): RouteDecision {
     policyGateEval,
     conformanceSpec,
     taskId = "task_default",
-    hallConfig,
-    registryGetWorkerHash,
     registryGetCurrentWorkerHash,
   } = opts;
+
+  // Auto-wire: if registryClient is provided, enable attestation enforcement
+  // and use the client's hash callback as the worker hash source.
+  // Hall binaries always provide this — making the standing receipt check non-bypassable.
+  let effectiveRegistryGetWorkerHash = opts.registryGetWorkerHash ?? null;
+  let effectiveHallConfig = opts.hallConfig ?? null;
+
+  if (opts.registryClient != null) {
+    const client = opts.registryClient;
+    if (effectiveRegistryGetWorkerHash == null) {
+      effectiveRegistryGetWorkerHash = client.getWorkerHashCallback();
+    }
+    if (effectiveHallConfig == null) {
+      effectiveHallConfig = { requireWorkerAttestation: true } as HallConfig;
+    } else if (!effectiveHallConfig.requireWorkerAttestation) {
+      effectiveHallConfig = { ...effectiveHallConfig, requireWorkerAttestation: true };
+    }
+  }
+
+  // Resolve to final names used throughout the rest of the function
+  const hallConfig = effectiveHallConfig ?? undefined;
+  const registryGetWorkerHash = effectiveRegistryGetWorkerHash;
 
   // TS-F5: Extract hall-level floors (defaults: enforceCorrelationId=true, enforceRequiredControls=true)
   const hallEnforceCorrelationId = hallConfig?.enforceCorrelationId !== false;

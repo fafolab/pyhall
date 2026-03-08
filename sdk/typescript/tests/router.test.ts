@@ -17,6 +17,7 @@ import { join } from "path";
 import { tmpdir } from "os";
 import { makeDecision } from "../src/router.js";
 import { Registry } from "../src/registry.js";
+import { RegistryClient } from "../src/registryClient.js";
 import { PolicyGate } from "../src/policyGate.js";
 import { loadRulesFromDoc, routeFirstMatch, type Rule } from "../src/rules.js";
 import { defaultConformanceSpec } from "../src/conformance.js";
@@ -2472,5 +2473,44 @@ describe("Router attestation enforcement (WCP §5.10)", () => {
       (ev) => (ev as Record<string, unknown>)["event_id"] === "evt.os.worker.attestation_skipped"
     );
     expect(skipped).toBeDefined();
+  });
+
+  // 11. registryClient auto-wiring: providing registryClient enables attestation enforcement
+  //     without manually setting hallConfig.requireWorkerAttestation.
+  test("registryClient auto-wires attestation enforcement — no manual hallConfig required", () => {
+    const rules = loadRulesFromDoc(ATTEST_ENFORCE_RULES_DOC);
+    const registry = registryWithWorker();
+    registry.addControlsPresent(["ctrl.obs.audit-log-append-only"]);
+
+    const goodHash = "b".repeat(64);
+
+    // Build a RegistryClient instance with a custom baseUrl to avoid real HTTP calls,
+    // then manually prime its cache by calling prefetch() with a stub that resolves
+    // from a mock verify() response. We achieve this by subclassing to override
+    // getWorkerHashCallback() — but the simplest approach is to use the actual class
+    // and mock getWorkerHashCallback directly on the instance.
+    const mockClient = new RegistryClient({ baseUrl: "http://localhost:0" });
+    // Override getWorkerHashCallback to return our good hash for the test worker.
+    mockClient.getWorkerHashCallback = () => (workerId: string) => {
+      if (workerId === "wrk.hello.greeter") return goodHash;
+      return null;
+    };
+
+    const i = inp();
+    const dec = makeDecision({
+      inp: i,
+      rules,
+      registryControlsPresent: registry.controlsPresent(),
+      registryWorkerAvailable: (id) => registry.workerAvailable(id),
+      // No hallConfig, no registryGetWorkerHash — all wired by registryClient
+      registryClient: mockClient,
+      registryGetCurrentWorkerHash: (_speciesId) => goodHash,
+    });
+
+    // Attestation should be enforced and pass (hashes match)
+    expect(dec.denied).toBe(false);
+    expect(dec.worker_attestation_checked).toBe(true);
+    expect(dec.worker_attestation_valid).toBe(true);
+    expect(dec.selected_worker_species_id).toBe("wrk.hello.greeter");
   });
 });

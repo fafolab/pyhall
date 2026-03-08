@@ -1448,3 +1448,102 @@ func TestAttestationEnforcement(t *testing.T) {
 		}
 	})
 }
+
+// ---------------------------------------------------------------------------
+// RegistryClient auto-wire: RouterOptions.RegistryClient forces attestation
+// ---------------------------------------------------------------------------
+
+func TestMakeDecision_AutoWiresRegistryClient(t *testing.T) {
+	// Verify that setting RouterOptions.RegistryClient:
+	//   1. Forces RequireWorkerAttestation=true without the caller setting it.
+	//   2. Wires GetWorkerHash from the client cache.
+	//   3. Still denies when GetCurrentWorkerHash is absent (DENY_ATTESTATION_UNCONFIGURED).
+	//
+	// We use a real RegistryClient pointed at a non-existent server but pre-populate
+	// its cache directly via setCache so no network calls are made.
+
+	reg := enrolledRegistry() // wrk.doc.summarizer / cap.doc.summarize
+	inp := minimalValidInput()
+
+	hash := strings.Repeat("b", 64)
+
+	// Build a RegistryClient and seed its cache so GetWorkerHash returns the hash.
+	client := NewRegistryClient(RegistryClientOptions{
+		BaseURL: "http://127.0.0.1:0", // unreachable — cache must be hit instead
+	})
+	client.setCache("wrk.doc.summarizer", VerifyResponse{
+		WorkerID:    "wrk.doc.summarizer",
+		Status:      "active",
+		CurrentHash: &hash,
+	})
+
+	t.Run("RegistryClient without GetCurrentWorkerHash → DENY_ATTESTATION_UNCONFIGURED", func(t *testing.T) {
+		// RegistryClient is set; GetCurrentWorkerHash is not.
+		// The router must auto-enable RequireWorkerAttestation and then deny
+		// because GetCurrentWorkerHash is still nil.
+		opts := RouterOptions{
+			RegistryClient: client,
+			// GetCurrentWorkerHash intentionally omitted.
+		}
+		dec := MakeDecision(inp, reg, opts)
+
+		if !dec.Denied {
+			t.Fatal("expected DENY_ATTESTATION_UNCONFIGURED when RegistryClient is set but GetCurrentWorkerHash is nil")
+		}
+		code := dec.DenyReasonIfDenied["code"]
+		if code != "DENY_ATTESTATION_UNCONFIGURED" {
+			t.Errorf("expected DENY_ATTESTATION_UNCONFIGURED, got %v", code)
+		}
+		if !dec.WorkerAttestationChecked {
+			t.Error("expected WorkerAttestationChecked=true — RequireWorkerAttestation must have been forced on by RegistryClient")
+		}
+	})
+
+	t.Run("RegistryClient with matching GetCurrentWorkerHash → allowed", func(t *testing.T) {
+		// RegistryClient provides the registered hash via cache.
+		// GetCurrentWorkerHash returns the same hash → attestation passes.
+		opts := RouterOptions{
+			RegistryClient: client,
+			GetCurrentWorkerHash: func(_ string) (string, bool) {
+				return hash, true
+			},
+		}
+		dec := MakeDecision(inp, reg, opts)
+
+		if dec.Denied {
+			t.Fatalf("expected allow when RegistryClient hash matches current hash, got denied: %v", dec.DenyReasonIfDenied)
+		}
+		if !dec.WorkerAttestationChecked {
+			t.Error("expected WorkerAttestationChecked=true when RegistryClient is set")
+		}
+		if dec.WorkerAttestationValid == nil || !*dec.WorkerAttestationValid {
+			t.Error("expected WorkerAttestationValid=true when hashes match via RegistryClient")
+		}
+	})
+
+	t.Run("RegistryClient does not override caller-supplied GetWorkerHash", func(t *testing.T) {
+		// If the caller already provides GetWorkerHash, RegistryClient must not
+		// overwrite it (the auto-wire only sets GetWorkerHash when it is nil).
+		callerHash := strings.Repeat("c", 64)
+		callerHashCalled := false
+
+		opts := RouterOptions{
+			RegistryClient: client,
+			GetWorkerHash: func(_ string) (string, bool) {
+				callerHashCalled = true
+				return callerHash, true
+			},
+			GetCurrentWorkerHash: func(_ string) (string, bool) {
+				return callerHash, true // match caller-supplied hash
+			},
+		}
+		dec := MakeDecision(inp, reg, opts)
+
+		if dec.Denied {
+			t.Fatalf("expected allow when caller-supplied GetWorkerHash matches current hash, got denied: %v", dec.DenyReasonIfDenied)
+		}
+		if !callerHashCalled {
+			t.Error("expected caller-supplied GetWorkerHash to be called (not overridden by RegistryClient)")
+		}
+	})
+}

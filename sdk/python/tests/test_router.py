@@ -836,6 +836,96 @@ class TestWorkerCodeAttestation:
         assert dec.denied is True
         assert dec.deny_reason_if_denied["code"] == "DENY_ATTESTATION_UNCONFIGURED"
 
+    def test_make_decision_auto_wires_registry_client(self):
+        """registry_client param auto-enables attestation and wires the hash callback."""
+        from pyhall import HallConfig
+
+        KNOWN_HASH = self.GOOD_HASH
+
+        # Minimal mock RegistryClient — only needs get_worker_hash()
+        class MockRegistryClient:
+            def get_worker_hash(self, worker_id: str):
+                return KNOWN_HASH
+
+        rules, registry, inp = self._base()
+        mock_client = MockRegistryClient()
+
+        # No hall_config, no registry_get_worker_hash — registry_client should supply both.
+        # get_current_worker_hash is still required from the caller side; provide it
+        # returning the same known hash so dispatch succeeds.
+        dec = make_decision(
+            inp=inp, rules=rules,
+            registry_controls_present=registry.controls_present(),
+            registry_worker_available=registry.worker_available,
+            registry_client=mock_client,
+            get_current_worker_hash=lambda wid: KNOWN_HASH,
+        )
+
+        # Attestation must have been checked and passed
+        assert dec.denied is False
+        assert dec.worker_attestation_checked is True
+        assert dec.worker_attestation_valid is True
+
+    def test_make_decision_auto_wires_registry_client_overrides_attestation_false(self):
+        """registry_client forces require_worker_attestation=True even if hall_config has it False."""
+        from pyhall import HallConfig
+
+        KNOWN_HASH = self.GOOD_HASH
+
+        class MockRegistryClient:
+            def get_worker_hash(self, worker_id: str):
+                return KNOWN_HASH
+
+        rules, registry, inp = self._base()
+        mock_client = MockRegistryClient()
+
+        # Explicitly pass hall_config with attestation disabled — client should upgrade it
+        explicit_cfg = HallConfig(require_worker_attestation=False)
+        dec = make_decision(
+            inp=inp, rules=rules,
+            registry_controls_present=registry.controls_present(),
+            registry_worker_available=registry.worker_available,
+            hall_config=explicit_cfg,
+            registry_client=mock_client,
+            get_current_worker_hash=lambda wid: KNOWN_HASH,
+        )
+
+        # Attestation must still have been enforced
+        assert dec.denied is False
+        assert dec.worker_attestation_checked is True
+        assert dec.worker_attestation_valid is True
+
+    def test_make_decision_registry_client_does_not_override_explicit_registry_get_worker_hash(self):
+        """If registry_get_worker_hash is already provided, registry_client does not overwrite it."""
+        from pyhall import HallConfig
+
+        KNOWN_HASH = self.GOOD_HASH
+        DIFFERENT_HASH = self.BAD_HASH
+
+        class MockRegistryClient:
+            def get_worker_hash(self, worker_id: str):
+                # Client would return DIFFERENT_HASH, but it should NOT be used
+                return DIFFERENT_HASH
+
+        rules, registry, inp = self._base()
+        mock_client = MockRegistryClient()
+
+        # Explicit registry_get_worker_hash returns KNOWN_HASH
+        # get_current_worker_hash returns KNOWN_HASH → should pass (no mismatch)
+        dec = make_decision(
+            inp=inp, rules=rules,
+            registry_controls_present=registry.controls_present(),
+            registry_worker_available=registry.worker_available,
+            registry_client=mock_client,
+            registry_get_worker_hash=lambda wid: KNOWN_HASH,
+            get_current_worker_hash=lambda wid: KNOWN_HASH,
+        )
+
+        # If client's hash (BAD) was used we'd get DENY_WORKER_TAMPERED.
+        # Passing means the explicit callable was respected.
+        assert dec.denied is False
+        assert dec.worker_attestation_valid is True
+
 
 # ---------------------------------------------------------------------------
 # Registry attestation methods (WCP §5.10)
