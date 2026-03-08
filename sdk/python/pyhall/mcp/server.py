@@ -724,7 +724,7 @@ _RESOURCE_LIST = [
     {
         "uri": "cap://catalog",
         "name": "Capability Catalog",
-        "description": "WCP taxonomy of 245 capabilities across all packs.",
+        "description": "WCP taxonomy of 245 capability entities across all domains.",
         "mimeType": "application/json",
     },
     {

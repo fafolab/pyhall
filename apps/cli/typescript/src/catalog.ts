@@ -5,7 +5,7 @@
  * entity lookup, namespace listing, and filter helpers.
  *
  * WCP organizes capabilities by domain namespace (cap.doc.*, cap.mem.*, etc.)
- * not by numbered packs. The namespace IS the organizing principle.
+ * not by numbered packs. The domain IS the organizing principle.
  */
 
 import rawCatalog from './taxonomy/catalog.json';

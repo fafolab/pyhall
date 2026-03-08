@@ -2,7 +2,7 @@
  * commands/search.ts — `pyhall search <query>`
  *
  * Fuzzy search across the taxonomy catalog.
- * Displays ranked results with type, pack, score, and description.
+ * Displays ranked results with type, domain, score, and description.
  */
 
 import { searchCatalog } from '../catalog.js';

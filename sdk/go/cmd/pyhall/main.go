@@ -23,7 +23,7 @@ and scaffold new workers with pre-filled registry records.
   pyhall version          Version and catalog stats
   pyhall search <query>   Fuzzy-search the taxonomy catalog
   pyhall explain <id>     Detailed info for a capability or worker species
-  pyhall browse           Browse taxonomy (filter by pack or type)
+  pyhall browse           Browse taxonomy (filter by domain or type)
   pyhall scaffold         Interactive worker scaffold wizard`,
 		SilenceUsage: true,
 	}
