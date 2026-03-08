@@ -64,7 +64,22 @@ export { Registry } from "./registry.js";
 
 // Registry API client (pyhall.dev HTTP API)
 export { RegistryClient, RegistryRateLimitError } from "./registryClient.js";
-export type { VerifyResponse, BanEntry, RegistryClientOptions } from "./registryClient.js";
+export type { VerifyResponse, BanEntry, RegistryClientOptions, AttestationResponse } from "./registryClient.js";
+
+// Attestation
+export {
+  ATTEST_MANIFEST_MISSING,
+  ATTEST_MANIFEST_ID_MISMATCH,
+  ATTEST_HASH_MISMATCH,
+  ATTEST_SIGNATURE_MISSING,
+  ATTEST_SIG_INVALID,
+  canonicalPackageHash,
+  buildManifest,
+  writeManifest,
+  scaffoldPackage,
+  PackageAttestationVerifier,
+} from "./attestation.js";
+export type { BuildManifestOptions, AttestResult, VerifierOptions } from "./attestation.js";
 
 // Policy gate
 export { PolicyGate } from "./policyGate.js";

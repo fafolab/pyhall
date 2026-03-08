@@ -39,10 +39,20 @@ export interface RegistryClientOptions {
   baseUrl?: string;
   /** pyhall_session JWT value for authenticated calls. Sent as Cookie header. */
   sessionToken?: string;
+  /** Bearer token for authenticated calls. Preferred over sessionToken when present. */
+  bearerToken?: string;
   /** Request timeout in ms. Default: 10000 */
   timeout?: number;
   /** Prefetch cache TTL in ms. Default: 60000 */
   cacheTtl?: number;
+}
+
+export interface AttestationResponse {
+  worker_id: string;
+  namespace: string;
+  package_hash: string;
+  attested_at: string;
+  status: string;
 }
 
 export class RegistryRateLimitError extends Error {
@@ -61,6 +71,7 @@ interface CacheEntry {
 export class RegistryClient {
   private readonly baseUrl: string;
   private readonly sessionToken: string | undefined;
+  private readonly bearerToken: string | undefined;
   private readonly timeout: number;
   private readonly cacheTtl: number;
   private readonly cache = new Map<string, CacheEntry>();
@@ -68,6 +79,7 @@ export class RegistryClient {
   constructor(opts: RegistryClientOptions = {}) {
     this.baseUrl = (opts.baseUrl ?? 'https://api.pyhall.dev').replace(/\/$/, '');
     this.sessionToken = opts.sessionToken;
+    this.bearerToken = opts.bearerToken;
     this.timeout = opts.timeout ?? 10_000;
     this.cacheTtl = opts.cacheTtl ?? 60_000;
   }
@@ -89,9 +101,11 @@ export class RegistryClient {
     }
   }
 
-  private _authHeaders(): Record<string, string> {
-    if (!this.sessionToken) return {};
-    return { Cookie: `pyhall_session=${this.sessionToken}` };
+  private _authHeaders(overrideBearerToken?: string): Record<string, string> {
+    const bearer = overrideBearerToken ?? this.bearerToken;
+    if (bearer) return { Authorization: `Bearer ${bearer}` };
+    if (this.sessionToken) return { Cookie: `pyhall_session=${this.sessionToken}` };
+    return {};
   }
 
   // ── Public endpoints (no auth) ────────────────────────────────────────────
@@ -198,5 +212,67 @@ export class RegistryClient {
       if (status === 'active' && current_hash) return current_hash;
       return null;
     };
+  }
+
+  // ── Attestation submission ─────────────────────────────────────────────────
+
+  /**
+   * Submit a package attestation to the registry (requires bearer token or session).
+   *
+   * Calls PUT /api/v1/workers/:worker_id/attest with the package hash and
+   * optional AI provenance fields.
+   *
+   * The bearerToken in opts takes precedence over the instance-level bearerToken,
+   * which in turn takes precedence over the session cookie.
+   */
+  async submitAttestation(opts: {
+    workerId: string;
+    workerSpeciesId: string;
+    packageHash: string;
+    workerVersion: string;
+    manifestPath?: string;
+    aiGenerated?: boolean;
+    aiService?: string;
+    aiModel?: string;
+    aiSessionFingerprint?: string;
+    /** Overrides instance-level bearerToken for this call. */
+    bearerToken?: string;
+  }): Promise<AttestationResponse> {
+    const {
+      workerId,
+      workerSpeciesId,
+      packageHash,
+      workerVersion,
+      manifestPath,
+      aiGenerated,
+      aiService,
+      aiModel,
+      aiSessionFingerprint,
+      bearerToken,
+    } = opts;
+
+    const body: Record<string, unknown> = {
+      worker_species_id: workerSpeciesId,
+      package_hash: packageHash,
+      worker_version: workerVersion,
+    };
+    if (manifestPath !== undefined) body['manifest_path'] = manifestPath;
+    if (aiGenerated !== undefined) body['ai_generated'] = aiGenerated;
+    if (aiService !== undefined) body['ai_service'] = aiService;
+    if (aiModel !== undefined) body['ai_model'] = aiModel;
+    if (aiSessionFingerprint !== undefined) body['ai_session_fingerprint'] = aiSessionFingerprint;
+
+    const path = `/api/v1/workers/${encodeURIComponent(workerId)}/attest`;
+    const res = await this._fetch(path, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        ...this._authHeaders(bearerToken),
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!res.ok) throw new Error(`registry submitAttestation failed: ${res.status}`);
+    return res.json() as Promise<AttestationResponse>;
   }
 }

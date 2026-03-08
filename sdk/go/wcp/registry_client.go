@@ -52,8 +52,10 @@ func (e *RegistryRateLimitError) Error() string {
 type RegistryClientOptions struct {
 	BaseURL      string
 	SessionToken string
-	Timeout      time.Duration
-	CacheTTL     time.Duration
+	// BearerToken for Authorization header (overrides session cookie when set).
+	BearerToken string
+	Timeout     time.Duration
+	CacheTTL    time.Duration
 }
 
 type cachedVerify struct {
@@ -220,7 +222,94 @@ func (c *RegistryClient) GetWorkerHash(workerID string) (string, bool) {
 	return *r.CurrentHash, true
 }
 
+// ── Attestation submission ─────────────────────────────────────────────────
+
+// AttestationResponse mirrors PUT /api/v1/workers/:worker_id/attest response.
+type AttestationResponse struct {
+	WorkerID    string `json:"worker_id"`
+	Namespace   string `json:"namespace"`
+	PackageHash string `json:"package_hash"`
+	AttestedAt  string `json:"attested_at"`
+	Status      string `json:"status"`
+}
+
+// SubmitAttestationRequest carries the payload and optional auth override for
+// PUT /api/v1/workers/:worker_id/attest.
+type SubmitAttestationRequest struct {
+	WorkerID             string `json:"worker_id"`
+	WorkerSpeciesID      string `json:"worker_species_id"`
+	PackageHash          string `json:"package_hash"`
+	WorkerVersion        string `json:"worker_version"`
+	ManifestPath         string `json:"manifest_path,omitempty"`
+	AIGenerated          bool   `json:"ai_generated,omitempty"`
+	AIService            string `json:"ai_service,omitempty"`
+	AIModel              string `json:"ai_model,omitempty"`
+	AISessionFingerprint string `json:"ai_session_fingerprint,omitempty"`
+	// BearerToken is not serialized — used only for per-request auth override.
+	BearerToken string `json:"-"`
+}
+
+// SubmitAttestation calls PUT /api/v1/workers/:worker_id/attest.
+// The bearer token is taken from req.BearerToken if set, otherwise from
+// RegistryClientOptions.BearerToken.
+func (c *RegistryClient) SubmitAttestation(req SubmitAttestationRequest) (AttestationResponse, error) {
+	path := "/api/v1/workers/" + url.PathEscape(req.WorkerID) + "/attest"
+
+	body, err := json.Marshal(req)
+	if err != nil {
+		return AttestationResponse{}, fmt.Errorf("registry: marshal attest request: %w", err)
+	}
+
+	bearer := req.BearerToken
+	if bearer == "" {
+		bearer = c.opts.BearerToken
+	}
+
+	httpReq, err := http.NewRequest(http.MethodPut, c.opts.BaseURL+path, strings.NewReader(string(body)))
+	if err != nil {
+		return AttestationResponse{}, err
+	}
+	httpReq.Header.Set("Content-Type", "application/json")
+	httpReq.Header.Set("Accept", "application/json")
+	c.applyAuth(httpReq, bearer)
+
+	resp, err := c.http.Do(httpReq)
+	if err != nil {
+		return AttestationResponse{}, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusTooManyRequests {
+		return AttestationResponse{}, &RegistryRateLimitError{}
+	}
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
+		return AttestationResponse{}, fmt.Errorf("registry error: %d", resp.StatusCode)
+	}
+
+	var r AttestationResponse
+	if err := json.NewDecoder(resp.Body).Decode(&r); err != nil {
+		return AttestationResponse{}, fmt.Errorf("registry decode: %w", err)
+	}
+	return r, nil
+}
+
 // ── Internals ─────────────────────────────────────────────────────────────────
+
+// applyAuth sets the Authorization header (bearer) or session cookie.
+// Bearer token takes priority over session cookie.
+func (c *RegistryClient) applyAuth(req *http.Request, bearerOverride string) {
+	if bearerOverride != "" {
+		req.Header.Set("Authorization", "Bearer "+bearerOverride)
+		return
+	}
+	if c.opts.BearerToken != "" {
+		req.Header.Set("Authorization", "Bearer "+c.opts.BearerToken)
+		return
+	}
+	if c.opts.SessionToken != "" {
+		req.Header.Set("Cookie", "pyhall_session="+c.opts.SessionToken)
+	}
+}
 
 func (c *RegistryClient) get(path string) (*http.Response, error) {
 	req, err := http.NewRequest(http.MethodGet, c.opts.BaseURL+path, nil)
@@ -228,9 +317,7 @@ func (c *RegistryClient) get(path string) (*http.Response, error) {
 		return nil, err
 	}
 	req.Header.Set("Accept", "application/json")
-	if c.opts.SessionToken != "" {
-		req.Header.Set("Cookie", "pyhall_session="+c.opts.SessionToken)
-	}
+	c.applyAuth(req, "")
 	return c.http.Do(req)
 }
 
