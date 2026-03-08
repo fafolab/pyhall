@@ -7,6 +7,113 @@
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
+
+<!-- ── Login Gate (shown until GitHub auth confirmed) ───────────────────── -->
+<div id="login-gate" style="position:fixed;inset:0;z-index:9999;background:var(--bg-primary);display:flex;align-items:center;justify-content:center;">
+  <div id="login-gate-box" style="width:360px;background:var(--bg-surface);border:1px solid var(--bg-border);border-radius:var(--radius);padding:40px 36px;text-align:center;">
+    <div style="font-size:18px;font-weight:700;color:var(--text-bright);letter-spacing:0.02em;margin-bottom:6px;">pyhall — Hall Monitor</div>
+    <div style="font-size:12px;color:var(--text-muted);margin-bottom:32px;">The Hall · every worker · every job · every decision.</div>
+    <div id="login-gate-hall-warn" style="display:none;margin-bottom:16px;padding:8px 12px;background:var(--error-muted);border:1px solid var(--error);border-radius:var(--radius-sm);font-size:11px;color:var(--error);">Hall Server must be running to complete sign-in.</div>
+    <button id="btn-login-gate-github" style="width:100%;padding:10px 0;background:var(--accent-blue);color:#fff;border:none;border-radius:var(--radius);font-size:13px;font-weight:600;cursor:pointer;letter-spacing:0.01em;" disabled>Sign in with GitHub</button>
+    <div style="margin-top:12px;font-size:11px;color:var(--text-dim);">Checking Hall Server...</div>
+  </div>
+</div>
+
+<!-- ── Passphrase Gate (shown after login, before full app) ─────────────── -->
+<div id="passphrase-gate" style="position:fixed;inset:0;z-index:9998;background:var(--bg-primary);display:none;align-items:center;justify-content:center;">
+  <div style="width:360px;background:var(--bg-surface);border:1px solid var(--bg-border);border-radius:var(--radius);padding:40px 36px;">
+
+    <!-- Unlock form (default) -->
+    <div id="passphrase-unlock-form">
+      <div style="font-size:15px;font-weight:700;color:var(--text-bright);margin-bottom:6px;">Unlock your Hall</div>
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:24px;">Enter your passphrase to continue.</div>
+      <div style="margin-bottom:12px;">
+        <input type="password" id="passphrase-input" placeholder="Passphrase" autocomplete="current-password"
+          style="width:100%;padding:9px 12px;background:var(--bg-raised);border:1px solid var(--bg-border);border-radius:var(--radius-sm);color:var(--text-primary);font-size:13px;outline:none;" />
+      </div>
+      <div style="margin-bottom:20px;">
+        <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-muted);cursor:pointer;">
+          <input type="checkbox" id="keychain-opt-in" style="accent-color:var(--accent-blue);" />
+          Remember on this device (uses OS keychain)
+        </label>
+      </div>
+      <button id="btn-passphrase-unlock" style="width:100%;padding:10px 0;background:var(--accent-blue);color:#fff;border:none;border-radius:var(--radius);font-size:13px;font-weight:600;cursor:pointer;">Unlock</button>
+      <div id="passphrase-unlock-error" style="display:none;margin-top:10px;font-size:12px;color:var(--error);text-align:center;"></div>
+      <div style="margin-top:16px;text-align:center;">
+        <a href="#" id="link-set-passphrase" style="font-size:12px;color:var(--accent-hover);text-decoration:none;">Set passphrase</a>
+      </div>
+    </div>
+
+    <!-- Set passphrase form (first-time / no passphrase set) -->
+    <div id="passphrase-set-form" style="display:none;">
+      <div style="font-size:15px;font-weight:700;color:var(--text-bright);margin-bottom:6px;">Set a passphrase</div>
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:24px;">Choose a passphrase to protect your Hall session.</div>
+      <div style="margin-bottom:12px;">
+        <input type="password" id="passphrase-new" placeholder="New passphrase" autocomplete="new-password"
+          style="width:100%;padding:9px 12px;background:var(--bg-raised);border:1px solid var(--bg-border);border-radius:var(--radius-sm);color:var(--text-primary);font-size:13px;outline:none;" />
+      </div>
+      <div style="margin-bottom:20px;">
+        <input type="password" id="passphrase-new-confirm" placeholder="Confirm passphrase" autocomplete="new-password"
+          style="width:100%;padding:9px 12px;background:var(--bg-raised);border:1px solid var(--bg-border);border-radius:var(--radius-sm);color:var(--text-primary);font-size:13px;outline:none;" />
+      </div>
+      <button id="btn-passphrase-set" style="width:100%;padding:10px 0;background:var(--accent-blue);color:#fff;border:none;border-radius:var(--radius);font-size:13px;font-weight:600;cursor:pointer;">Set Passphrase</button>
+      <div id="passphrase-set-error" style="display:none;margin-top:10px;font-size:12px;color:var(--error);text-align:center;"></div>
+      <div style="margin-top:16px;text-align:center;">
+        <a href="#" id="link-back-to-unlock" style="font-size:12px;color:var(--text-muted);text-decoration:none;">Back to unlock</a>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── Setup Wizard Gate (shown once after first-time passphrase set) ─────── -->
+<div id="setup-wizard-gate" style="position:fixed;inset:0;z-index:9998;background:var(--bg-primary);display:none;align-items:center;justify-content:center;">
+  <div style="width:480px;background:var(--bg-surface);border:1px solid var(--bg-border);border-radius:var(--radius);padding:40px 40px 32px;">
+    <div id="wizard-step-indicator" style="font-size:11px;color:var(--text-dim);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:24px;">Step 1 of 4</div>
+
+    <!-- Step 1 — Welcome -->
+    <div id="wizard-step-1">
+      <div style="font-size:18px;font-weight:700;color:var(--text-bright);margin-bottom:10px;">Hall is set up.</div>
+      <div style="font-size:13px;color:var(--text-muted);line-height:1.6;margin-bottom:32px;">Your vault is locked and your session is active. Here's what to do next.</div>
+      <button id="btn-wizard-1" style="padding:10px 24px;background:var(--accent-blue);color:#fff;border:none;border-radius:var(--radius);font-size:13px;font-weight:600;cursor:pointer;">Let's go &rarr;</button>
+    </div>
+
+    <!-- Step 2 — Enroll worker -->
+    <div id="wizard-step-2" style="display:none;">
+      <div style="font-size:18px;font-weight:700;color:var(--text-bright);margin-bottom:10px;">Enroll a worker</div>
+      <div style="font-size:13px;color:var(--text-muted);line-height:1.6;margin-bottom:16px;">Workers are the governed agents Hall routes work to. Drag a <code style="background:var(--bg-raised);padding:1px 5px;border-radius:3px;font-size:12px;">registry_record.json</code> into the Enroll screen, or use the CLI to scaffold one:</div>
+      <pre style="background:var(--bg-raised);border:1px solid var(--bg-border);border-radius:var(--radius-sm);padding:12px 14px;font-size:12px;font-family:monospace;color:var(--text-primary);margin-bottom:20px;overflow-x:auto;">hall scaffold --id wrk.yourname.worker-name</pre>
+      <div style="margin-bottom:24px;">
+        <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-muted);cursor:pointer;">
+          <input type="checkbox" id="wizard-skip-2" style="accent-color:var(--accent-blue);" />
+          I'll do this later
+        </label>
+      </div>
+      <button id="btn-wizard-2" style="padding:10px 24px;background:var(--accent-blue);color:#fff;border:none;border-radius:var(--radius);font-size:13px;font-weight:600;cursor:pointer;">Next &rarr;</button>
+    </div>
+
+    <!-- Step 3 — Connect MCPs -->
+    <div id="wizard-step-3" style="display:none;">
+      <div style="font-size:18px;font-weight:700;color:var(--text-bright);margin-bottom:10px;">Connect your tools</div>
+      <div style="font-size:13px;color:var(--text-muted);line-height:1.6;margin-bottom:20px;">Hall can govern any MCP server — your own tools, third-party APIs, anything. Add them in Settings &rarr; Connected MCPs. Hall proxies every tool call through the governance gate.</div>
+      <div style="margin-bottom:24px;">
+        <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-muted);cursor:pointer;">
+          <input type="checkbox" id="wizard-skip-3" style="accent-color:var(--accent-blue);" />
+          I'll do this later
+        </label>
+      </div>
+      <button id="btn-wizard-3" style="padding:10px 24px;background:var(--accent-blue);color:#fff;border:none;border-radius:var(--radius);font-size:13px;font-weight:600;cursor:pointer;">Next &rarr;</button>
+    </div>
+
+    <!-- Step 4 — Go Online -->
+    <div id="wizard-step-4" style="display:none;">
+      <div style="font-size:18px;font-weight:700;color:var(--text-bright);margin-bottom:10px;">Ready to go live</div>
+      <div style="font-size:13px;color:var(--text-muted);line-height:1.6;margin-bottom:32px;">Click Go Online on the Status screen to start dispatching. Hall checks your account standing with the registry and activates.</div>
+      <button id="btn-wizard-4" style="padding:10px 24px;background:var(--accent-blue);color:#fff;border:none;border-radius:var(--radius);font-size:13px;font-weight:600;cursor:pointer;">Open Hall &rarr;</button>
+    </div>
+  </div>
+</div>
+
 <div id="app">
 
   <!-- ── Header ──────────────────────────────────────────────────────────── -->
@@ -45,6 +152,16 @@
       <span class="nav-badge" id="alert-badge" style="display:none">0</span>
     </div>
 
+    <div class="nav-item" data-screen="coordination">
+      <span class="nav-icon">⇄</span>
+      <span class="nav-label">Coordination</span>
+    </div>
+
+    <div class="nav-item" data-screen="profile">
+      <span class="nav-icon">◉</span>
+      <span class="nav-label">My Profile</span>
+    </div>
+
     <div class="nav-spacer"></div>
     <div class="nav-divider"></div>
 
@@ -68,6 +185,9 @@
         <button class="btn btn-secondary btn-sm" id="btn-refresh-status">↺ Refresh</button>
       </div>
 
+      <!-- Grace / degraded mode warning banner — hidden when account_standing === 'ok' -->
+      <div id="grace-countdown-banner" style="display:none; background:#7c2c2c; color:#fff; padding:10px 16px; font-size:12px; font-family:inherit; border-radius:4px; margin-bottom:12px; letter-spacing:0.03em;"></div>
+
       <div class="stat-grid">
         <!-- Hall health card -->
         <div class="stat-card">
@@ -80,18 +200,18 @@
           <div class="stat-detail" id="hall-latency">—</div>
         </div>
 
-        <!-- Workers card -->
+        <!-- Agents card -->
         <div class="stat-card">
-          <div class="stat-label">Workers</div>
-          <div class="stat-value" id="stat-workers">14</div>
-          <div class="stat-detail" id="stat-active-jobs">3 active jobs</div>
+          <div class="stat-label">Agents</div>
+          <div class="stat-value" id="stat-workers">—</div>
+          <div class="stat-detail" id="stat-active-jobs">0 active jobs</div>
         </div>
 
         <!-- Today card -->
         <div class="stat-card">
           <div class="stat-label">Today</div>
-          <div class="stat-value" id="stat-dispatches">847</div>
-          <div class="stat-detail" id="stat-refusals">12 refused</div>
+          <div class="stat-value" id="stat-dispatches">—</div>
+          <div class="stat-detail" id="stat-refusals">0 refused</div>
         </div>
       </div>
 
@@ -117,23 +237,38 @@
         <!-- Populated by status.js -->
       </div>
 
-      <!-- Hall info -->
+      <!-- Connected Agents -->
+      <div class="section-divider">Connected Agents</div>
+      <div id="status-agent-list" style="padding: 4px 0 12px;">
+        <span style="color:var(--text-dim); font-size:12px;">No agents connected — agents self-register via the Hall MCP.</span>
+      </div>
+
+      <!-- Hall Server Info -->
       <div class="section-divider">Hall Server Info</div>
       <div class="info-grid" id="hall-info-grid">
         <span class="info-label">Version</span>
-        <span class="info-value" id="info-version">pyhall 0.1.0 / WCP 0.1</span>
+        <span class="info-value" id="info-version">pyhall 0.3.0 / WCP 0.1</span>
         <span class="info-label">Uptime</span>
         <span class="info-value" id="info-uptime">—</span>
-        <span class="info-label">Rules loaded</span>
-        <span class="info-value" id="info-rules">214</span>
-        <span class="info-label">Profile</span>
-        <span class="info-value" id="info-profile">prof.dev.permissive</span>
+        <span class="info-label">Governance</span>
+        <span class="info-value" id="info-governance">
+          <span id="info-wcp-badge" style="color:var(--success)">● WCP enabled</span>
+          <span style="color:var(--text-dim); font-size:10px; margin-left:8px;" id="info-wcp-mode">enforce mode</span>
+        </span>
+        <span class="info-label">Signed in as</span>
+        <span class="info-value" id="info-signed-in">
+          <span id="info-signed-in-user" style="color:var(--text-dim)">not logged in —
+            <a href="#" id="link-go-profile" style="color:var(--accent-hover);">sign in</a>
+          </span>
+        </span>
       </div>
 
       <div style="margin-top:16px; display:flex; gap:8px;">
         <button class="btn btn-secondary btn-sm" id="btn-go-config-from-status">Open Hall Config</button>
         <button class="btn btn-ghost btn-sm" id="btn-go-feed-from-status">View Live Feed</button>
+        <button class="btn btn-ghost btn-sm" id="btn-open-log-from-status" style="display:none;">Open Log File</button>
       </div>
+      <div id="status-log-path-display" style="margin-top:6px; font-size:11px; color:var(--text-dim); font-family:monospace; display:none;"></div>
     </section>
 
     <!-- Screen 2: Live Dispatch Feed -->
@@ -230,7 +365,176 @@
       <div id="acked-list" style="display:none;"></div>
     </section>
 
-    <!-- Screen 5: Worker Enrollment -->
+    <!-- Screen 5: Coordination -->
+    <section class="screen" id="screen-coordination">
+      <div class="screen-header">
+        <span class="screen-title">Coordination</span>
+        <span class="screen-subtitle" id="coord-subtitle">Multi-agent · WCP governed</span>
+      </div>
+
+      <!-- Offline banner -->
+      <div id="coord-offline-banner" class="coord-offline-banner" style="display:none;">
+        Hall Server offline — connect to see live coordination data.
+      </div>
+
+      <!-- Agent Roster -->
+      <div class="section-divider">Agent Roster</div>
+      <div id="coord-agent-roster" class="coord-agent-roster">
+        <!-- Populated by coordination.js -->
+      </div>
+
+      <!-- File Locks Panel -->
+      <div class="section-divider" id="coord-locks-divider" style="display:none;">Active File Locks</div>
+      <div id="coord-locks-list" class="coord-locks-list" style="display:none;"></div>
+
+      <!-- New Task Button -->
+      <div style="padding: 0 20px 12px; text-align:right;">
+        <button class="btn-primary btn-sm" id="btn-new-task">+ New Task</button>
+      </div>
+
+      <!-- New Task Form (hidden by default) -->
+      <div id="new-task-form" style="display:none; margin:0 20px 16px; background:var(--bg-raised); border:1px solid var(--bg-border); border-radius:var(--radius); padding:16px;">
+        <div style="font-size:12px; font-weight:600; color:var(--text-bright); margin-bottom:12px;">New Task</div>
+        <div class="new-task-row">
+          <label class="new-task-label">Title *</label>
+          <input class="new-task-input" id="nt-title" placeholder="What needs to be done?" />
+        </div>
+        <div class="new-task-row">
+          <label class="new-task-label">Details</label>
+          <textarea class="new-task-input new-task-textarea" id="nt-details" placeholder="Full context — what to check, where, success criteria..."></textarea>
+        </div>
+        <div class="new-task-row new-task-row-split">
+          <div>
+            <label class="new-task-label">Assign to</label>
+            <select class="new-task-input" id="nt-owner">
+              <!-- Populated dynamically from agent registry -->
+              <option value="any">Any</option>
+            </select>
+          </div>
+          <div>
+            <label class="new-task-label">Priority</label>
+            <select class="new-task-input" id="nt-priority">
+              <option value="p0">P0 — Urgent</option>
+              <option value="p1" selected>P1 — Normal</option>
+              <option value="p2">P2 — Low</option>
+            </select>
+          </div>
+          <div>
+            <label class="new-task-label">Agent type</label>
+            <select class="new-task-input" id="nt-agent-type">
+              <option value="any" selected>Any</option>
+              <option value="llm">LLM</option>
+              <option value="code">Code agent</option>
+              <option value="gpu">GPU (Monty)</option>
+              <option value="human">Human</option>
+            </select>
+          </div>
+        </div>
+        <div class="new-task-row new-task-row-split">
+          <div>
+            <label class="new-task-label">Section</label>
+            <input class="new-task-input" id="nt-section" placeholder="Registry, Security, CI/CD…" />
+          </div>
+          <div>
+            <label class="new-task-label">Location</label>
+            <input class="new-task-input" id="nt-location" placeholder="/mnt/github/…" />
+          </div>
+        </div>
+        <div class="new-task-row">
+          <label class="new-task-label">Depends on (task IDs)</label>
+          <input class="new-task-input" id="nt-predecessors" placeholder="C1,R3 — comma separated" />
+        </div>
+        <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:12px;">
+          <button class="btn-secondary btn-sm" id="btn-cancel-task">Cancel</button>
+          <button class="btn-primary btn-sm" id="btn-submit-task">Create Task</button>
+        </div>
+        <div id="new-task-error" style="color:var(--error); font-size:11px; margin-top:6px; display:none;"></div>
+      </div>
+
+      <!-- Task Board -->
+      <div class="section-divider" style="display:flex;align-items:center;justify-content:space-between;padding-right:20px;">
+        <span>Task Board</span>
+        <div class="coord-view-toggle" id="coord-view-toggle">
+          <button class="coord-view-btn active" data-view="kanban">Kanban</button>
+          <button class="coord-view-btn" data-view="tree">Dependency Tree</button>
+          <button class="coord-view-btn" data-view="swimlane">CPM Swimlanes</button>
+          <button class="coord-view-btn" data-view="phases">Order of Operations</button>
+        </div>
+      </div>
+
+      <!-- Tree view -->
+      <div id="coord-tree-view" class="coord-tree-view" style="display:none;"></div>
+
+      <!-- Swimlane view -->
+      <div id="coord-swimlane-view" class="coord-swimlane-view" style="display:none;"></div>
+
+      <!-- Order of Operations (phases) view -->
+      <div id="coord-phases-view" class="coord-phases-view" style="display:none;"></div>
+
+      <div class="coord-kanban" id="coord-kanban-view">
+
+        <div class="coord-kanban-col">
+          <div class="coord-kanban-header coord-kanban-pending">
+            Pending
+            <span class="coord-col-count" id="coord-count-pending">0</span>
+          </div>
+          <div class="coord-kanban-body" id="coord-col-pending">
+            <!-- Populated by coordination.js -->
+          </div>
+        </div>
+
+        <div class="coord-kanban-col">
+          <div class="coord-kanban-header coord-kanban-inprogress">
+            In Progress
+            <span class="coord-col-count" id="coord-count-inprogress">0</span>
+          </div>
+          <div class="coord-kanban-body" id="coord-col-inprogress">
+            <!-- Populated by coordination.js -->
+          </div>
+        </div>
+
+        <div class="coord-kanban-col">
+          <div class="coord-kanban-header coord-kanban-done">
+            Done
+            <span class="coord-col-count" id="coord-count-done">0</span>
+          </div>
+          <div class="coord-kanban-body" id="coord-col-done">
+            <!-- Populated by coordination.js -->
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Agent Messages / Live Feed -->
+      <div class="section-divider">Agent Messages &amp; Live Feed</div>
+
+      <!-- Quick message bar -->
+      <div style="display:flex; gap:8px; padding: 0 20px 10px; align-items:center;">
+        <select class="new-task-input" id="msg-to" style="width:110px; flex-shrink:0;">
+          <!-- Populated dynamically from agent registry -->
+          <option value="all">→ All</option>
+        </select>
+        <input class="new-task-input" id="msg-text" placeholder="Send a message to an agent…" style="flex:1;" />
+        <button class="btn-primary btn-sm" id="btn-send-msg">Send</button>
+      </div>
+
+      <div id="coord-event-feed" class="coord-event-feed">
+        <!-- Populated by coordination.js -->
+      </div>
+
+    </section>
+
+    <!-- Screen 6: Worker Enrollment -->
+    <!-- ── Profile & Namespaces ───────────────────────────────────────────── -->
+    <section class="screen" id="screen-profile">
+      <div class="screen-header">
+        <span class="screen-title">My Profile</span>
+        <span class="screen-subtitle" id="profile-subtitle">namespaces &amp; account</span>
+      </div>
+      <div id="profile-loading" style="display:none;padding:1.5rem;color:var(--text-dim)">Loading from registry…</div>
+      <div id="profile-content"></div>
+    </section>
+
     <section class="screen" id="screen-enroll">
       <div class="screen-header">
         <span class="screen-title">Register a Worker with the Hall</span>
@@ -361,6 +665,119 @@
         </div>
       </div>
 
+      <!-- Diagnostics -->
+      <div class="config-section">
+        <div class="config-section-title">Diagnostics</div>
+        <div class="field">
+          <label>Hall Server Log</label>
+          <div style="display:flex; gap:8px; align-items:center;">
+            <button class="btn btn-secondary btn-sm" id="btn-open-log">Open Log File</button>
+            <span id="log-path-display" style="font-size:11px; color:var(--text-dim); font-family:monospace;"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Security -->
+      <div class="config-section" id="config-security-section">
+        <div class="config-section-title">Security</div>
+
+        <!-- Change passphrase -->
+        <div class="field">
+          <label>Hall passphrase</label>
+          <div style="display:flex; gap:8px; align-items:center;">
+            <button class="btn btn-secondary btn-sm" id="btn-show-change-passphrase">Change passphrase</button>
+            <button class="btn btn-ghost btn-sm" id="btn-forget-keychain">Forget saved passphrase</button>
+            <span id="security-action-result" style="font-size:11px; display:none;"></span>
+          </div>
+        </div>
+
+        <!-- Change passphrase inline form (hidden by default) -->
+        <div id="change-passphrase-form" style="display:none; margin-top:12px; background:var(--bg-raised); border:1px solid var(--bg-border); border-radius:var(--radius); padding:16px;">
+          <div style="font-size:12px; font-weight:600; color:var(--text-bright); margin-bottom:12px;">Change passphrase</div>
+          <div class="field">
+            <label>Current passphrase</label>
+            <input type="password" id="sec-current-passphrase" autocomplete="current-password"
+              style="width:100%; max-width:320px; padding:7px 10px; background:var(--bg-primary); border:1px solid var(--bg-border); border-radius:var(--radius-sm); color:var(--text-primary); font-size:12px; outline:none;" />
+          </div>
+          <div class="field" style="margin-top:8px;">
+            <label>New passphrase</label>
+            <input type="password" id="sec-new-passphrase" autocomplete="new-password"
+              style="width:100%; max-width:320px; padding:7px 10px; background:var(--bg-primary); border:1px solid var(--bg-border); border-radius:var(--radius-sm); color:var(--text-primary); font-size:12px; outline:none;" />
+          </div>
+          <div class="field" style="margin-top:8px;">
+            <label>Confirm new passphrase</label>
+            <input type="password" id="sec-confirm-passphrase" autocomplete="new-password"
+              style="width:100%; max-width:320px; padding:7px 10px; background:var(--bg-primary); border:1px solid var(--bg-border); border-radius:var(--radius-sm); color:var(--text-primary); font-size:12px; outline:none;" />
+          </div>
+          <div id="change-passphrase-error" style="display:none; margin-top:8px; font-size:11px; color:var(--error);"></div>
+          <div style="display:flex; gap:8px; margin-top:12px;">
+            <button class="btn btn-primary btn-sm" id="btn-change-passphrase-submit">Update Passphrase</button>
+            <button class="btn btn-ghost btn-sm" id="btn-change-passphrase-cancel">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Connected MCPs -->
+      <div class="config-section" id="config-mcp-section">
+        <div class="config-section-title">Connected MCPs</div>
+        <div style="font-size:12px; color:var(--text-muted); margin-bottom:12px;">
+          Connect your own MCP servers. Hall governs all tool calls from connected servers.
+        </div>
+
+        <!-- MCP server list -->
+        <div id="mcp-server-list">
+          <!-- Populated by config.js -->
+          <div id="mcp-empty-state" style="font-size:12px; color:var(--text-dim); padding:8px 0;">
+            No MCP servers registered.
+          </div>
+        </div>
+
+        <div style="margin-top:12px;">
+          <button class="btn btn-secondary btn-sm" id="btn-show-add-mcp">+ Add MCP Server</button>
+        </div>
+
+        <!-- Add MCP server inline form (hidden by default) -->
+        <div id="add-mcp-form" style="display:none; margin-top:12px; background:var(--bg-raised); border:1px solid var(--bg-border); border-radius:var(--radius); padding:16px;">
+          <div style="font-size:12px; font-weight:600; color:var(--text-bright); margin-bottom:12px;">Add MCP Server</div>
+
+          <div class="field">
+            <label>Name *</label>
+            <input type="text" id="mcp-name" placeholder="My Company MCP"
+              style="width:100%; max-width:320px; padding:7px 10px; background:var(--bg-primary); border:1px solid var(--bg-border); border-radius:var(--radius-sm); color:var(--text-primary); font-size:12px; outline:none;" />
+          </div>
+
+          <div class="field" style="margin-top:8px;">
+            <label>Transport</label>
+            <select id="mcp-transport"
+              style="padding:7px 10px; background:var(--bg-primary); border:1px solid var(--bg-border); border-radius:var(--radius-sm); color:var(--text-primary); font-size:12px; outline:none;">
+              <option value="http">HTTP</option>
+              <option value="stdio">stdio</option>
+            </select>
+          </div>
+
+          <div class="field" id="mcp-field-url" style="margin-top:8px;">
+            <label>URL</label>
+            <input type="text" id="mcp-url" placeholder="http://localhost:3001/mcp"
+              style="width:100%; max-width:400px; padding:7px 10px; background:var(--bg-primary); border:1px solid var(--bg-border); border-radius:var(--radius-sm); color:var(--text-primary); font-size:12px; outline:none;" />
+          </div>
+
+          <div class="field" id="mcp-field-command" style="display:none; margin-top:8px;">
+            <label>Command</label>
+            <input type="text" id="mcp-command" placeholder="npx my-mcp-server"
+              style="width:100%; max-width:400px; padding:7px 10px; background:var(--bg-primary); border:1px solid var(--bg-border); border-radius:var(--radius-sm); color:var(--text-primary); font-size:12px; outline:none;" />
+          </div>
+
+          <div id="add-mcp-error" style="display:none; margin-top:8px; font-size:11px; color:var(--error);"></div>
+
+          <div style="display:flex; gap:8px; margin-top:12px;">
+            <button class="btn btn-primary btn-sm" id="btn-add-mcp-submit">Add Server</button>
+            <button class="btn btn-ghost btn-sm" id="btn-add-mcp-cancel">Cancel</button>
+          </div>
+        </div>
+
+        <div id="mcp-list-error" style="display:none; margin-top:8px; font-size:11px; color:var(--error);"></div>
+      </div>
+
       <button class="btn btn-primary" id="btn-save-config">Save Configuration</button>
       <span id="save-config-result" style="margin-left:10px; font-size:12px; display:none;"></span>
     </section>
@@ -388,6 +805,185 @@
 <script src="js/screens/alerts.js"></script>
 <script src="js/screens/enroll.js"></script>
 <script src="js/screens/config.js"></script>
+<script src="js/screens/coordination.js"></script>
+<script src="js/screens/profile.js"></script>
+<script src="js/screens/setup.js"></script>
 <script src="js/app.js"></script>
+
+<!-- Edit Task Modal -->
+<div id="edit-task-modal" class="coord-modal-overlay" style="display:none;">
+  <div class="coord-modal-box" style="width:620px;">
+    <div class="coord-modal-header">
+      <span class="coord-modal-title">Edit Task — <span id="edit-task-id-display" style="font-family:monospace;color:var(--accent-blue);"></span></span>
+      <button class="coord-modal-close" id="edit-modal-close">✕</button>
+    </div>
+    <div class="coord-modal-body">
+
+      <div class="field">
+        <label class="field-label">Title</label>
+        <input type="text" id="edit-title" class="text-input" placeholder="Task title">
+      </div>
+
+      <div class="field" style="margin-top:10px;">
+        <label class="field-label">Details</label>
+        <textarea id="edit-details" class="coord-modal-textarea" rows="3" placeholder="Full task description, context, acceptance criteria…"></textarea>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px;">
+        <div class="field">
+          <label class="field-label">Section</label>
+          <input type="text" id="edit-section" class="text-input" placeholder="e.g. Security, Registry…">
+        </div>
+        <div class="field">
+          <label class="field-label">Location / File</label>
+          <input type="text" id="edit-location" class="text-input" placeholder="optional">
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-top:10px;">
+        <div class="field">
+          <label class="field-label">Owner</label>
+          <select id="edit-owner" class="coord-modal-select">
+            <option value="claude">Claude</option>
+            <option value="codex">Codex</option>
+            <option value="monty">Monty</option>
+            <option value="rob">Rob</option>
+            <option value="Claude+Rob">Claude+Rob</option>
+            <option value="Claude+Codex">Claude+Codex</option>
+            <option value="any">Any</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="field-label">Priority</label>
+          <select id="edit-priority" class="coord-modal-select">
+            <option value="p0">P0 — Critical</option>
+            <option value="p1">P1 — Normal</option>
+            <option value="p2">P2 — Low</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="field-label">Agent Type</label>
+          <select id="edit-agent-type" class="coord-modal-select">
+            <option value="any">Any</option>
+            <option value="llm">LLM</option>
+            <option value="code">Code</option>
+            <option value="gpu">GPU</option>
+            <option value="human">Human</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr auto; gap:10px; margin-top:10px; align-items:end;">
+        <div class="field">
+          <label class="field-label">Predecessors <span style="color:var(--text-dim);font-weight:400;">(comma-separated task IDs)</span></label>
+          <input type="text" id="edit-predecessors" class="text-input" placeholder="e.g. T1A2B3, T4C5D6">
+        </div>
+        <div class="field">
+          <label class="field-label">Dep Type</label>
+          <select id="edit-dep-type" class="coord-modal-select" style="width:160px;">
+            <option value="FS">FS — Finish to Start</option>
+            <option value="SS">SS — Start to Start</option>
+            <option value="FF">FF — Finish to Finish</option>
+            <option value="SF">SF — Start to Finish</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="edit-error" class="coord-modal-error" style="display:none;"></div>
+    </div>
+    <div class="coord-modal-footer">
+      <button class="btn btn-secondary btn-sm" id="btn-edit-cancel">Cancel</button>
+      <button class="btn btn-primary btn-sm" id="btn-edit-save">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- Complete Task Modal -->
+<div id="complete-task-modal" class="coord-modal-overlay" style="display:none;">
+  <div class="coord-modal-box">
+    <div class="coord-modal-header">
+      <span class="coord-modal-title">Mark Task Complete</span>
+      <button class="coord-modal-close" id="complete-modal-close">✕</button>
+    </div>
+    <div class="coord-modal-body">
+      <div class="coord-modal-task-info" id="complete-task-info"></div>
+
+      <div class="field" style="margin-top:12px;">
+        <label class="field-label">Result / Notes <span style="color:var(--text-dim);font-weight:400;">(optional)</span></label>
+        <textarea id="complete-summary" class="coord-modal-textarea" rows="4"
+          placeholder="What was completed? Any blockers resolved, follow-up needed, decisions made?"></textarea>
+      </div>
+
+      <div class="field" style="margin-top:10px;">
+        <label class="coord-modal-check-label">
+          <input type="checkbox" id="complete-create-followup">
+          Create a follow-up task
+        </label>
+      </div>
+
+      <div id="complete-followup-form" style="display:none; margin-top:10px; padding:12px; background:var(--bg-base); border:1px solid var(--border); border-radius:6px;">
+        <div class="coord-modal-followup-title">Follow-up Task</div>
+
+        <div class="field" style="margin-top:8px;">
+          <label class="field-label">Title</label>
+          <input type="text" id="followup-title" class="text-input" placeholder="Follow-up task title">
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-top:8px;">
+          <div class="field">
+            <label class="field-label">Owner</label>
+            <select id="followup-owner" class="coord-modal-select">
+              <option value="claude">Claude</option>
+              <option value="codex">Codex</option>
+              <option value="monty">Monty</option>
+              <option value="rob">Rob</option>
+              <option value="Claude+Rob">Claude+Rob</option>
+              <option value="any">Any</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field-label">Dependency Type</label>
+            <select id="followup-dep-type" class="coord-modal-select">
+              <option value="FS">FS — Finish to Start</option>
+              <option value="SS">SS — Start to Start</option>
+              <option value="FF">FF — Finish to Finish</option>
+              <option value="SF">SF — Start to Finish</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field-label">Priority</label>
+            <select id="followup-priority" class="coord-modal-select">
+              <option value="p0">P0 — Critical</option>
+              <option value="p1" selected>P1 — Normal</option>
+              <option value="p2">P2 — Low</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:8px;">
+          <div class="field">
+            <label class="field-label">Section</label>
+            <input type="text" id="followup-section" class="text-input" placeholder="e.g. Security, Registry…">
+          </div>
+          <div class="field">
+            <label class="field-label">Location / File</label>
+            <input type="text" id="followup-location" class="text-input" placeholder="optional">
+          </div>
+        </div>
+
+        <div class="field" style="margin-top:8px;">
+          <label class="field-label">Details</label>
+          <textarea id="followup-details" class="coord-modal-textarea" rows="2" placeholder="What needs to be done?"></textarea>
+        </div>
+      </div>
+
+      <div id="complete-error" class="coord-modal-error" style="display:none;"></div>
+    </div>
+    <div class="coord-modal-footer">
+      <button class="btn btn-secondary btn-sm" id="btn-complete-cancel">Cancel</button>
+      <button class="btn btn-primary btn-sm" id="btn-complete-submit">Mark Complete + Notify All</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>

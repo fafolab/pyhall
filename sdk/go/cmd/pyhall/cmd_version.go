@@ -21,7 +21,7 @@ func newVersionCmd() *cobra.Command {
 				wcpSpec = v
 			}
 
-			fmt.Println(primaryBlue.Render("pyhall CLI 0.1.0 (Go)"))
+			fmt.Println(primaryBlue.Render("pyhall CLI 0.3.0 (Go)"))
 			fmt.Printf("WCP specification: %s\n", lightBlue.Render(wcpSpec))
 			fmt.Printf("Taxonomy:          %s entities\n",
 				primaryBlue.Render(fmt.Sprintf("%d", c.EntityCount())),

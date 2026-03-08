@@ -1,0 +1,130 @@
+# Hall Monitor — Cross-Platform Desktop Build
+# Created (UTC): 2026-03-04T09:58:59Z
+# Owner: FΔFΌ★LΔB / Rob Kennedy
+# Triggers on apps/desktop/v* tags to build Linux, macOS, Windows installers
+
+name: Hall Monitor — Cross-Platform Desktop Build
+
+on:
+  push:
+    tags:
+      - "apps/desktop/v*"
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Git ref to build (branch, tag, or SHA)"
+        required: false
+        default: "main"
+
+jobs:
+  lint:
+    name: Skill policy lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install PyYAML
+        run: pip install pyyaml
+
+      - name: Check skill manifests for unsafe policy defaults
+        run: python scripts/lint_skill_policy.py
+
+  build:
+    needs: [lint]
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            platform: linux
+            artifact: "*.deb,*.AppImage"
+          - os: macos-13
+            platform: macos
+            artifact: "*.dmg"
+          - os: windows-2022
+            platform: windows
+            artifact: "*.msi,*.exe"
+
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: apps/desktop
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ── Linux system deps ─────────────────────────────────────────────────
+      - name: Install Linux system dependencies
+        if: matrix.platform == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libappindicator3-dev \
+            librsvg2-dev \
+            patchelf \
+            libssl-dev \
+            libgtk-3-dev
+
+      # ── Rust ──────────────────────────────────────────────────────────────
+      - name: Set up Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust build artifacts
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: "apps/desktop/src-tauri -> target"
+
+      # ── Node (for any JS build step Tauri needs) ──────────────────────────
+      - name: Set up Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: apps/desktop/package-lock.json
+
+      - name: Install JS dependencies
+        run: npm ci
+
+      # ── Build ─────────────────────────────────────────────────────────────
+      - name: Build Tauri app
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          projectPath: apps/desktop
+          tagName: ${{ github.ref_name }}
+          releaseName: "Hall Monitor ${{ github.ref_name }}"
+          releaseBody: |
+            Hall Monitor desktop release — connects to a local Hall server at localhost:8765.
+
+            **Install the Hall server first:**
+            ```
+            pip install pyhall-wcp
+            pyhall hall start
+            ```
+          releaseDraft: true
+          prerelease: ${{ contains(github.ref_name, 'beta') || contains(github.ref_name, 'rc') }}
+          includeDebug: false
+          includeRelease: true
+
+      # ── Upload artifacts (for workflow_dispatch runs — no release created) ─
+      - name: Upload build artifacts
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v4
+        with:
+          name: hall-monitor-${{ matrix.platform }}
+          path: |
+            apps/desktop/src-tauri/target/release/bundle/**/*.deb
+            apps/desktop/src-tauri/target/release/bundle/**/*.AppImage
+            apps/desktop/src-tauri/target/release/bundle/**/*.dmg
+            apps/desktop/src-tauri/target/release/bundle/**/*.msi
+            apps/desktop/src-tauri/target/release/bundle/**/*.exe
+          retention-days: 14
+          if-no-files-found: warn

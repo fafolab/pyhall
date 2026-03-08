@@ -203,4 +203,17 @@ describe('RegistryClient', () => {
       expect(cb('x.nonexistent.w')).toBeNull(); // unknown → no hash
     });
   });
+
+  // ── C4 parity stubs: submitAttestation / AttestationResponse ────────────
+  // Python SDK exposes AttestationResponse + submit_attestation().
+  // TS SDK does not yet expose equivalent API surface.
+  describe('submitAttestation() parity (TODO)', () => {
+    test.todo('exposes AttestationResponse shape equivalent to Python (id, worker_id, sha256)');
+    test.todo('submitAttestation validates package_hash format (64 lowercase hex)');
+    test.todo('submitAttestation PUTs /api/v1/workers/:id/attest');
+    test.todo('submitAttestation includes optional label and AI provenance fields');
+    test.todo('submitAttestation uses bearer token precedence over session cookie when provided');
+    test.todo('submitAttestation throws RegistryRateLimitError on 429');
+    test.todo('submitAttestation propagates 401/403/404 as HTTP errors');
+  });
 });

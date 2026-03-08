@@ -1,0 +1,20 @@
+{
+  "name": "pyhall-wcp",
+  "description": "Worker Class Protocol governance for AI agents. Register workers, check capabilities, make routing decisions, inspect attestation, and manage the ban list — all governed by WCP.",
+  "version": "0.3.0",
+  "author": {
+    "name": "FΔFΌ★LΔB",
+    "email": "hello@fafolab.ai"
+  },
+  "homepage": "https://pyhall.dev",
+  "repository": "https://github.com/fafolab/pyhall",
+  "license": "Apache-2.0",
+  "keywords": ["wcp", "governance", "ai-workers", "attestation", "pyhall", "worker-class-protocol"],
+  "category": "developer-tools",
+  "skills": [
+    {
+      "name": "pyhall-wcp",
+      "path": "skills/pyhall-wcp/SKILL.md"
+    }
+  ]
+}

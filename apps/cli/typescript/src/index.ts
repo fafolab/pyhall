@@ -15,7 +15,7 @@ import { runScaffold } from './commands/scaffold.js';
 import { runRegistryVerify, runRegistryCheckHash, runRegistryBanList, runRegistryStatus } from './commands/registry.js';
 import { theme } from './theme.js';
 
-const CLI_VERSION = '0.1.0';
+const CLI_VERSION = '0.3.0';
 
 const program = new Command();
 

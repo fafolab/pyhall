@@ -19,6 +19,11 @@ jobs:
       - name: Install build tools
         run: pip install build twine
 
+      - name: Run tests
+        run: |
+          pip install -e "sdk/python[dev]"
+          pytest sdk/python/tests/ -x -q
+
       - name: Build distribution
         working-directory: sdk/python
         run: python -m build

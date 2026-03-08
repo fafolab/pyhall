@@ -32,7 +32,7 @@ Quick start:
     print(decision.selected_worker_species_id)  # "wrk.hello.greeter"
 """
 
-__version__ = "0.2.2"
+__version__ = "0.3.0"
 __wcp_version__ = "0.1"
 
 from .router import make_decision, detect_shadow_rules
@@ -40,7 +40,19 @@ from .models import RouteInput, RouteDecision, HallConfig
 from .registry import Registry
 from .policy_gate import PolicyGate
 from .rules import load_rules, load_rules_from_dict, Rule
-from .registry_client import RegistryClient, RegistryRateLimitError, VerifyResponse, BanEntry
+from .registry_client import RegistryClient, RegistryRateLimitError, VerifyResponse, BanEntry, AttestationResponse
+from .attestation import (
+    PackageAttestationVerifier,
+    canonical_package_hash,
+    build_manifest,
+    write_manifest,
+    scaffold_package,
+    ATTEST_MANIFEST_MISSING,
+    ATTEST_MANIFEST_ID_MISMATCH,
+    ATTEST_HASH_MISMATCH,
+    ATTEST_SIGNATURE_MISSING,
+    ATTEST_SIG_INVALID,
+)
 
 __all__ = [
     "make_decision",
@@ -57,4 +69,16 @@ __all__ = [
     "RegistryRateLimitError",
     "VerifyResponse",
     "BanEntry",
+    "AttestationResponse",
+    # Full-package attestation
+    "PackageAttestationVerifier",
+    "canonical_package_hash",
+    "build_manifest",
+    "write_manifest",
+    "scaffold_package",
+    "ATTEST_MANIFEST_MISSING",
+    "ATTEST_MANIFEST_ID_MISMATCH",
+    "ATTEST_HASH_MISMATCH",
+    "ATTEST_SIGNATURE_MISSING",
+    "ATTEST_SIG_INVALID",
 ]

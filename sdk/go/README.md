@@ -1,6 +1,6 @@
 # pyhall-go — WCP Worker Class Protocol (Go)
 
-**Status:** v0.1 scaffold — interfaces and stubs only.
+**Status:** v0.1 scaffold — routing core and registry client implemented; attestation not yet ported.
 **Spec:** [WCP_SPEC.md](https://github.com/fafolab/wcp/blob/main/WCP_SPEC.md)
 **Production implementation:** [pip install pyhall-wcp](https://github.com/fafolab/pyhall)
 
@@ -8,14 +8,14 @@
 
 ## What this is
 
-This is the Go scaffolding for [WCP — Worker Class Protocol](https://github.com/fafolab/wcp/blob/main/WCP_SPEC.md), an open standard for governing worker dispatch in AI agent systems.
+This is the Go implementation of [WCP — Worker Class Protocol](https://github.com/fafolab/wcp/blob/main/WCP_SPEC.md), an open standard for governing worker dispatch in AI agent systems.
 
 The Python reference implementation (`pyhall`) is the production-ready version. This Go package mirrors its type system and routing interfaces so Go services can participate in a WCP-governed worker fleet.
 
-**If you need production routing today:** use PyHall.
+**If you need production routing or package attestation today:** use PyHall.
 
 ```bash
-pip install pyhall-wcp
+pip install pyhall-wcp==0.3.0
 pyhall route --capability cap.doc.summarize --env dev --data-label INTERNAL
 ```
 
@@ -23,15 +23,26 @@ This Go package is for teams that need to write WCP workers or consume WCP routi
 
 ---
 
-## Package layout
+## Module
+
+```
+github.com/fafolab/pyhall/sdk/go
+```
+
+Go 1.22+. Zero external runtime dependencies — stdlib only.
+
+---
+
+## Package Layout
 
 ```
 wcp/
-  models.go       — RouteInput, RouteDecision, supporting types
-  router.go       — MakeDecision() — the primary routing entrypoint (stub)
-  registry.go     — Registry — in-memory worker enrollment store
-  policy_gate.go  — PolicyGate interface + DefaultPolicyGate stub
-  common.go       — NowUTC(), SHA256Hex(), OK/Err helpers
+  models.go           — RouteInput, RouteDecision, supporting types
+  router.go           — MakeDecision() — the primary routing entrypoint (stub)
+  registry.go         — Registry — in-memory worker enrollment store
+  registry_client.go  — RegistryClient — HTTP client for api.pyhall.dev
+  policy_gate.go      — PolicyGate interface + DefaultPolicyGate stub
+  common.go           — NowUTC(), SHA256Hex(), OK/Err helpers
 
 workers/examples/hello_worker/
   worker.go             — minimal canonical worker implementation
@@ -40,12 +51,12 @@ workers/examples/hello_worker/
 
 ---
 
-## Quick start
+## Quick Start — Routing
 
 ```go
 import (
     "fmt"
-    "github.com/fafolab/pyhall-go/wcp"
+    "github.com/fafolab/pyhall/sdk/go/wcp"
 )
 
 func main() {
@@ -86,24 +97,92 @@ func main() {
 
 ---
 
-## WCP compliance level
+## Registry Client
 
-This scaffold targets **WCP-Basic** compliance:
+Go has parity with Python and TypeScript for the `api.pyhall.dev` HTTP API.
+
+```go
+import "github.com/fafolab/pyhall/sdk/go/wcp"
+
+client := wcp.NewRegistryClient(wcp.RegistryClientOptions{
+    // BaseURL defaults to "https://api.pyhall.dev"
+    // SessionToken: "your-session-jwt",
+    // Timeout: 10 * time.Second,
+    // CacheTTL: 60 * time.Second,
+})
+
+// Verify a worker's attestation status
+resp, err := client.Verify("org.example.my-worker")
+if err != nil {
+    log.Fatal(err)
+}
+fmt.Println(resp.Status)       // "active" | "revoked" | "banned" | "unknown"
+fmt.Println(resp.AIGenerated)  // bool — was this package AI-assisted?
+
+// Check the ban-list
+banned, err := client.IsHashBanned(someHash)
+
+// Fetch all confirmed ban-list entries
+entries, err := client.GetBanList(500)
+
+// Registry health check
+h, err := client.Health()
+
+// Pre-populate cache before routing
+err = client.Prefetch([]string{"org.example.worker-a", "org.example.worker-b"})
+
+// Synchronous hash lookup (uses cache populated by Prefetch)
+hash, ok := client.GetWorkerHash("org.example.worker-a")
+```
+
+`VerifyResponse` fields: `WorkerID`, `Status`, `CurrentHash`, `Banned`,
+`BanReason`, `AttestedAt`, `AIGenerated`, `AIService`, `AIModel`,
+`AISessionFingerprint`.
+
+Override the registry URL via `RegistryClientOptions.BaseURL` or set the
+`PYHALL_REGISTRY_URL` environment variable.
+
+---
+
+## Package Attestation — Python only in v0.3.0
+
+Full-package attestation (`PackageAttestationVerifier`, `build_manifest`,
+`write_manifest`, `scaffold_package`, `canonical_package_hash`, `ATTEST_*`
+deny codes, `RegistryClient.submit_attestation()`) is implemented in the
+Python SDK only. Go parity is planned.
+
+If you need attestation in a Go deployment today, use the Python CLI as a
+build step:
+
+```bash
+pip install pyhall-wcp==0.3.0
+pyhall scaffold my-worker/
+# ... populate code/worker_logic.py ...
+export WCP_ATTEST_HMAC_KEY=your-key
+pyhall attest my-worker/ --worker-id org.example.my-worker --species wrk.example.my-worker --version 1.0.0
+```
+
+---
+
+## WCP Compliance Level
 
 | Requirement | Status |
 |-------------|--------|
 | Capability routing | Stub (workers enrolled via Registry) |
 | Fail-closed (unknown capability = deny) | Done |
-| Deterministic routing | Done (stub rule, deterministic) |
+| Deterministic routing | Done |
 | Controls enforcement | TODO |
 | Mandatory telemetry | Done (three events emitted) |
-| Dry-run support | Done (no dispatch when DryRun=true) |
+| Dry-run support | Done |
 | Blast radius scoring | TODO |
 | Policy gate | Stub (DefaultPolicyGate passes through) |
 | Evidence receipts | Done (in hello_worker example) |
 | Discovery API | TODO |
+| Registry client (api.pyhall.dev) | Done |
+| Package attestation | Not yet ported |
 
-Full WCP-Standard and WCP-Full compliance requires completing the TODOs in `router.go` and `policy_gate.go`.
+Full WCP-Standard and WCP-Full compliance requires completing the TODOs in
+`router.go` and `policy_gate.go`.
 
 ---
 
@@ -124,16 +203,6 @@ Worker execution
 ```
 
 Read the full spec: [WCP_SPEC.md](https://github.com/fafolab/wcp/blob/main/WCP_SPEC.md)
-
----
-
-## Module
-
-```
-github.com/fafolab/pyhall-go
-```
-
-Go 1.22+. Zero external runtime dependencies — stdlib only.
 
 ---
 

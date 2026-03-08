@@ -9,25 +9,38 @@ window.CrewScreen = (() => {
   let crewFilter = 'all';
   let searchQuery = '';
 
-  // ── Catalog fallback (from catalog.json embedded as mock workers) ─────────
+  // Catalog fetched from Hall Server /api/catalog (real SDK catalog.json)
+  let _catalogCache = null;
 
-  // A representative subset from catalog.json for the "available in catalog" view
-  const CATALOG_WORKERS = [
-    { species_id: 'wrk.sandbox.workspace', pack: 'Sandboxing & Containment (Pack 01)', capabilities: ['cap.mount.workspace.v1'], blast_score: 20, risk_tier: 'medium', guarantee: 'best-effort', status: 'catalog' },
-    { species_id: 'wrk.secrets.vault', pack: 'Secrets & Identity (Pack 02)', capabilities: ['cap.secrets.read'], blast_score: 85, risk_tier: 'high', guarantee: 'exactly-once', status: 'catalog' },
-    { species_id: 'wrk.obs.flight-recorder', pack: 'Observability (Pack 03)', capabilities: ['cap.obs.log.structured'], blast_score: 8, risk_tier: 'low', guarantee: 'best-effort', status: 'catalog' },
-    { species_id: 'wrk.data.classifier', pack: 'Data Governance (Pack 07)', capabilities: ['cap.data.classify'], blast_score: 30, risk_tier: 'medium', guarantee: 'at-least-once', status: 'catalog' },
-    { species_id: 'wrk.stream.consumer', pack: 'Streaming & Events (Pack 08)', capabilities: ['cap.stream.consume'], blast_score: 25, risk_tier: 'low', guarantee: 'at-least-once', status: 'catalog' },
-    { species_id: 'wrk.doc.pipeline', pack: 'Document Pipeline (Pack 10)', capabilities: ['cap.doc.summarize', 'cap.doc.ocr'], blast_score: 15, risk_tier: 'low', guarantee: 'best-effort', status: 'catalog' },
-    { species_id: 'wrk.notify.multi', pack: 'Notification (Pack 11)', capabilities: ['cap.notify.send', 'cap.notify.email'], blast_score: 22, risk_tier: 'low', guarantee: 'at-least-once', status: 'catalog' },
-    { species_id: 'wrk.security.scanner', pack: 'Security Scanning (Pack 12)', capabilities: ['cap.sec.scan.sast'], blast_score: 40, risk_tier: 'medium', guarantee: 'best-effort', status: 'catalog' },
-    { species_id: 'wrk.chaos.injector', pack: 'Chaos / Fault Injection (Pack 13)', capabilities: ['cap.chaos.inject.latency'], blast_score: 72, risk_tier: 'high', guarantee: 'best-effort', status: 'catalog' },
-    { species_id: 'wrk.scheduler.priority', pack: 'Scheduler & QoS (Pack 14)', capabilities: ['cap.sched.priority-queue'], blast_score: 30, risk_tier: 'medium', guarantee: 'at-least-once', status: 'catalog' },
-    { species_id: 'wrk.policy.enforcer', pack: 'Formal Policy (Pack 15)', capabilities: ['cap.pol.evaluate'], blast_score: 55, risk_tier: 'medium', guarantee: 'at-least-once', status: 'catalog' },
-    { species_id: 'wrk.prov.signer', pack: 'Provenance & Signing (Pack 16)', capabilities: ['cap.prov.sign'], blast_score: 45, risk_tier: 'medium', guarantee: 'exactly-once', status: 'catalog' },
-    { species_id: 'wrk.mem.retriever', pack: 'Memory & Context (Pack 20)', capabilities: ['cap.mem.retrieve', 'cap.mem.search'], blast_score: 18, risk_tier: 'low', guarantee: 'at-least-once', status: 'catalog' },
-    { species_id: 'wrk.workflow.dag', pack: 'Workflow Orchestration (Pack 21)', capabilities: ['cap.wf.dag.execute'], blast_score: 50, risk_tier: 'medium', guarantee: 'at-least-once', status: 'catalog' },
-  ];
+  async function loadCatalog(hallUrl) {
+    if (_catalogCache) return _catalogCache;
+    try {
+      const resp = await fetch(`${hallUrl}/api/catalog?type=worker_species`);
+      if (!resp.ok) return [];
+      const data = await resp.json();
+      _catalogCache = (data.entities || []).map(e => {
+        // Compute a blast_score from blast_radius_hint (0–100)
+        const bh = e.blast_radius_hint || {};
+        const raw = (bh.data || 0) + (bh.network || 0) + (bh.financial || 0) + (bh.time || 0);
+        const rev = bh.reversibility === 'irreversible' ? 3 : bh.reversibility === 'partially-reversible' ? 1 : 0;
+        const blast_score = Math.min(100, Math.round((raw + rev) / 15 * 100));
+        return {
+          species_id: e.id,
+          name: e.name,
+          description: e.description || '',
+          capabilities: e.serves_capabilities || [],
+          risk_tier: e.risk_tier || 'medium',
+          blast_score,
+          guarantee: e.idempotency === 'full' ? 'exactly-once' : e.idempotency === 'partial' ? 'at-least-once' : 'best-effort',
+          tags: e.tags || [],
+          status: 'catalog',
+        };
+      });
+      return _catalogCache;
+    } catch (e) {
+      return [];
+    }
+  }
 
   // ── Render ────────────────────────────────────────────────────────────────
 
@@ -38,7 +51,8 @@ window.CrewScreen = (() => {
         const q = searchQuery.toLowerCase();
         if (!w.species_id.toLowerCase().includes(q) &&
             !(w.capabilities || []).some(c => c.toLowerCase().includes(q)) &&
-            !(w.pack || '').toLowerCase().includes(q)) return false;
+            !(w.name || '').toLowerCase().includes(q) &&
+            !(w.description || '').toLowerCase().includes(q)) return false;
       }
       return true;
     });
@@ -121,8 +135,8 @@ window.CrewScreen = (() => {
           ${!isCatalog ? `<span data-registry-badge="${esc(w.species_id)}" class="badge-registry-placeholder" title="Checking registry…">…</span>` : ''}
         </div>
         <div class="worker-card-meta">
-          <span class="meta-label">Trade</span>
-          <span class="meta-value">${esc(w.pack || '—')}</span>
+          <span class="meta-label">Name</span>
+          <span class="meta-value">${esc(w.name || w.species_id)}</span>
           <span class="meta-label">Handles</span>
           <span class="meta-value">${esc(caps)}</span>
           <span class="meta-label">Guarantee</span>
@@ -156,7 +170,8 @@ window.CrewScreen = (() => {
     const caps = (w.capabilities || []).join('\n  ');
     const details = [
       `Species ID:     ${w.species_id}`,
-      `Pack:           ${w.pack || '—'}`,
+      `Name:           ${w.name || '—'}`,
+      w.description ? `Description:    ${w.description}` : '',
       `Capabilities:\n  ${caps}`,
       `Guarantee:      ${w.guarantee || '—'}`,
       `Blast score:    ${w.blast_score} / 100 (${blastTierLabel(w.blast_score)})`,
@@ -200,7 +215,9 @@ window.CrewScreen = (() => {
 
     let serverWorkers = [];
     let localWorkers = [];
+    let catalogWorkers = [];
 
+    // Load from Hall Server when online
     if (online) {
       try {
         const result = await HallAPI.getWorkers(url);
@@ -208,22 +225,20 @@ window.CrewScreen = (() => {
           serverWorkers = result.workers;
         }
       } catch (e) {}
+
+      // Load catalog from SDK via Hall Server
+      catalogWorkers = await loadCatalog(url);
     }
 
-    if (serverWorkers.length === 0) {
-      // Use mock workers (simulating server data) + catalog fallback
-      serverWorkers = window.MOCK_WORKERS;
-    }
-
-    // Local enrolled
+    // Local enrolled (always try)
     try {
       const local = await HallAPI.listEnrolledWorkers();
       localWorkers = (local.workers || []).map(w => Object.assign({}, w, { status: w.status || 'idle', source: 'local' }));
     } catch (e) {}
 
-    // Merge: server > local > catalog
-    const allIds = new Set([...serverWorkers, ...localWorkers].map(w => w.species_id));
-    const catalogExtra = CATALOG_WORKERS.filter(w => !allIds.has(w.species_id));
+    // Merge: server > local > catalog (catalog fills in unenrolled species)
+    const enrolledIds = new Set([...serverWorkers, ...localWorkers].map(w => w.species_id));
+    const catalogExtra = catalogWorkers.filter(w => !enrolledIds.has(w.species_id));
 
     allWorkers = [...serverWorkers, ...localWorkers, ...catalogExtra];
     renderCrew();

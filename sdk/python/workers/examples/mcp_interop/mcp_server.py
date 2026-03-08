@@ -39,8 +39,10 @@ Test with a raw initialize request:
 from __future__ import annotations
 
 import json
+import os
 import sys
 import uuid
+from pathlib import Path
 from typing import Any, Dict, Optional
 
 # PyHall imports — WCP governance layer
@@ -148,6 +150,52 @@ def _build_registry() -> Registry:
 _RULES = load_rules_from_dict(RULES)
 _REGISTRY = _build_registry()
 _POLICY_GATE = PolicyGate()
+_WORKER_SPECIES_ID = "wrk.doc.summarizer"
+_WORKER_SOURCE_FILE = Path(__file__).parent / "wcp_worker.py"
+_MAX_TEXT_CHARS = 100_000
+
+# ── Startup policy gate validation ──────────────────────────────────────────
+# PYHALL_MCP_STRICT controls fail-safe behaviour for stub PolicyGate:
+#   "1" (default) — stub PolicyGate is REJECTED at startup; all tool calls
+#                   are blocked until a real PolicyGate subclass is injected.
+#   "0"           — dev mode; stub PolicyGate is allowed; a warning is logged.
+#
+# PYHALL_ENV is a secondary guard: even with PYHALL_MCP_STRICT=0, a stub gate
+# in stage/prod raises RuntimeError because the env labels carry explicit intent.
+_STRICT_MODE = os.environ.get("PYHALL_MCP_STRICT", "1").strip() != "0"
+_DEPLOYMENT_ENV = os.environ.get("PYHALL_ENV", "dev").lower()
+_NON_DEV_ENVS = {"stage", "staging", "prod", "production"}
+
+if getattr(_POLICY_GATE, "is_stub", True):
+    if _STRICT_MODE:
+        raise RuntimeError(
+            "[pyhall-mcp] STARTUP FAILED: PolicyGate not configured — "
+            "the default stub is ALLOW-all and cannot run in strict mode. "
+            "Subclass PolicyGate, set is_stub=False, and inject a real policy. "
+            "Set PYHALL_MCP_STRICT=0 for development mode or provide a policy provider."
+        )
+    elif _DEPLOYMENT_ENV in _NON_DEV_ENVS:
+        raise RuntimeError(
+            f"[pyhall-mcp] STARTUP FAILED: stub PolicyGate cannot run in "
+            f"env='{_DEPLOYMENT_ENV}'. Governance would be silently ALLOW-all. "
+            "Subclass PolicyGate, set is_stub=False, and inject a real policy. "
+            "Set PYHALL_ENV=dev only for local development."
+        )
+    else:
+        print(
+            "[pyhall-mcp] WARNING: running in non-strict dev mode (PYHALL_MCP_STRICT=0). "
+            "PolicyGate is a permissive stub — ALL tool calls will be ALLOWED without "
+            "governance enforcement. Do NOT use this mode in production.",
+            file=sys.stderr,
+        )
+
+# Register worker code attestation (if registry supports it).
+# This keeps the interop example aligned with WCP worker integrity checks.
+try:
+    _REGISTRY.register_attestation(_WORKER_SPECIES_ID, str(_WORKER_SOURCE_FILE))
+except Exception as exc:
+    # Non-fatal for backwards compatibility with older registry implementations.
+    print(f"[pyhall-mcp] attestation registration skipped: {exc}", file=sys.stderr)
 
 
 # ---------------------------------------------------------------------------
@@ -241,11 +289,30 @@ def handle_tools_call(params: dict, req_id: Any) -> dict:
         5. If APPROVED: call wcp_worker.execute() with proper WorkerContext.
         6. Return worker result as MCP tool response.
     """
+    if not isinstance(params, dict):
+        return _mcp_error(req_id, -32602, "Invalid params: expected object")
+
     tool_name = params.get("name", "")
     arguments = params.get("arguments", {})
 
     if tool_name != "summarize_document":
         return _mcp_error(req_id, -32601, f"Unknown tool: {tool_name!r}")
+    if not isinstance(arguments, dict):
+        return _mcp_error(req_id, -32602, "Invalid arguments: expected object")
+
+    # Basic anti-DoS input bounds for stdio-hosted MCP usage.
+    text_arg = arguments.get("text", "")
+    if not isinstance(text_arg, str):
+        return _mcp_error(req_id, -32602, "Invalid argument 'text': must be string")
+    if len(text_arg) > _MAX_TEXT_CHARS:
+        return _mcp_error(req_id, -32602, f"Input too large: text exceeds {_MAX_TEXT_CHARS} characters")
+
+    max_sentences_raw = arguments.get("max_sentences", 3)
+    try:
+        max_sentences = int(max_sentences_raw)
+    except Exception:
+        return _mcp_error(req_id, -32602, "Invalid argument 'max_sentences': must be integer")
+    max_sentences = max(1, min(max_sentences, 20))
 
     # ------------------------------------------------------------------
     # Step 1: Build WCP RouteInput from MCP tool call parameters
@@ -255,6 +322,22 @@ def handle_tools_call(params: dict, req_id: Any) -> dict:
     # Validate env value
     if env not in ("dev", "stage", "prod", "edge"):
         env = "dev"
+
+    # Defense-in-depth: if we somehow got past startup (e.g. PYHALL_MCP_STRICT=0),
+    # still block non-dev envs with a stub gate, and block ALL envs in strict mode.
+    if getattr(_POLICY_GATE, "is_stub", True):
+        if _STRICT_MODE:
+            return _mcp_error(
+                req_id, -32603,
+                "PolicyGate not configured — set PYHALL_MCP_STRICT=0 for "
+                "development mode or provide a policy provider.",
+            )
+        elif env not in ("dev",):
+            return _mcp_error(
+                req_id, -32603,
+                f"stub PolicyGate cannot evaluate '{env}' requests. "
+                "Inject a real PolicyGate subclass for stage/prod governance.",
+            )
 
     try:
         inp = RouteInput(
@@ -266,8 +349,8 @@ def handle_tools_call(params: dict, req_id: Any) -> dict:
             tenant_id="mcp-client",
             correlation_id=correlation_id,
             request={
-                "text": arguments.get("text", ""),
-                "max_sentences": arguments.get("max_sentences", 3),
+                "text": text_arg,
+                "max_sentences": max_sentences,
             },
         )
     except Exception as exc:
@@ -276,6 +359,15 @@ def handle_tools_call(params: dict, req_id: Any) -> dict:
     # ------------------------------------------------------------------
     # Step 2: WCP governance check via the Hall
     # ------------------------------------------------------------------
+    decision_kwargs: Dict[str, Any] = {}
+    try:
+        reg_hash, cur_hash = _REGISTRY.attestation_callables()
+        decision_kwargs["registry_get_worker_hash"] = reg_hash
+        decision_kwargs["get_current_worker_hash"] = cur_hash
+    except Exception:
+        # Keep behavior compatible when attestation callables are unavailable.
+        pass
+
     decision = make_decision(
         inp=inp,
         rules=_RULES,
@@ -285,6 +377,7 @@ def handle_tools_call(params: dict, req_id: Any) -> dict:
         registry_policy_allows_privilege=_REGISTRY.policy_allows_privilege,
         policy_gate_eval=_POLICY_GATE.evaluate,
         task_id=f"mcp_tools_call_{correlation_id[:8]}",
+        **decision_kwargs,
     )
 
     # ------------------------------------------------------------------

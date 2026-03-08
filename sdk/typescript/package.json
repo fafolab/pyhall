@@ -1,6 +1,6 @@
 {
   "name": "@pyhall/core",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "PyHall TypeScript \u2014 WCP Worker Class Protocol reference implementation",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

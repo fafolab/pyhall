@@ -2566,6 +2566,170 @@ def discord_bootstrap(
 
 
 # ---------------------------------------------------------------------------
+# hall mcp — manage external MCP server registrations via Hall Server
+# ---------------------------------------------------------------------------
+
+_HALL_SERVER_BASE = "http://localhost:8765"
+_HALL_SERVER_TIMEOUT = 5  # seconds
+
+
+def _hall_request(
+    method: str,
+    path: str,
+    payload: Optional[dict] = None,
+) -> dict:
+    """
+    Make an HTTP request to the Hall Server at localhost:8765.
+    Raises SystemExit with a user-friendly message if unreachable.
+    """
+    from urllib.request import Request as _Request, urlopen as _urlopen
+    from urllib.error import URLError as _URLError
+
+    url = f"{_HALL_SERVER_BASE}{path}"
+    body = json.dumps(payload).encode("utf-8") if payload is not None else None
+    req = _Request(url, data=body, method=method.upper())
+    req.add_header("Content-Type", "application/json")
+    req.add_header("User-Agent", f"pyhall-cli/{__version__}")
+
+    try:
+        with _urlopen(req, timeout=_HALL_SERVER_TIMEOUT) as resp:
+            raw = resp.read()
+            return json.loads(raw) if raw else {}
+    except _URLError:
+        console.print(
+            "[red]Hall Server not running at localhost:8765. Start with:[/red] [bold]hall start[/bold]"
+        )
+        raise typer.Exit(1)
+    except Exception as exc:
+        console.print(f"[red]Hall Server error: {exc}[/red]")
+        raise typer.Exit(1)
+
+
+mcp_app = typer.Typer(
+    name="mcp",
+    help="Manage external MCP server registrations with the Hall Server.",
+    no_args_is_help=True,
+)
+app.add_typer(mcp_app)
+
+
+@mcp_app.command("list")
+def mcp_list() -> None:
+    """List all registered external MCP servers."""
+    data = _hall_request("GET", "/api/mcp/servers")
+    servers = data.get("servers", data) if isinstance(data, dict) else data
+
+    if not servers:
+        console.print("[dim]No external MCP servers registered.[/dim]")
+        console.print("[dim]Add one with:[/dim] [bold]hall mcp add --name \"My MCP\" --http http://localhost:3001/mcp[/bold]")
+        return
+
+    table = Table(title="Registered MCP Servers", border_style="cyan", show_lines=False)
+    table.add_column("ID", style="dim", no_wrap=True)
+    table.add_column("Name", style="bold white")
+    table.add_column("Transport", style="cyan", width=9)
+    table.add_column("URL / Command", style="white")
+    table.add_column("Status", style="white", width=10)
+    table.add_column("Tools", style="dim", justify="right", width=5)
+
+    for s in servers:
+        transport = s.get("transport", "?")
+        url_or_cmd = s.get("url") or s.get("command") or "—"
+        status = s.get("status", "unknown")
+        status_colored = (
+            "[green]online[/green]" if status == "online"
+            else "[red]offline[/red]" if status == "offline"
+            else f"[yellow]{status}[/yellow]"
+        )
+        table.add_row(
+            str(s.get("id", "")),
+            s.get("name", ""),
+            transport,
+            url_or_cmd,
+            status_colored,
+            str(s.get("tool_count", "—")),
+        )
+
+    console.print(table)
+
+
+@mcp_app.command("add")
+def mcp_add(
+    name: str = typer.Option(..., "--name", help="Human-readable name for this MCP server"),
+    http_url: Optional[str] = typer.Option(None, "--http", help="HTTP transport URL, e.g. http://localhost:3001/mcp"),
+    stdio_cmd: Optional[str] = typer.Option(None, "--stdio", help="stdio transport command, e.g. 'npx my-mcp-server'"),
+) -> None:
+    """
+    Register an external MCP server with the Hall Server.
+
+    Specify exactly one of --http or --stdio.
+
+    Examples:
+
+        hall mcp add --name "My MCP" --http http://localhost:3001/mcp
+
+        hall mcp add --name "My MCP" --stdio "npx my-mcp-server"
+    """
+    if http_url and stdio_cmd:
+        console.print("[red]Specify exactly one of --http or --stdio, not both.[/red]")
+        raise typer.Exit(1)
+    if not http_url and not stdio_cmd:
+        console.print("[red]Specify one of --http <url> or --stdio <command>.[/red]")
+        raise typer.Exit(1)
+
+    if http_url:
+        payload: dict = {"name": name, "transport": "http", "url": http_url}
+    else:
+        payload = {"name": name, "transport": "stdio", "command": stdio_cmd}
+
+    result = _hall_request("POST", "/api/mcp/servers", payload)
+
+    server_id = result.get("id") or result.get("server", {}).get("id", "?")
+    console.print(f"[green]Registered:[/green] [bold]{name}[/bold]  (id: {server_id})")
+    if http_url:
+        console.print(f"  transport: http  url: {http_url}")
+    else:
+        console.print(f"  transport: stdio  command: {stdio_cmd}")
+
+
+@mcp_app.command("remove")
+def mcp_remove(
+    server_id: str = typer.Argument(..., help="MCP server ID to remove"),
+) -> None:
+    """Remove a registered MCP server."""
+    confirmed = Confirm.ask(
+        f"[yellow]Remove MCP server[/yellow] [bold]{server_id}[/bold]?",
+        default=False,
+    )
+    if not confirmed:
+        console.print("[dim]Cancelled.[/dim]")
+        raise typer.Exit(0)
+
+    _hall_request("DELETE", f"/api/mcp/servers/{server_id}")
+    console.print(f"[green]Removed:[/green] {server_id}")
+
+
+@mcp_app.command("ping")
+def mcp_ping(
+    server_id: str = typer.Argument(..., help="MCP server ID to ping"),
+) -> None:
+    """Test connectivity to a registered MCP server."""
+    result = _hall_request("POST", f"/api/mcp/servers/{server_id}/ping")
+
+    ok = result.get("ok", result.get("success", result.get("status") == "ok"))
+    latency = result.get("latency_ms")
+    error = result.get("error")
+
+    if ok:
+        latency_str = f"  latency: {latency}ms" if latency is not None else ""
+        console.print(f"[green]PONG[/green]  server {server_id} is reachable.{latency_str}")
+    else:
+        msg = error or result.get("message", "no response")
+        console.print(f"[red]TIMEOUT[/red]  server {server_id} did not respond: {msg}")
+        raise typer.Exit(1)
+
+
+# ---------------------------------------------------------------------------
 # pyhall registry — pyhall.dev registry operations
 # ---------------------------------------------------------------------------
 
@@ -2692,6 +2856,275 @@ def cmd_registry_status(
         console.print(f"  [red]Status:[/red]    unreachable ({exc})")
         console.print()
         raise typer.Exit(1)
+
+
+# ---------------------------------------------------------------------------
+# hall attest — full-package attestation workflow
+# ---------------------------------------------------------------------------
+
+attest_app = typer.Typer(
+    name="attest",
+    help="Full-package worker attestation — scaffold, sign, and verify WCP worker packages.",
+)
+app.add_typer(attest_app)
+
+
+@attest_app.command("scaffold")
+def cmd_attest_scaffold(
+    package_root: Path = typer.Option(..., "--package-root", help="Directory to create the worker package in"),
+    worker_logic_file: Optional[Path] = typer.Option(None, "--worker-logic-file", help="Path to user/agent business logic .py to inject"),
+    overwrite: bool = typer.Option(False, "--overwrite", help="Overwrite existing worker_logic.py"),
+) -> None:
+    """
+    Create a minimal worker package layout and optionally inject business logic.
+
+    After scaffolding, run 'hall attest build-sign' to produce the signed manifest.
+
+    Example:
+        hall attest scaffold --package-root ./my-worker --worker-logic-file ./logic.py
+    """
+    from .attestation import scaffold_package
+    try:
+        scaffold_package(package_root, worker_logic_file, overwrite)
+    except FileExistsError as exc:
+        console.print(f"[red]ERROR:[/red] {exc}")
+        raise typer.Exit(2)
+
+    console.print()
+    console.print(f"  [green]OK[/green]  Package scaffolded at [bold]{package_root}[/bold]")
+    if worker_logic_file:
+        console.print(f"  [dim]Logic injected from:[/dim] {worker_logic_file}")
+    console.print()
+    console.print("  [dim]Next step:[/dim]")
+    console.print(f"    export WCP_ATTEST_HMAC_KEY=<your-namespace-signing-secret>")
+    console.print(f"    hall attest build-sign \\")
+    console.print(f"      --package-root {package_root} \\")
+    console.print(f"      --worker-id org.example.my-worker.instance-1 \\")
+    console.print(f"      --worker-species-id wrk.example.my-worker \\")
+    console.print(f"      --worker-version 0.3.0")
+    console.print()
+
+
+@attest_app.command("build-sign")
+def cmd_attest_build_sign(
+    package_root: Path = typer.Option(..., "--package-root", help="Worker package root directory"),
+    worker_id: str = typer.Option(..., "--worker-id", help="WCP worker instance ID (e.g. org.example.worker.i-1)"),
+    worker_species_id: str = typer.Option(..., "--worker-species-id", help="WCP worker species ID (e.g. wrk.example.worker)"),
+    worker_version: str = typer.Option("0.1.0", "--worker-version", help="Semver version string"),
+    build_source: str = typer.Option("local", "--build-source", help="Origin label: local | ci | agent"),
+    manifest_out: Path = typer.Option(None, "--manifest-out", help="Output path for manifest.json (default: <package-root>/manifest.json)"),
+    key_env: str = typer.Option("WCP_ATTEST_HMAC_KEY", "--key-env", help="Env var name holding the HMAC signing secret"),
+) -> None:
+    """
+    Compute the canonical package hash and write a signed manifest.json.
+
+    Requires the env var WCP_ATTEST_HMAC_KEY (or --key-env override) to be set.
+
+    Trust statement format:
+        "Package attested by namespace <ns> at <UTC>; package hash sha256:<hash>."
+
+    Example:
+        export WCP_ATTEST_HMAC_KEY=my-secret
+        hall attest build-sign --package-root ./my-worker --worker-id org.ex.w.i-1 \\
+          --worker-species-id wrk.ex.worker --worker-version 0.3.0
+    """
+    from .attestation import build_manifest, write_manifest
+
+    secret = os.getenv(key_env, "")
+    if not secret:
+        console.print(f"[red]ERROR:[/red] env var [bold]{key_env}[/bold] is not set")
+        raise typer.Exit(2)
+
+    if not package_root.is_dir():
+        console.print(f"[red]ERROR:[/red] package root not found: {package_root}")
+        raise typer.Exit(2)
+
+    out_path = manifest_out or (package_root / "manifest.json")
+
+    try:
+        manifest = build_manifest(
+            package_root=package_root,
+            worker_id=worker_id,
+            worker_species_id=worker_species_id,
+            worker_version=worker_version,
+            signing_secret=secret,
+            build_source=build_source,
+        )
+        write_manifest(manifest, out_path)
+    except Exception as exc:
+        console.print(f"[red]ERROR:[/red] {exc}")
+        raise typer.Exit(1)
+
+    console.print()
+    console.print(f"  [green]OK[/green]  Manifest written → [bold]{out_path}[/bold]")
+    console.print(f"  [dim]worker_id:[/dim]         {worker_id}")
+    console.print(f"  [dim]worker_species_id:[/dim] {worker_species_id}")
+    console.print(f"  [dim]package_hash:[/dim]      sha256:{manifest['package_hash']}")
+    console.print(f"  [dim]attested_at_utc:[/dim]   {manifest['attested_at_utc']}")
+    console.print(f"  [dim]trust_statement:[/dim]   {manifest['trust_statement']}")
+    console.print()
+    console.print("  [dim]Next step:[/dim]")
+    console.print(f"    hall attest verify --package-root {package_root} --manifest-in {out_path}")
+    console.print()
+
+
+@attest_app.command("verify")
+def cmd_attest_verify(
+    package_root: Path = typer.Option(..., "--package-root", help="Worker package root directory"),
+    manifest_in: Path = typer.Option(None, "--manifest-in", help="Path to manifest.json (default: <package-root>/manifest.json)"),
+    worker_id: str = typer.Option(None, "--worker-id", help="Expected worker instance ID (read from manifest if not provided)"),
+    worker_species_id: str = typer.Option(None, "--worker-species-id", help="Expected worker species ID (read from manifest if not provided)"),
+    key_env: str = typer.Option("WCP_ATTEST_HMAC_KEY", "--key-env", help="Env var name holding the HMAC signing secret"),
+) -> None:
+    """
+    Verify a worker package against its signed manifest. Exits non-zero on any failure.
+
+    This is the same check the runtime performs at worker startup — fail-closed.
+
+    Example:
+        export WCP_ATTEST_HMAC_KEY=my-secret
+        hall attest verify --package-root ./my-worker
+    """
+    import json as _json
+    from .attestation import PackageAttestationVerifier
+
+    manifest_path = manifest_in or (package_root / "manifest.json")
+
+    # Read worker identity from manifest if not provided via flags
+    w_id = worker_id
+    ws_id = worker_species_id
+    if (not w_id or not ws_id) and manifest_path.exists():
+        try:
+            m = _json.loads(manifest_path.read_text(encoding="utf-8"))
+            w_id = w_id or m.get("worker_id", "")
+            ws_id = ws_id or m.get("worker_species_id", "")
+        except Exception:
+            pass
+
+    if not w_id or not ws_id:
+        console.print("[red]ERROR:[/red] Could not determine worker_id / worker_species_id. Pass --worker-id and --worker-species-id.")
+        raise typer.Exit(2)
+
+    verifier = PackageAttestationVerifier(
+        package_root=package_root,
+        manifest_path=manifest_path,
+        worker_id=w_id,
+        worker_species_id=ws_id,
+        secret_env=key_env,
+    )
+    ok, deny_code, meta = verifier.verify()
+
+    console.print()
+    if ok:
+        console.print(f"  [bold green]ALLOW[/bold green]  Attestation verified")
+        console.print(f"  [dim]worker_id:[/dim]         {w_id}")
+        console.print(f"  [dim]worker_species_id:[/dim] {ws_id}")
+        console.print(f"  [dim]package_hash:[/dim]      sha256:{meta['package_hash']}")
+        console.print(f"  [dim]attested_at_utc:[/dim]   {meta['attested_at_utc']}")
+        console.print(f"  [dim]verified_at_utc:[/dim]   {meta['verified_at_utc']}")
+        console.print(f"  [dim]trust_statement:[/dim]   {meta['trust_statement']}")
+    else:
+        console.print(f"  [bold red]DENY[/bold red]   {deny_code}")
+        for k, v in meta.items():
+            console.print(f"  [dim]{k}:[/dim] {v}")
+        console.print()
+        raise typer.Exit(1)
+
+    console.print()
+
+
+@attest_app.command("submit")
+def cmd_attest_submit(
+    manifest_in: Path = typer.Option(Path("manifest.json"), "--manifest-in", help="Path to signed manifest.json"),
+    bearer_token: Optional[str] = typer.Option(None, "--bearer-token", help="Auth token (or set PYHALL_TOKEN env var)"),
+    label: Optional[str] = typer.Option(None, "--label", help="Optional label (default: 'full-package v<version>')"),
+    ai_generated: bool = typer.Option(False, "--ai-generated/--no-ai-generated", help="Flag: this package was AI-assisted"),
+    ai_service: Optional[str] = typer.Option(None, "--ai-service", help="AI service name (e.g. claude)"),
+    ai_model: Optional[str] = typer.Option(None, "--ai-model", help="Model name (e.g. claude-sonnet-4-6)"),
+    registry_url: Optional[str] = typer.Option(None, "--registry-url", help="Override registry URL"),
+) -> None:
+    """
+    Submit a full-package attestation to the pyhall registry.
+
+    Reads manifest.json (produced by 'hall attest build-sign'), extracts the
+    package_hash and worker identity, and calls PUT /api/v1/workers/:id/attest.
+
+    Requires --bearer-token or the PYHALL_TOKEN environment variable.
+
+    Example:
+        export PYHALL_TOKEN=<your-jwt>
+        hall attest submit --manifest-in ./my-worker/manifest.json --ai-generated \\
+          --ai-service claude --ai-model claude-sonnet-4-6
+    """
+    import json as _json
+    from .registry_client import RegistryClient
+
+    # Resolve auth token
+    token = bearer_token or os.environ.get('PYHALL_TOKEN', '')
+    if not token:
+        console.print("[red]ERROR:[/red] No auth token. Pass --bearer-token or set PYHALL_TOKEN.")
+        raise typer.Exit(1)
+
+    # Read and parse manifest
+    if not manifest_in.exists():
+        console.print(f"[red]ERROR:[/red] manifest not found: {manifest_in}")
+        raise typer.Exit(2)
+
+    try:
+        manifest = _json.loads(manifest_in.read_text(encoding="utf-8"))
+    except Exception as exc:
+        console.print(f"[red]ERROR:[/red] Failed to parse manifest: {exc}")
+        raise typer.Exit(2)
+
+    package_hash = manifest.get("package_hash", "")
+    worker_id = manifest.get("worker_id", "")
+    worker_version = manifest.get("worker_version", "")
+    trust_statement = manifest.get("trust_statement", "")
+
+    if not package_hash:
+        console.print("[red]ERROR:[/red] manifest is missing 'package_hash'")
+        raise typer.Exit(2)
+    if not worker_id:
+        console.print("[red]ERROR:[/red] manifest is missing 'worker_id'")
+        raise typer.Exit(2)
+
+    effective_label = label or (f"full-package v{worker_version}" if worker_version else "full-package")
+
+    client = RegistryClient(base_url=registry_url, bearer_token=token)
+
+    try:
+        result = client.submit_attestation(
+            worker_id=worker_id,
+            package_hash=package_hash,
+            label=effective_label,
+            ai_generated=ai_generated,
+            ai_service=ai_service,
+            ai_model=ai_model,
+            bearer_token=token,
+        )
+    except ValueError as exc:
+        console.print(f"[red]ERROR:[/red] {exc}")
+        raise typer.Exit(2)
+    except HTTPError as exc:
+        console.print(f"[red]ERROR:[/red] Registry returned HTTP {exc.code}: {exc.reason}")
+        try:
+            body = exc.read().decode(errors='replace')
+            console.print(f"  [dim]{body}[/dim]")
+        except Exception:
+            pass
+        raise typer.Exit(1)
+    except Exception as exc:
+        console.print(f"[red]ERROR:[/red] {exc}")
+        raise typer.Exit(1)
+
+    console.print()
+    console.print(f"  [bold green]OK[/bold green]  Attestation submitted")
+    console.print(f"  [dim]attestation_id:[/dim] {result.id}")
+    console.print(f"  [dim]worker_id:[/dim]      {result.worker_id}")
+    console.print(f"  [dim]sha256:[/dim]         {result.sha256[:12]}...")
+    if trust_statement:
+        console.print(f"  [dim]trust:[/dim]          {trust_statement}")
+    console.print()
 
 
 # ---------------------------------------------------------------------------

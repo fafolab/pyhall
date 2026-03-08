@@ -1,17 +1,17 @@
 # @pyhall/core — TypeScript WCP Reference Implementation
 
-The TypeScript/Node.js port of [PyHall](../pyhall/) — the Worker Class Protocol reference implementation.
+The TypeScript/Node.js port of [PyHall](../python/) — the Worker Class Protocol reference implementation.
 
 **WCP version:** 0.1
-**Package version:** 0.1.0
+**Package version:** 0.3.0
 
 ## Install
 
 ```bash
-npm install @pyhall/core
+npm install @pyhall/core@0.3.0
 ```
 
-## Quick start
+## Quick Start
 
 ```typescript
 import { makeDecision, Registry, loadRulesFromDoc } from "@pyhall/core";
@@ -61,34 +61,154 @@ console.log(decision.selected_worker_species_id);  // "wrk.hello.greeter"
 console.log(decision.telemetry_envelopes.length);  // 3
 ```
 
+## Registry Client
+
+`@pyhall/core` includes an HTTP client for the pyhall.dev registry API,
+with the same interface as the Python `RegistryClient`.
+
+```typescript
+import { RegistryClient, RegistryRateLimitError } from "@pyhall/core";
+
+const client = new RegistryClient({
+  // baseUrl defaults to "https://api.pyhall.dev"
+  // sessionToken: "your-session-jwt",  // for authenticated calls
+  // timeout: 10000,                    // ms, default 10s
+  // cacheTtl: 60000,                   // ms, default 60s
+});
+
+// Verify a worker's attestation status
+const r = await client.verify("org.example.my-worker");
+console.log(r.status);        // 'active' | 'revoked' | 'banned' | 'unknown'
+console.log(r.current_hash);  // string | null
+console.log(r.banned);        // boolean
+console.log(r.ai_generated);  // boolean
+
+// Check the ban-list
+const banned = await client.isHashBanned(someHash);
+
+// Fetch the full ban-list
+const list = await client.getBanList();
+
+// Report a bad hash (requires sessionToken)
+await client.reportHash(hash, "Backdoored dependency", "https://evidence.url");
+
+// Check registry health
+const h = await client.health();
+console.log(h.ok, h.version);
+```
+
+### Integration with `makeDecision()`
+
+Pre-populate the cache before routing so the synchronous hash callback
+has data available:
+
+```typescript
+const client = new RegistryClient({ sessionToken: token });
+
+// Async pre-fetch
+await client.prefetch(["org.example.worker-a", "org.example.worker-b"]);
+
+// Synchronous callback for makeDecision()
+const hashCallback = client.getWorkerHashCallback();
+
+const decision = makeDecision({
+  inp,
+  rules,
+  registryControlsPresent: registry.controlsPresent(),
+  registryWorkerAvailable: (id) => registry.workerAvailable(id),
+  // Pass hashCallback to verify attestation during routing
+});
+```
+
+`VerifyResponse` fields: `worker_id`, `status`, `current_hash`, `banned`,
+`ban_reason`, `attested_at`, `ai_generated`, `ai_service`, `ai_model`,
+`ai_session_fingerprint`.
+
+## Package Attestation — Python only in v0.3.0
+
+Full-package attestation (`PackageAttestationVerifier`, `build_manifest`,
+`write_manifest`, `scaffold_package`, `canonical_package_hash`, `ATTEST_*`
+deny codes) is implemented in the Python SDK only. TypeScript parity is
+planned for a future release.
+
+If you need attestation in a TypeScript/Node.js environment today, shell
+out to `pyhall scaffold` / `pyhall attest` via the Python CLI, or use the
+Python SDK in a sidecar process.
+
 ## Build
 
 ```bash
 npm run build    # tsc → dist/
-npm test         # jest (21 tests)
+npm test         # jest
 npm run typecheck  # tsc --noEmit
 ```
 
-## Package structure
+## Public API
+
+```typescript
+// Core routing
+export { makeDecision } from "./router.js";
+export type { MakeDecisionOptions } from "./router.js";
+
+// Models / types
+export type { RouteInput, RouteDecision, CandidateWorker, Escalation,
+              PreconditionsChecked, Env, DataLabel, QoSClass, TenantRisk,
+              WorkerRegistryRecord, PrivilegeEnvelope } from "./models.js";
+
+// Rules engine
+export { loadRulesFromDoc, loadRulesFromJson, routeFirstMatch,
+         ruleMatches, matchMembership } from "./rules.js";
+export type { Rule, RulesDocument } from "./rules.js";
+
+// Local registry
+export { Registry } from "./registry.js";
+
+// Registry API client (pyhall.dev)
+export { RegistryClient, RegistryRateLimitError } from "./registryClient.js";
+export type { VerifyResponse, BanEntry, RegistryClientOptions } from "./registryClient.js";
+
+// Policy gate
+export { PolicyGate } from "./policyGate.js";
+export type { PolicyGateEvaluator, PolicyGateContext,
+              PolicyGateResult, PolicyDecision } from "./policyGate.js";
+
+// Conformance
+export { validateRequiredFields, validateRequiredTelemetry,
+         defaultConformanceSpec, loadConformanceSpecFromJson } from "./conformance.js";
+
+// Telemetry builders
+export { osTaskRouted, osWorkerSelected, osPolicyGated,
+         govBlastScored, govPrivilegeEnvelopeChecked } from "./telemetry.js";
+
+// Utilities
+export { nowUtc, uuidV4, sha256Hex, ok, err, partial } from "./common.js";
+export type { ResultStatus, WorkerResultEnvelope } from "./common.js";
+
+export const VERSION = "0.3.0";
+export const WCP_VERSION = "0.1";
+```
+
+## Package Structure
 
 ```
 src/
-  models.ts       — TypeScript interfaces for RouteInput, RouteDecision, etc.
-  router.ts       — makeDecision() — the routing engine
-  rules.ts        — Rule type, loadRulesFromDoc(), routeFirstMatch()
-  registry.ts     — Registry class
-  policyGate.ts   — PolicyGate stub
-  telemetry.ts    — telemetry envelope builders
-  conformance.ts  — conformance validation
-  common.ts       — nowUtc(), sha256Hex(), ok/err/partial helpers
-  index.ts        — public API exports
+  models.ts         — TypeScript interfaces for RouteInput, RouteDecision, etc.
+  router.ts         — makeDecision() — the routing engine
+  rules.ts          — Rule type, loadRulesFromDoc(), routeFirstMatch()
+  registry.ts       — Registry class
+  registryClient.ts — RegistryClient (HTTP client for api.pyhall.dev)
+  policyGate.ts     — PolicyGate stub
+  telemetry.ts      — telemetry envelope builders
+  conformance.ts    — conformance validation
+  common.ts         — nowUtc(), sha256Hex(), ok/err/partial helpers
+  index.ts          — public API exports
 workers/examples/
-  hello-worker/   — minimal canonical worker example
+  hello-worker/     — minimal canonical worker example
 tests/
-  router.test.ts  — Jest test suite (21 tests, mirrors Python)
+  router.test.ts    — Jest test suite (mirrors Python)
 ```
 
-## Design choices vs Python
+## Design Choices vs Python
 
 | Concern | Python | TypeScript |
 |---------|--------|------------|
@@ -98,5 +218,7 @@ tests/
 | SHA-256 | `hashlib.sha256` | Node `crypto.createHash` / `SubtleCrypto` for browser |
 | Runtime validation | Pydantic | Optional Zod (peer dep) |
 | Browser compat | N/A | `src/` has no Node-only APIs except `sha256Hex` |
+| Package attestation | Full (v0.3.0) | Not yet implemented |
+| `submit_attestation()` | `RegistryClient.submit_attestation()` | Not yet implemented |
 
 See [WCP_SPEC.md](https://github.com/fafolab/wcp/blob/main/WCP_SPEC.md) for the protocol specification.

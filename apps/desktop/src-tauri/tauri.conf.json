@@ -20,7 +20,7 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self' tauri: https://tauri.localhost; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' http://localhost:8765 http://localhost:* ipc: http://ipc.localhost tauri: https://tauri.localhost; img-src 'self' data:; font-src 'self' data:"
+      "csp": "default-src 'self' tauri: https://tauri.localhost; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' http://localhost:8765 http://localhost:* https://api.pyhall.dev ipc: http://ipc.localhost tauri: https://tauri.localhost; img-src 'self' data: https://avatars.githubusercontent.com; font-src 'self' data:"
     },
     "trayIcon": {
       "id": "main-tray",

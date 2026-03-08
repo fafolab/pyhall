@@ -23,7 +23,7 @@ PyHall is the Hall.
 ## Install
 
 ```bash
-pip install pyhall-wcp
+pip install pyhall-wcp==0.3.0
 ```
 
 ## Quick Start
@@ -68,6 +68,7 @@ else:
 - **Blast radius containment** — workers declare their potential damage scope before execution. High-risk operations in production automatically require human review.
 - **Deterministic routing** — given identical inputs, routing decisions are identical. Golden snapshot testing catches regressions before they ship.
 - **Evidence receipts** — every dispatch produces a signed, hashed evidence trail: what ran, when, under what policy, with what controls verified.
+- **Package attestation** — full-package HMAC-SHA256 signing and runtime verification of worker packages before dispatch.
 
 ## WCP Compliance Levels
 
@@ -94,9 +95,180 @@ pyhall status --registry-dir enrolled/
 # Enroll a worker
 pyhall enroll my_worker/registry_record.json --registry-dir enrolled/
 
+# Scaffold a new worker package
+pyhall scaffold my_worker/
+
 # Version
 pyhall version
 ```
+
+## Package Attestation (v0.3.0)
+
+PyHall v0.3.0 adds full-package attestation for worker packages. Attestation
+binds a namespace signing key to the complete package content — code,
+dependencies, config — using HMAC-SHA256. Fail-closed: no silent fallback.
+
+### Worker Package Layout
+
+```
+worker-package/
+  code/
+    worker_logic.py       — business logic
+    bootstrap.py          — entrypoint (calls worker_logic.run())
+  requirements.lock       — pinned dependencies
+  config.schema.json      — JSON Schema for worker config
+  manifest.json           — signed manifest (written by build_manifest/write_manifest)
+```
+
+### Scaffold a Package
+
+```python
+from pathlib import Path
+from pyhall import scaffold_package
+
+scaffold_package(
+    package_root=Path("my-worker/"),
+    worker_logic_file=Path("src/my_logic.py"),  # optional — stub written if omitted
+)
+```
+
+### Sign and Build a Manifest
+
+```python
+import os
+from pathlib import Path
+from pyhall import build_manifest, write_manifest
+
+manifest = build_manifest(
+    package_root=Path("my-worker/"),
+    worker_id="org.example.my-worker.instance-1",
+    worker_species_id="wrk.example.my-worker",
+    worker_version="1.0.0",
+    signing_secret=os.environ["WCP_ATTEST_HMAC_KEY"],
+    build_source="ci",  # 'local' | 'ci' | 'agent'
+)
+write_manifest(manifest, Path("my-worker/manifest.json"))
+```
+
+The manifest contains:
+- `package_hash` — deterministic SHA-256 over all package files
+- `signature_hmac_sha256` — HMAC-SHA256 over the canonical signing payload
+- `trust_statement` — human-readable namespace-key trust claim
+- `built_at_utc` / `attested_at_utc` — ISO 8601 UTC timestamps
+- `build_source` — origin label for audit trail
+
+### Verify at Runtime
+
+```python
+from pathlib import Path
+from pyhall import PackageAttestationVerifier
+
+verifier = PackageAttestationVerifier(
+    package_root=Path("/opt/workers/my-worker"),
+    manifest_path=Path("/opt/workers/my-worker/manifest.json"),
+    worker_id="org.example.my-worker.instance-1",
+    worker_species_id="wrk.example.my-worker",
+    # secret_env defaults to "WCP_ATTEST_HMAC_KEY"
+)
+
+ok, deny_code, meta = verifier.verify()
+if not ok:
+    raise SystemExit(f"Attestation denied: {deny_code}")
+
+# meta["package_hash"]     — embed in evidence receipts
+# meta["trust_statement"]  — canonical namespace-key trust claim
+# meta["verified_at_utc"]  — UTC ISO 8601
+```
+
+### Compute the Package Hash Directly
+
+```python
+from pathlib import Path
+from pyhall import canonical_package_hash
+
+h = canonical_package_hash(Path("my-worker/"))
+print(h)  # 64-char lowercase hex SHA-256
+```
+
+Hash input is deterministic: one record per file sorted by POSIX path:
+`<relative_path>\n<size_bytes>\n<sha256_hex(content)>\n`. Excludes
+`manifest.json`, `manifest.sig`, `.git/`, `__pycache__/`, `.pyc` files.
+
+### Attestation Deny Codes
+
+All fail-closed — no silent fallback execution.
+
+| Code | Meaning |
+|------|---------|
+| `ATTEST_MANIFEST_MISSING` | `manifest.json` absent or unreadable |
+| `ATTEST_MANIFEST_ID_MISMATCH` | manifest `worker_id`/`worker_species_id` != declared |
+| `ATTEST_HASH_MISMATCH` | recomputed package hash != `manifest.package_hash` |
+| `ATTEST_SIGNATURE_MISSING` | no signature in manifest or `WCP_ATTEST_HMAC_KEY` not set |
+| `ATTEST_SIG_INVALID` | HMAC-SHA256 signature does not verify |
+
+```python
+from pyhall import (
+    ATTEST_MANIFEST_MISSING,
+    ATTEST_MANIFEST_ID_MISMATCH,
+    ATTEST_HASH_MISMATCH,
+    ATTEST_SIGNATURE_MISSING,
+    ATTEST_SIG_INVALID,
+)
+```
+
+### Signing Model
+
+HMAC-SHA256 with `WCP_ATTEST_HMAC_KEY` env var for portability and
+self-contained operation. For production, replace with Ed25519 asymmetric
+signing and store the public key in the pyhall.dev registry.
+
+## Registry Client
+
+```python
+from pyhall import RegistryClient, RegistryRateLimitError
+
+client = RegistryClient()
+
+# Verify a worker's attestation status
+r = client.verify("org.example.my-worker.instance-1")
+print(r.status)          # 'active' | 'revoked' | 'banned' | 'unknown'
+print(r.current_hash)    # 64-char hex or None
+print(r.banned)          # bool
+print(r.ai_generated)    # bool — was this package AI-assisted?
+
+# Submit a full-package attestation (requires bearer token)
+resp = client.submit_attestation(
+    worker_id="org.example.my-worker.instance-1",
+    package_hash=h,
+    label="v1.0.0 release",
+    ai_generated=True,
+    ai_service="claude",
+    ai_model="claude-sonnet-4-6",
+    ai_session_id="session-fingerprint",
+    bearer_token="your-jwt-token",
+)
+print(resp.id)        # attestation record ID
+print(resp.sha256)    # confirmed hash
+
+# Check the ban-list
+banned = client.is_hash_banned(h)
+
+# Report a bad hash (requires session token)
+client.report_hash(h, reason="Backdoored dependency", evidence_url="https://...")
+
+# Pre-populate cache before make_decision()
+client.prefetch(["org.example.worker-a", "org.example.worker-b"])
+callback = client.get_worker_hash  # use as registry_get_worker_hash in make_decision()
+```
+
+`VerifyResponse` fields: `worker_id`, `status`, `current_hash`, `banned`,
+`ban_reason`, `attested_at`, `ai_generated`, `ai_service`, `ai_model`,
+`ai_session_fingerprint`.
+
+`AttestationResponse` fields: `id`, `worker_id`, `sha256`.
+
+Override the registry URL: `RegistryClient(base_url="https://...")` or
+set `PYHALL_REGISTRY_URL` env var.
 
 ## The Five-Worker Pipeline
 
@@ -154,7 +326,10 @@ pyhall/
   telemetry.py     — mandatory telemetry event builders
   conformance.py   — conformance validation for CI
   common.py        — shared utilities (timestamps, response envelopes)
-  cli.py           — pyhall CLI (route, validate, status, enroll)
+  cli.py           — pyhall CLI (route, validate, status, enroll, scaffold)
+  attestation.py   — PackageAttestationVerifier, build_manifest, write_manifest,
+                     scaffold_package, canonical_package_hash, ATTEST_* deny codes
+  registry_client.py — RegistryClient (HTTP client for api.pyhall.dev)
 
 workers/examples/
   hello_worker/    — minimal complete worker (start here)

@@ -1,0 +1,15 @@
+interface:
+  display_name: "PyHall WCP"
+  short_description: "Govern AI workers with Worker Class Protocol — register, attest, route, and audit."
+  icon_small: assets/icon-32.png
+  icon_large: assets/icon-256.png
+  brand_color: "#0050D4"
+  default_prompt: "Help me register and govern my AI workers using pyhall WCP"
+policy:
+  allow_implicit_invocation: false
+dependencies:
+  tools:
+    - type: cli
+      name: pyhall
+      install: "npm install -g @pyhall/cli"
+      homepage: https://pyhall.dev

@@ -53,6 +53,22 @@ class BanEntry:
     review_status: Optional[str] = None
 
 
+@dataclass
+class AttestationResponse:
+    id: str
+    worker_id: str
+    sha256: str
+
+
+__all__ = [
+    'VerifyResponse',
+    'BanEntry',
+    'AttestationResponse',
+    'RegistryRateLimitError',
+    'RegistryClient',
+]
+
+
 # ── Errors ────────────────────────────────────────────────────────────────────
 
 class RegistryRateLimitError(Exception):
@@ -76,12 +92,14 @@ class RegistryClient:
         self,
         base_url: Optional[str] = None,
         session_token: Optional[str] = None,
+        bearer_token: Optional[str] = None,
         timeout: int = 10,
         cache_ttl: float = 60.0,
     ) -> None:
         env_url = os.environ.get('PYHALL_REGISTRY_URL', 'https://api.pyhall.dev')
         self.base_url = (base_url or env_url).rstrip('/')
         self.session_token = session_token
+        self.bearer_token = bearer_token
         self.timeout = timeout
         self._cache_ttl = cache_ttl
         self._cache: Dict[str, Tuple[VerifyResponse, float]] = {}
@@ -129,6 +147,63 @@ class RegistryClient:
             body['evidence_url'] = evidence_url
         self._post('/api/v1/ban-list/report', body)
 
+    def submit_attestation(
+        self,
+        worker_id: str,
+        package_hash: str,
+        label: Optional[str] = None,
+        ai_generated: bool = False,
+        ai_service: Optional[str] = None,
+        ai_model: Optional[str] = None,
+        ai_session_id: Optional[str] = None,
+        bearer_token: Optional[str] = None,
+    ) -> AttestationResponse:
+        """PUT /api/v1/workers/:id/attest — submit a full-package attestation.
+
+        Args:
+            worker_id: WCP worker instance ID to attest.
+            package_hash: 64-character lowercase hex SHA-256 of the worker package.
+            label: Human-readable label for this attestation.
+            ai_generated: True if this package was AI-assisted.
+            ai_service: AI service name (e.g. "claude").
+            ai_model: Model name (e.g. "claude-sonnet-4-6").
+            ai_session_id: Session fingerprint from the AI service.
+            bearer_token: JWT bearer token; overrides instance-level bearer_token.
+                          Falls back to session cookie if neither is set.
+
+        Returns:
+            AttestationResponse with id, worker_id, and sha256.
+
+        Raises:
+            ValueError: if package_hash is not 64 lowercase hex characters.
+            RegistryRateLimitError: if the registry returns HTTP 429.
+            urllib.error.HTTPError: for other HTTP errors (401, 403, 404, etc.).
+        """
+        import re as _re
+        if not _re.fullmatch(r'[0-9a-f]{64}', package_hash):
+            raise ValueError(
+                f'package_hash must be 64 lowercase hex characters, got: {package_hash!r}'
+            )
+
+        body: dict = {'sha256': package_hash, 'ai_generated': ai_generated}
+        if label is not None:
+            body['label'] = label
+        if ai_service is not None:
+            body['ai_service'] = ai_service
+        if ai_model is not None:
+            body['ai_model'] = ai_model
+        if ai_session_id is not None:
+            body['ai_session_id'] = ai_session_id
+
+        path = f'/api/v1/workers/{urllib.parse.quote(worker_id, safe="")}/attest'
+        effective_bearer = bearer_token or self.bearer_token
+        data = self._put(path, body, bearer_token=effective_bearer)
+        return AttestationResponse(
+            id=data.get('id', ''),
+            worker_id=data.get('worker_id', worker_id),
+            sha256=data.get('sha256', package_hash),
+        )
+
     def prefetch(self, worker_ids: list[str]) -> None:
         """Pre-populate verify cache — non-fatal on 404 or rate limit."""
         for wid in worker_ids:
@@ -151,12 +226,15 @@ class RegistryClient:
 
     # ── Internals ─────────────────────────────────────────────────────────────
 
-    def _headers(self) -> dict[str, str]:
+    def _headers(self, bearer_token: Optional[str] = None) -> dict[str, str]:
         h: dict[str, str] = {
             'Accept': 'application/json',
             'User-Agent': f'pyhall-python/{__version__}',
         }
-        if self.session_token:
+        effective_bearer = bearer_token or self.bearer_token
+        if effective_bearer:
+            h['Authorization'] = f'Bearer {effective_bearer}'
+        elif self.session_token:
             h['Cookie'] = f'pyhall_session={self.session_token}'
         return h
 
@@ -179,6 +257,24 @@ class RegistryClient:
             data=data,
             headers={**self._headers(), 'Content-Type': 'application/json'},
             method='POST',
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=self.timeout) as r:
+                return json.loads(r.read())
+        except urllib.error.HTTPError as exc:
+            if exc.code == 429:
+                raise RegistryRateLimitError(
+                    f'pyhall registry rate limit exceeded ({path})'
+                ) from exc
+            raise
+
+    def _put(self, path: str, body: dict, bearer_token: Optional[str] = None):
+        data = json.dumps(body).encode()
+        req = urllib.request.Request(
+            self.base_url + path,
+            data=data,
+            headers={**self._headers(bearer_token=bearer_token), 'Content-Type': 'application/json'},
+            method='PUT',
         )
         try:
             with urllib.request.urlopen(req, timeout=self.timeout) as r:

@@ -26,9 +26,19 @@ class PolicyGate:
     Evaluates a capability request context and returns a (decision, policy_version,
     reason) triple.
 
+    **IMPORTANT — STUB WARNING**: The base PolicyGate is an ALLOW-all stub.
+    It is safe for ``env="dev"`` only. Deploying the stub in stage or prod
+    silently bypasses all governance. Always subclass and override evaluate()
+    before running in non-dev environments.
+
+    ``is_stub = True`` signals to callers (e.g. mcp_server) that this is the
+    default permissive implementation and should be rejected in non-dev contexts.
+
     To implement real governance, subclass PolicyGate and override evaluate():
 
         class MyPolicyGate(PolicyGate):
+            is_stub = False  # signal: this is a real policy implementation
+
             def evaluate(self, context):
                 if context["env"] == "prod" and context["data_label"] == "RESTRICTED":
                     return ("REQUIRE_HUMAN", "policy.v1", "restricted_data_in_prod")
@@ -39,6 +49,9 @@ class PolicyGate:
         gate = MyPolicyGate()
         decision = make_decision(inp, rules, ..., policy_gate_eval=gate.evaluate)
     """
+
+    #: Set to False in any real (non-stub) subclass to declare governance intent.
+    is_stub: bool = True
 
     def evaluate(self, context: Dict[str, Any]) -> Tuple[str, str, str]:
         """
@@ -61,5 +74,6 @@ class PolicyGate:
                 reason:         human-readable reason string
         """
         # Default stub: allow everything. Replace with real policy logic.
+        # This stub should NOT be used outside of env="dev".
         policy_version = context.get("policy_version") or "policy.v0"
         return ("ALLOW", policy_version, "stub_allow")

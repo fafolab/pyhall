@@ -1,29 +1,39 @@
 /**
  * feed.js — Live Dispatch Feed screen (Screen 2)
  * Real-time table of dispatch events, filterable, pauseable.
- * When offline: cycles mock events to simulate live feed.
+ * Empty when Hall is offline — no mock data.
  */
 
 window.FeedScreen = (() => {
   const MAX_ROWS = 500;
-  let allEvents = [...window.MOCK_DISPATCH_EVENTS];
+  let allEvents = [];
   let paused = false;
   let pausedBuffer = [];
   let activeFilter = 'all';
   let workerFilter = '';
   let pollTimer = null;
-  let mockCycleTimer = null;
-  let mockOffset = 0;
 
   // ── Render ────────────────────────────────────────────────────────────────
 
   function getFilteredEvents() {
-    return allEvents.filter(e => {
+    return allEvents.filter(raw => {
+      const e = normalizeEvent(raw);
       if (activeFilter !== 'all' && e.outcome !== activeFilter) return false;
       if (workerFilter && !(e.worker || '').toLowerCase().includes(workerFilter.toLowerCase())
           && !e.capability.toLowerCase().includes(workerFilter.toLowerCase())) return false;
       return true;
     });
+  }
+
+  function normalizeEvent(raw) {
+    const e = { ...raw };
+    if (!e.outcome) {
+      const decision = String(e.decision || '').toLowerCase();
+      if (decision === 'allow') e.outcome = 'DISPATCHED';
+      else if (decision === 'deny') e.outcome = 'STEWARD_HOLD';
+      else e.outcome = 'REFUSED';
+    }
+    return e;
   }
 
   function renderFeed() {
@@ -33,11 +43,16 @@ window.FeedScreen = (() => {
     const filtered = getFilteredEvents().slice(0, MAX_ROWS);
 
     if (filtered.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding:24px;">No events match the current filter.</td></tr>`;
+      const offline = !window.AppState?.hallOnline;
+      const msg = offline
+        ? 'Hall Server offline — connect to see live dispatch events.'
+        : (allEvents.length === 0 ? 'No dispatch events yet. Events will appear here as workers are dispatched.' : 'No events match the current filter.');
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding:24px;">${msg}</td></tr>`;
       return;
     }
 
-    tbody.innerHTML = filtered.map(e => {
+    tbody.innerHTML = filtered.map(raw => {
+      const e = normalizeEvent(raw);
       const rowClass = e.outcome === 'DISPATCHED' ? 'dispatched' :
                        e.outcome === 'REFUSED'      ? 'refused'    : 'held';
       const outcomeEl = e.outcome === 'DISPATCHED'
@@ -45,6 +60,9 @@ window.FeedScreen = (() => {
         : e.outcome === 'REFUSED'
         ? `<span class="outcome-refused">✗ HALL REFUSED</span>`
         : `<span class="outcome-held">✗ STEWARD HOLD</span>`;
+      const blastEl = (e.blast_score === null || e.blast_score === undefined)
+        ? '<span style="color:var(--text-muted)">—</span>'
+        : `<span class="blast-tier ${blastTierClass(e.blast_score)}">${e.blast_score}</span>`;
 
       return `
         <tr class="${rowClass}" data-id="${esc(e.id)}" style="cursor:pointer;">
@@ -52,7 +70,7 @@ window.FeedScreen = (() => {
           <td>${outcomeEl}</td>
           <td class="mono" style="font-size:11px;">${esc(e.worker) || '<span style="color:var(--text-muted)">—</span>'}</td>
           <td class="mono" style="font-size:11px;">${esc(e.capability)}</td>
-          <td><span class="blast-tier ${blastTierClass(e.blast_score)}">${e.blast_score}</span></td>
+          <td>${blastEl}</td>
         </tr>
         <tr class="ticket-row" id="ticket-${esc(e.id)}" style="display:none;">
           <td colspan="5">${renderWorkTicket(e)}</td>
@@ -133,30 +151,6 @@ window.FeedScreen = (() => {
     }
   }
 
-  // ── Mock cycling (offline mode) ───────────────────────────────────────────
-
-  function startMockCycle() {
-    if (mockCycleTimer) return;
-    mockCycleTimer = setInterval(() => {
-      if (window.AppState.hallOnline) return; // let live data take over
-      const templates = window.MOCK_DISPATCH_EVENTS;
-      const template = templates[mockOffset % templates.length];
-      mockOffset++;
-      const fresh = Object.assign({}, template, {
-        id: `mock-${Date.now()}`,
-        timestamp: new Date().toISOString(),
-      });
-      addEvent(fresh);
-    }, 4000);
-  }
-
-  function stopMockCycle() {
-    if (mockCycleTimer) {
-      clearInterval(mockCycleTimer);
-      mockCycleTimer = null;
-    }
-  }
-
   // ── Live poll (when online) ───────────────────────────────────────────────
 
   async function pollFeed() {
@@ -165,7 +159,7 @@ window.FeedScreen = (() => {
       const result = await HallAPI.getDispatchFeed(window.AppState.hallUrl, 100);
       const events = result.events || [];
       if (events.length > 0 && result.source !== 'mock' && result.source !== 'offline') {
-        allEvents = events;
+        allEvents = events.map(normalizeEvent);
         if (!paused && document.getElementById('screen-feed').classList.contains('active')) {
           renderFeed();
         }
@@ -203,13 +197,7 @@ window.FeedScreen = (() => {
 
   function onShow() {
     renderFeed();
-    if (!window.AppState.hallOnline) {
-      startMockCycle();
-    }
   }
-
-  // Always start mock cycle so the feed has data when user first opens it
-  startMockCycle();
 
   // Poll live feed every 3s
   setInterval(pollFeed, 3000);

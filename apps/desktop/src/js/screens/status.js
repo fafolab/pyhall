@@ -1,15 +1,72 @@
 /**
  * status.js — Hall Status screen (Screen 1)
- * Shows: connection card, worker count, dispatch stats, active jobs, recent refusals, server info.
- * Uses mock data when Hall is offline.
+ * Shows: connection card, agent count, dispatch stats, active jobs, recent refusals, server info.
  */
 
 window.StatusScreen = (() => {
   let lastData = null;
   let lastOnline = false;
 
-  // Active jobs (cycles mock when offline, shows live when online)
-  let mockJobCycle = 0;
+  // ── Grace countdown banner ──────────────────────────────────────────────────
+  // Ticks down locally every second; server-polled value resets it each refresh.
+  let _graceSecondsRemaining = null;
+  let _graceIntervalId = null;
+
+  function _startGraceCountdown(seconds) {
+    _graceSecondsRemaining = seconds;
+    if (_graceIntervalId) clearInterval(_graceIntervalId);
+    _graceIntervalId = setInterval(() => {
+      if (_graceSecondsRemaining === null) return;
+      _graceSecondsRemaining = Math.max(0, _graceSecondsRemaining - 1);
+      _renderGraceBanner();
+    }, 1000);
+  }
+
+  function _stopGraceCountdown() {
+    if (_graceIntervalId) { clearInterval(_graceIntervalId); _graceIntervalId = null; }
+    _graceSecondsRemaining = null;
+  }
+
+  function _formatHMS(totalSeconds) {
+    const s = Math.max(0, Math.floor(totalSeconds));
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    const sec = s % 60;
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+  }
+
+  function _renderGraceBanner() {
+    const banner = document.getElementById('grace-countdown-banner');
+    if (!banner) return;
+    const standing = (lastData || {}).account_standing;
+    if (!standing || standing === 'ok') {
+      banner.style.display = 'none';
+      return;
+    }
+    banner.style.display = '';
+    if (standing === 'grace' && _graceSecondsRemaining > 0) {
+      banner.textContent = `Account verification failed. Hall goes offline in ${_formatHMS(_graceSecondsRemaining)}. Resolve your account to continue.`;
+    } else {
+      banner.textContent = 'Hall is in degraded mode. New dispatches are on hold. Resolve your account.';
+    }
+  }
+
+  function _updateGraceBanner(data) {
+    const standing = (data || {}).account_standing;
+    if (!standing || standing === 'ok') {
+      _stopGraceCountdown();
+      _renderGraceBanner();
+      return;
+    }
+    const remaining = (data || {}).grace_seconds_remaining;
+    if (standing === 'grace' && remaining != null && remaining > 0) {
+      _startGraceCountdown(remaining);
+    } else {
+      // degraded or expired grace — stop ticking, show static message
+      _stopGraceCountdown();
+      _renderGraceBanner();
+    }
+  }
 
   function renderActiveJobs(jobs) {
     const tbody = document.getElementById('active-jobs-body');
@@ -23,14 +80,23 @@ window.StatusScreen = (() => {
     const displayed = jobs.slice(0, 10);
     const extra = jobs.length - displayed.length;
 
-    tbody.innerHTML = displayed.map(j => `
-      <tr>
-        <td class="mono">${formatTimeCT(j.started_at)}</td>
-        <td class="mono">${esc(j.worker)}</td>
-        <td class="mono">${esc(j.capability)}</td>
-        <td><span class="blast-tier ${blastTierClass(j.blast_score)}">${j.blast_score}</span></td>
-      </tr>
-    `).join('');
+    tbody.innerHTML = displayed.map(j => {
+      // Support both WCP dispatch format (worker/capability/blast_score)
+      // and coord task format (owner/title/id)
+      const worker     = j.worker     || j.owner   || '—';
+      const capability = j.capability || j.title   || j.id || '—';
+      const blast      = j.blast_score;
+      const blastCell  = blast != null
+        ? `<span class="blast-tier ${blastTierClass(blast)}">${blast}</span>`
+        : `<span style="color:var(--text-dim)">—</span>`;
+      return `
+        <tr>
+          <td class="mono">${formatTimeCT(j.started_at)}</td>
+          <td class="mono">${esc(worker)}</td>
+          <td class="mono">${esc(capability)}</td>
+          <td>${blastCell}</td>
+        </tr>`;
+    }).join('');
 
     if (extra > 0) {
       tbody.innerHTML += `<tr><td colspan="4" style="text-align:center; color:var(--text-muted); font-size:11px; padding:8px;">${extra} more active jobs</td></tr>`;
@@ -42,7 +108,7 @@ window.StatusScreen = (() => {
     if (!container) return;
 
     const refusals = (events || [])
-      .filter(e => e.outcome !== 'DISPATCHED')
+      .filter(e => e.decision === 'deny' || e.outcome === 'REFUSED' || e.outcome === 'STEWARD_HOLD')
       .slice(0, 5);
 
     if (refusals.length === 0) {
@@ -66,44 +132,98 @@ window.StatusScreen = (() => {
     const latency = document.getElementById('hall-latency');
     const urlEl = document.getElementById('hall-url-display');
 
-    if (online) {
-      dot.style.color = 'var(--success)';
-      text.style.color = 'var(--success)';
-      text.textContent = 'ONLINE';
-      latency.textContent = data.latency_ms ? `latency: ${data.latency_ms}ms` : 'latency: <5ms';
-    } else {
-      dot.style.color = 'var(--error)';
-      text.style.color = 'var(--error)';
-      text.textContent = 'OFFLINE';
-      latency.textContent = 'Not reachable';
-    }
+    // Use server state machine — server reachable but locked/ready is NOT "online"
+    const state = online ? (data.state || 'locked') : 'offline';
+    const stateDisplay = {
+      offline:  { color: 'var(--error)',   label: 'OFFLINE',  latency: 'Not reachable' },
+      locked:   { color: 'var(--warning)', label: 'LOCKED',   latency: 'Log in to activate' },
+      ready:    { color: '#f59e0b',         label: 'READY',    latency: 'Press Go Online to activate' },
+      online:   { color: 'var(--success)', label: 'ONLINE',   latency: data.latency_ms ? `latency: ${data.latency_ms}ms` : 'latency: <5ms' },
+    };
+    const s = stateDisplay[state] || stateDisplay.offline;
+    dot.style.color  = s.color;
+    text.style.color = s.color;
+    text.textContent = s.label;
+    latency.textContent = s.latency;
 
     urlEl.textContent = data.url || window.AppState.hallUrl;
 
     // Stats
-    const workers = online ? (data.workers ?? 14) : 14;
-    const dispatches = online ? (data.dispatches_today ?? 847) : 847;
-    const refusals = online ? (data.refusals_today ?? 12) : 12;
+    const agents = online ? (data.agents ?? 0) : '—';
+    const dispatches = online ? (data.dispatches_today ?? 0) : '—';
+    const refusals = online ? (data.refusals_today ?? 0) : '—';
 
-    document.getElementById('stat-workers').textContent = workers;
-    document.getElementById('stat-active-jobs').textContent = `${window.MOCK_ACTIVE_JOBS.length} active jobs`;
+    document.getElementById('stat-workers').textContent = agents;
+    document.getElementById('stat-active-jobs').textContent = online ? `${data.tasks_in_progress ?? 0} active jobs` : '— active jobs';
     document.getElementById('stat-dispatches').textContent = dispatches;
     document.getElementById('stat-refusals').textContent = `${refusals} refused`;
 
     // Server info panel
-    const version = (data.version) ? `pyhall ${data.version} / WCP 0.1` : 'pyhall 0.1.0 / WCP 0.1';
+    const version = data.version ? `pyhall ${data.version} / WCP 0.1` : 'pyhall 0.3.0 / WCP 0.1';
     document.getElementById('info-version').textContent = version;
-    document.getElementById('info-uptime').textContent = formatUptime(data.uptime_seconds || 15780);
-    document.getElementById('info-rules').textContent = data.rules_loaded ?? 214;
-    document.getElementById('info-profile').textContent = data.profile ?? 'prof.dev.permissive';
+    document.getElementById('info-uptime').textContent = formatUptime(data.uptime_seconds || 0);
+
+    // Governance / WCP
+    const wcpBadge = document.getElementById('info-wcp-badge');
+    const wcpMode  = document.getElementById('info-wcp-mode');
+    if (wcpBadge) {
+      if (online && data.wcp_enabled) {
+        wcpBadge.style.color = 'var(--success)';
+        wcpBadge.textContent = '● WCP enabled';
+      } else if (online) {
+        wcpBadge.style.color = 'var(--text-dim)';
+        wcpBadge.textContent = '○ WCP disabled';
+      } else {
+        wcpBadge.style.color = 'var(--text-dim)';
+        wcpBadge.textContent = '—';
+      }
+    }
+    if (wcpMode) {
+      wcpMode.textContent = online && data.wcp_mode ? `${data.wcp_mode} mode` : '';
+    }
+
+    // Connected agents list
+    renderAgentList(online ? (data.agents_list || []) : []);
+
+    // Signed in as — read from config
+    const config = window.AppState?.config || {};
+    const signedInEl = document.getElementById('info-signed-in-user');
+    if (signedInEl) {
+      if (config.auth_token) {
+        signedInEl.innerHTML = `<span style="color:var(--success)">● authenticated</span>
+          — <a href="#" id="link-go-profile" style="color:var(--accent-hover);">view profile</a>`;
+      } else {
+        signedInEl.innerHTML = `<span style="color:var(--text-dim)">not logged in</span>
+          — <a href="#" id="link-go-profile" style="color:var(--accent-hover);">sign in</a>`;
+      }
+      document.getElementById('link-go-profile')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (window.navigateTo) window.navigateTo('profile');
+      });
+    }
+  }
+
+  function renderAgentList(agents) {
+    const el = document.getElementById('status-agent-list');
+    if (!el) return;
+    if (!agents || agents.length === 0) {
+      el.innerHTML = `<span style="color:var(--text-dim); font-size:12px;">No agents connected — agents self-register via the Hall MCP.</span>`;
+      return;
+    }
+    el.innerHTML = agents.map(a => {
+      const name = esc(a.name || a.id || '?');
+      const type = esc(a.type || 'agent');
+      const since = a.registered_at ? formatTimeCT(a.registered_at) : '';
+      return `<span class="agent-badge" title="${type}${since ? ' · since ' + since : ''}">${name}</span>`;
+    }).join('');
   }
 
   async function refresh() {
     const url = window.AppState.hallUrl;
     const online = window.AppState.hallOnline;
 
-    // Active jobs
-    let jobs = window.MOCK_ACTIVE_JOBS;
+    // Active jobs — real data only, empty state when none
+    let jobs = [];
     if (online) {
       try {
         const result = await HallAPI.getActiveDispatches(url);
@@ -112,16 +232,26 @@ window.StatusScreen = (() => {
     }
     renderActiveJobs(jobs);
 
-    // Recent refusals — use mock data until connected
-    renderRecentRefusals(online ? null : window.MOCK_DISPATCH_EVENTS);
+    // Recent refusals — real data from dispatch feed, empty state when none
+    let refusalEvents = [];
+    if (online) {
+      try {
+        const result = await HallAPI.getDispatchFeed(url, 50);
+        if (result.events) refusalEvents = result.events;
+      } catch (e) {}
+    }
+    renderRecentRefusals(refusalEvents);
 
     // Hall info (uses AppState which was updated by pollHall)
     renderHallInfo(lastData || { url }, online);
+    _updateGraceBanner(online ? (lastData || {}) : {});
   }
 
   function onStatusUpdate(data, online) {
     lastData = data;
     lastOnline = online;
+    updateLogBtn(online);
+    _updateGraceBanner(online ? data : {});
     // Only repaint if status screen is active
     if (document.getElementById('screen-status').classList.contains('active')) {
       renderHallInfo(data, online);
@@ -131,16 +261,50 @@ window.StatusScreen = (() => {
   // Wire refresh button
   document.getElementById('btn-refresh-status')?.addEventListener('click', refresh);
 
-  // Schedule active jobs refresh (every 3s when visible)
+  // ── Open Log File (H10) ────────────────────────────────────────────────────
+  // Show button only when Hall Server is online; clicking opens the log file.
+
+  function updateLogBtn(online) {
+    const btn = document.getElementById('btn-open-log-from-status');
+    if (btn) btn.style.display = online ? '' : 'none';
+  }
+
+  document.getElementById('btn-open-log-from-status')?.addEventListener('click', async () => {
+    const url = window.AppState?.hallUrl || 'http://localhost:8765';
+    const pathEl = document.getElementById('status-log-path-display');
+    try {
+      const res = await fetch(`${url}/api/health`);
+      const data = await res.json();
+      const logPath = data.log_path || '';
+      if (pathEl) {
+        pathEl.textContent = logPath || '—';
+        pathEl.style.display = logPath ? '' : 'none';
+      }
+      if (logPath) {
+        if (window.__TAURI__?.opener?.openPath) {
+          await window.__TAURI__.opener.openPath(logPath);
+        } else {
+          // Fallback: copy path to clipboard
+          navigator.clipboard?.writeText(logPath);
+          if (pathEl) pathEl.textContent = `copied: ${logPath}`;
+        }
+      }
+    } catch (e) {
+      if (pathEl) {
+        pathEl.textContent = `Error: ${e}`;
+        pathEl.style.display = '';
+      }
+    }
+  });
+
+  // Schedule active jobs refresh (every 5s when visible)
   setInterval(() => {
     if (document.getElementById('screen-status').classList.contains('active')) {
-      const jobs = window.MOCK_ACTIVE_JOBS.slice(mockJobCycle % 3);
-      mockJobCycle++;
-      renderActiveJobs(jobs);
+      refresh();
     }
-  }, 3000);
+  }, 5000);
 
-  return { refresh, onStatusUpdate };
+  return { refresh, onStatusUpdate, updateLogBtn, renderGraceBanner: _renderGraceBanner };
 })();
 
 // ─── Helpers ───────────────────────────────────────────────────────────────

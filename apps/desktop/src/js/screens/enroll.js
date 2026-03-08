@@ -177,10 +177,18 @@ window.EnrollScreen = (() => {
 
   document.getElementById('link-cli-wizard')?.addEventListener('click', (e) => {
     e.preventDefault();
-    // Would open terminal with `hall scaffold` — for now show info
+    const cmd = 'hall scaffold';
     const msg = document.createElement('div');
-    msg.style.cssText = 'position:fixed; bottom:40px; right:20px; background:var(--bg-surface); border:1px solid var(--accent-blue); border-radius:var(--radius); padding:12px 16px; font-size:12px; color:var(--text-primary); z-index:100;';
-    msg.textContent = 'Run: hall scaffold — in your terminal to generate a registry_record.json';
+    msg.style.cssText = 'position:fixed; bottom:40px; right:20px; background:var(--bg-surface); border:1px solid var(--accent-blue); border-radius:var(--radius); padding:12px 16px; font-size:12px; color:var(--text-primary); z-index:100; display:flex; align-items:center; gap:10px;';
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(cmd).then(() => {
+        msg.innerHTML = `<span style="color:var(--success)">✓ Copied!</span> <code style="background:var(--bg-border);padding:2px 6px;border-radius:4px;">${cmd}</code> — paste in your terminal`;
+      }).catch(() => {
+        msg.textContent = `Run in your terminal: ${cmd}`;
+      });
+    } else {
+      msg.textContent = `Run in your terminal: ${cmd}`;
+    }
     document.body.appendChild(msg);
     setTimeout(() => msg.remove(), 4000);
   });

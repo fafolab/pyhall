@@ -9,9 +9,9 @@ import { catalog } from '../catalog.js';
 
 // Package version injected at build time (from package.json)
 // We read it directly to avoid circular imports.
-const CLI_VERSION = '0.2.0';
+const CLI_VERSION = '0.3.0';
 // @pyhall/core version — kept in sync
-const CORE_VERSION = '0.2.0';
+const CORE_VERSION = '0.3.0';
 
 export function runVersion(): void {
   const wcpSpec = catalog._meta.wcp_spec;

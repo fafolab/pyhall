@@ -1,11 +1,11 @@
 /**
  * alerts.js — Alerts screen (Screen 4)
  * Shows active + acknowledged alerts. Severity filters.
- * Uses mock alerts when offline.
+ * Empty when Hall is offline — no mock data.
  */
 
 window.AlertsScreen = (() => {
-  let activeAlerts = [...window.MOCK_ALERTS];
+  let activeAlerts = [];
   let ackedAlerts = [];
   let severityFilter = 'all';
 
@@ -155,11 +155,6 @@ window.AlertsScreen = (() => {
       } catch (e) {}
     }
 
-    // Keep mock alerts if nothing loaded
-    if (activeAlerts.length === 0 && ackedAlerts.length === 0) {
-      activeAlerts = [...window.MOCK_ALERTS];
-    }
-
     render();
   }
 
@@ -174,7 +169,7 @@ window.AlertsScreen = (() => {
     });
   });
 
-  // Initial render with mock data
+  // Initial render — empty until Hall comes online
   render();
 
   return { refresh };

@@ -29,6 +29,10 @@ jobs:
         working-directory: sdk/typescript
         run: npm ci && npm run build
 
+      - name: Run tests
+        working-directory: sdk/typescript
+        run: npm test
+
       - name: Publish @pyhall/core
         working-directory: sdk/typescript
         run: npm publish --access public
@@ -58,6 +62,10 @@ jobs:
       - name: Install CLI deps
         working-directory: apps/cli/typescript
         run: npm ci && npm run build
+
+      - name: Run tests
+        working-directory: apps/cli/typescript
+        run: npm test
 
       - name: Publish @pyhall/cli
         working-directory: apps/cli/typescript
