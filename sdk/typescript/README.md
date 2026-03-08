@@ -124,16 +124,38 @@ const decision = makeDecision({
 `ban_reason`, `attested_at`, `ai_generated`, `ai_service`, `ai_model`,
 `ai_session_fingerprint`.
 
-## Package Attestation — Python only in v0.3.0
+## Package Attestation
 
-Full-package attestation (`PackageAttestationVerifier`, `build_manifest`,
-`write_manifest`, `scaffold_package`, `canonical_package_hash`, `ATTEST_*`
-deny codes) is implemented in the Python SDK only. TypeScript parity is
-planned for a future release.
+Full-package attestation is fully implemented in `@pyhall/core` v0.3.0:
 
-If you need attestation in a TypeScript/Node.js environment today, shell
-out to `pyhall scaffold` / `pyhall attest` via the Python CLI, or use the
-Python SDK in a sidecar process.
+```typescript
+import {
+  canonicalPackageHash, buildManifest, writeManifest, scaffoldPackage,
+  PackageAttestationVerifier,
+  ATTEST_MANIFEST_MISSING, ATTEST_HASH_MISMATCH, ATTEST_SIG_INVALID,
+  ATTEST_SIGNATURE_MISSING, ATTEST_MANIFEST_ID_MISMATCH,
+} from '@pyhall/core';
+
+// Build + sign a manifest at CI/deploy time
+const manifest = buildManifest({
+  packageRoot: '/opt/workers/my-worker',
+  workerId: 'org.example.my-worker.i-1',
+  workerSpeciesId: 'wrk.example.my-worker',
+  workerVersion: '1.0.0',
+  signingSecret: process.env.WCP_ATTEST_HMAC_KEY!,
+});
+writeManifest(manifest, '/opt/workers/my-worker/manifest.json');
+
+// Verify at runtime (fail-closed)
+const verifier = new PackageAttestationVerifier({
+  packageRoot: '/opt/workers/my-worker',
+  manifestPath: '/opt/workers/my-worker/manifest.json',
+  workerId: 'org.example.my-worker.i-1',
+  workerSpeciesId: 'wrk.example.my-worker',
+});
+const { ok, denyCode, meta } = verifier.verify();
+if (!ok) throw new Error(`Attestation denied: ${denyCode}`);
+```
 
 ## Build
 

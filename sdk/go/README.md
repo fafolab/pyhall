@@ -1,6 +1,6 @@
 # pyhall-go — WCP Worker Class Protocol (Go)
 
-**Status:** v0.1 scaffold — routing core and registry client implemented; attestation not yet ported.
+**Status:** v0.3.0 — routing, registry client, and full package attestation implemented.
 **Spec:** [WCP_SPEC.md](https://github.com/fafolab/wcp/blob/main/WCP_SPEC.md)
 **Production implementation:** [pip install pyhall-wcp](https://github.com/fafolab/pyhall)
 
@@ -144,22 +144,34 @@ Override the registry URL via `RegistryClientOptions.BaseURL` or set the
 
 ---
 
-## Package Attestation — Python only in v0.3.0
+## Package Attestation
 
-Full-package attestation (`PackageAttestationVerifier`, `build_manifest`,
-`write_manifest`, `scaffold_package`, `canonical_package_hash`, `ATTEST_*`
-deny codes, `RegistryClient.submit_attestation()`) is implemented in the
-Python SDK only. Go parity is planned.
+Full-package attestation is fully implemented in v0.3.0:
 
-If you need attestation in a Go deployment today, use the Python CLI as a
-build step:
+```go
+import "github.com/fafolab/pyhall/sdk/go/wcp"
 
-```bash
-pip install pyhall-wcp==0.3.0
-pyhall scaffold my-worker/
-# ... populate code/worker_logic.py ...
-export WCP_ATTEST_HMAC_KEY=your-key
-pyhall attest my-worker/ --worker-id org.example.my-worker --species wrk.example.my-worker --version 1.0.0
+// Build + sign a manifest at CI/deploy time
+manifest, err := wcp.BuildManifest(wcp.BuildManifestOptions{
+    PackageRoot:     "/opt/workers/my-worker",
+    WorkerID:        "org.example.my-worker.i-1",
+    WorkerSpeciesID: "wrk.example.my-worker",
+    WorkerVersion:   "1.0.0",
+    SigningSecret:   os.Getenv("WCP_ATTEST_HMAC_KEY"),
+})
+wcp.WriteManifest(manifest, "/opt/workers/my-worker/manifest.json")
+
+// Verify at runtime (fail-closed)
+v := &wcp.PackageAttestationVerifier{
+    PackageRoot:     "/opt/workers/my-worker",
+    ManifestPath:    "/opt/workers/my-worker/manifest.json",
+    WorkerID:        "org.example.my-worker.i-1",
+    WorkerSpeciesID: "wrk.example.my-worker",
+}
+result := v.Verify()
+if !result.OK {
+    log.Fatalf("Attestation denied: %s", result.DenyCode)
+}
 ```
 
 ---
