@@ -5,7 +5,7 @@ import (
 	"os"
 	"regexp"
 
-	"github.com/fafolab/pyhall/sdk/go/wcp"
+	"github.com/pyhall/pyhall-go/wcp"
 	"github.com/spf13/cobra"
 )
 

@@ -243,4 +243,4 @@ tests/
 | Package attestation | Full (v0.3.0) | Not yet implemented |
 | `submit_attestation()` | `RegistryClient.submit_attestation()` | Not yet implemented |
 
-See [WCP_SPEC.md](https://github.com/fafolab/wcp/blob/main/WCP_SPEC.md) for the protocol specification.
+See [WCP_SPEC.md](https://github.com/workerclassprotocol/wcp/blob/main/WCP_SPEC.md) for the protocol specification.

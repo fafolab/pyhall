@@ -1,4 +1,4 @@
-module github.com/fafolab/pyhall/sdk/go
+module github.com/pyhall/pyhall-go
 
 go 1.22
 

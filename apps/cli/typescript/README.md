@@ -99,7 +99,7 @@ PYHALL_REGISTRY_URL=https://api.pyhall.dev   # Default registry URL (override fo
 
 - [pyhall.dev](https://pyhall.dev) — Documentation and registry
 - [WCP Spec](https://workerclassprotocol.dev) — Protocol specification
-- [GitHub](https://github.com/fafolab/pyhall) — Source code
+- [GitHub](https://github.com/pyhall/pyhall-typescript) — Source code
 
 ## License
 

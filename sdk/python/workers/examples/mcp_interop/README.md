@@ -336,4 +336,4 @@ They solve different problems. This example shows they compose cleanly:
 - The audit trail (correlation IDs, telemetry, evidence receipts) flows through
   every layer.
 
-For more on WCP, see the [WCP Specification](https://github.com/fafolab/wcp/blob/main/WCP_SPEC.md).
+For more on WCP, see the [WCP Specification](https://github.com/workerclassprotocol/wcp/blob/main/WCP_SPEC.md).

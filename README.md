@@ -1,6 +1,6 @@
 # PyHall
 
-**PyHall** is the reference implementation of the [Worker Class Protocol (WCP)](https://github.com/fafolab/wcp) — an open standard for governing AI agent worker dispatch.
+**PyHall** is the reference implementation of the [Worker Class Protocol (WCP)](https://github.com/workerclassprotocol/wcp) — an open standard for governing AI agent worker dispatch.
 
 WCP defines how AI systems route capability requests to workers: which worker handles which task, under what controls, with a full audit trail. PyHall implements the complete routing engine, registry, policy gate, attestation layer, MCP interop, and telemetry.
 
@@ -14,7 +14,7 @@ WCP defines how AI systems route capability requests to workers: which worker ha
 |----------|---------|---------|--------|
 | Python | `pip install pyhall-wcp` | 0.3.0 | Reference implementation — production ready |
 | TypeScript | `npm install @pyhall/core` | 0.3.0 | Full port |
-| Go | `go get github.com/fafolab/pyhall/sdk/go` | 0.3.0 | Scaffold / interfaces |
+| Go | `go get github.com/pyhall/pyhall-go@latest` | 0.3.0 | Scaffold / interfaces |
 
 ---
 
@@ -221,7 +221,7 @@ skills/pyhall-wcp/       — Claude Code skill
 
 ## Spec
 
-The protocol specification lives at [workerclassprotocol.dev](https://workerclassprotocol.dev) and [github.com/fafolab/wcp](https://github.com/fafolab/wcp).
+The protocol specification lives at [workerclassprotocol.dev](https://workerclassprotocol.dev) and [github.com/workerclassprotocol/wcp](https://github.com/workerclassprotocol/wcp).
 
 ---
 

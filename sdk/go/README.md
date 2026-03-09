@@ -1,14 +1,14 @@
 # pyhall-go — WCP Worker Class Protocol (Go)
 
 **Status:** v0.3.0 — routing, registry client, and full package attestation implemented.
-**Spec:** [WCP_SPEC.md](https://github.com/fafolab/wcp/blob/main/WCP_SPEC.md)
-**Production implementation:** [pip install pyhall-wcp](https://github.com/fafolab/pyhall)
+**Spec:** [WCP_SPEC.md](https://github.com/workerclassprotocol/wcp/blob/main/WCP_SPEC.md)
+**Production implementation:** [pip install pyhall-wcp](https://github.com/pyhall/pyhall-python)
 
 ---
 
 ## What this is
 
-This is the Go implementation of [WCP — Worker Class Protocol](https://github.com/fafolab/wcp/blob/main/WCP_SPEC.md), an open standard for governing worker dispatch in AI agent systems.
+This is the Go implementation of [WCP — Worker Class Protocol](https://github.com/workerclassprotocol/wcp/blob/main/WCP_SPEC.md), an open standard for governing worker dispatch in AI agent systems.
 
 The Python reference implementation (`pyhall`) is the production-ready version. This Go package mirrors its type system and routing interfaces so Go services can participate in a WCP-governed worker fleet.
 
@@ -26,7 +26,7 @@ This Go package is for teams that need to write WCP workers or consume WCP routi
 ## Module
 
 ```
-github.com/fafolab/pyhall/sdk/go
+github.com/pyhall/pyhall-go
 ```
 
 Go 1.22+. Zero external runtime dependencies — stdlib only.
@@ -56,7 +56,7 @@ workers/examples/hello_worker/
 ```go
 import (
     "fmt"
-    "github.com/fafolab/pyhall/sdk/go/wcp"
+    "github.com/pyhall/pyhall-go/wcp"
 )
 
 func main() {
@@ -102,7 +102,7 @@ func main() {
 Go has parity with Python and TypeScript for the `api.pyhall.dev` HTTP API.
 
 ```go
-import "github.com/fafolab/pyhall/sdk/go/wcp"
+import "github.com/pyhall/pyhall-go/wcp"
 
 client := wcp.NewRegistryClient(wcp.RegistryClientOptions{
     // BaseURL defaults to "https://api.pyhall.dev"
@@ -149,7 +149,7 @@ Override the registry URL via `RegistryClientOptions.BaseURL` or set the
 Full-package attestation is fully implemented in v0.3.0:
 
 ```go
-import "github.com/fafolab/pyhall/sdk/go/wcp"
+import "github.com/pyhall/pyhall-go/wcp"
 
 // Build + sign a manifest at CI/deploy time
 manifest, err := wcp.BuildManifest(wcp.BuildManifestOptions{
@@ -214,7 +214,7 @@ Transport (MCP, HTTP, A2A, subprocess)
 Worker execution
 ```
 
-Read the full spec: [WCP_SPEC.md](https://github.com/fafolab/wcp/blob/main/WCP_SPEC.md)
+Read the full spec: [WCP_SPEC.md](https://github.com/workerclassprotocol/wcp/blob/main/WCP_SPEC.md)
 
 ---
 

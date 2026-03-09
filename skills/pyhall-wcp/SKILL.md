@@ -11,7 +11,7 @@ metadata:
   author: fafolab
   version: "0.3.0"
   homepage: https://pyhall.dev
-  repository: https://github.com/fafolab/pyhall
+  repository: https://github.com/pyhall
   registry: https://api.pyhall.dev
 ---
 

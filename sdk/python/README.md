@@ -337,7 +337,7 @@ workers/examples/
 tests/
   test_router.py   — WCP compliance test suite
 
-WCP spec           — see https://github.com/fafolab/wcp
+WCP spec           — see https://github.com/workerclassprotocol/wcp
 ```
 
 ## License

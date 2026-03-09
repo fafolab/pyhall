@@ -14,7 +14,7 @@ WCP is an open concept — fork it, implement it, improve it.
 ## Getting Started
 
 ```bash
-git clone https://github.com/fafolab/pyhall
+git clone https://github.com/pyhall/pyhall-python
 cd pyhall/sdk/python
 pip install -e ".[dev]"
 pytest tests/
@@ -68,7 +68,7 @@ Changes to `router.py` must maintain WCP compliance:
 
 ## WCP Spec Changes
 
-The WCP spec is versioned separately from PyHall — see [github.com/fafolab/wcp](https://github.com/fafolab/wcp).
+The WCP spec is versioned separately from PyHall — see [github.com/workerclassprotocol/wcp](https://github.com/workerclassprotocol/wcp).
 
 To propose a spec change:
 1. Open an issue describing the problem and proposed solution

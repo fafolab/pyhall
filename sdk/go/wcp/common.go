@@ -5,7 +5,7 @@
 //
 //	pip install pyhall-wcp
 //
-// WCP Spec: https://github.com/fafolab/wcp/blob/main/WCP_SPEC.md
+// WCP Spec: https://github.com/workerclassprotocol/wcp/blob/main/WCP_SPEC.md
 package wcp
 
 import (
