@@ -218,6 +218,80 @@ describe("TestDeterministicRouting", () => {
     expect(devDec.matched_rule_id).toBe("rr_hello_dev_001");
     expect(prodDec.matched_rule_id).toBe("rr_hello_prod_001");
   });
+
+  test("artifact_hash is stable for equivalent nested request objects", () => {
+    const rules = loadRulesFromDoc(HELLO_RULES_DOC);
+    const registry = registryWithWorker();
+    registry.addControlsPresent(["ctrl.obs.audit-log-append-only"]);
+
+    const fixedCorr = corr();
+    const base: Omit<RouteInput, "request"> = {
+      capability_id: "cap.hello.greet",
+      env: "dev",
+      data_label: "PUBLIC",
+      tenant_risk: "low",
+      qos_class: "P2",
+      tenant_id: "test-tenant",
+      correlation_id: fixedCorr,
+    };
+
+    const decA = makeDecision({
+      inp: { ...base, request: { meta: { b: 2, a: 1 }, text: "hello" } },
+      rules,
+      registryControlsPresent: registry.controlsPresent(),
+      registryWorkerAvailable: (id) => registry.workerAvailable(id),
+    });
+
+    const decB = makeDecision({
+      inp: { ...base, request: { text: "hello", meta: { a: 1, b: 2 } } },
+      rules,
+      registryControlsPresent: registry.controlsPresent(),
+      registryWorkerAvailable: (id) => registry.workerAvailable(id),
+    });
+
+    expect(decA.denied).toBe(false);
+    expect(decB.denied).toBe(false);
+    expect(decA.artifact_hash).toBeTruthy();
+    expect(decB.artifact_hash).toBeTruthy();
+    expect(decA.artifact_hash).toBe(decB.artifact_hash);
+  });
+
+  test("artifact_hash changes when nested request payload changes", () => {
+    const rules = loadRulesFromDoc(HELLO_RULES_DOC);
+    const registry = registryWithWorker();
+    registry.addControlsPresent(["ctrl.obs.audit-log-append-only"]);
+
+    const fixedCorr = corr();
+    const base: Omit<RouteInput, "request"> = {
+      capability_id: "cap.hello.greet",
+      env: "dev",
+      data_label: "PUBLIC",
+      tenant_risk: "low",
+      qos_class: "P2",
+      tenant_id: "test-tenant",
+      correlation_id: fixedCorr,
+    };
+
+    const decA = makeDecision({
+      inp: { ...base, request: { meta: { doc_id: "d-1" }, text: "hello" } },
+      rules,
+      registryControlsPresent: registry.controlsPresent(),
+      registryWorkerAvailable: (id) => registry.workerAvailable(id),
+    });
+
+    const decB = makeDecision({
+      inp: { ...base, request: { meta: { doc_id: "d-2" }, text: "hello" } },
+      rules,
+      registryControlsPresent: registry.controlsPresent(),
+      registryWorkerAvailable: (id) => registry.workerAvailable(id),
+    });
+
+    expect(decA.denied).toBe(false);
+    expect(decB.denied).toBe(false);
+    expect(decA.artifact_hash).toBeTruthy();
+    expect(decB.artifact_hash).toBeTruthy();
+    expect(decA.artifact_hash).not.toBe(decB.artifact_hash);
+  });
 });
 
 // ---------------------------------------------------------------------------

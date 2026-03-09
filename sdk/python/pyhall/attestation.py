@@ -80,18 +80,6 @@ def _sha256_hex(b: bytes) -> str:
     return hashlib.sha256(b).hexdigest()
 
 
-def _namespace_from_species(worker_species_id: str) -> str:
-    """Extract namespace prefix from a species ID (e.g. 'wrk.doc.summarizer' → 'wrk').
-
-    .. deprecated::
-        Use :func:`_tenant_namespace_from_worker_id` for trust statement generation.
-        This function produces semantically incorrect output for attestation namespace
-        attribution — it returns the language protocol prefix ('wrk'), not the
-        tenant signer namespace ('x.*' / 'org.*').
-    """
-    return worker_species_id.split(".")[0] if "." in worker_species_id else worker_species_id
-
-
 def _tenant_namespace_from_worker_id(worker_id: str) -> str:
     """Extract tenant signer namespace from a worker_id.
 

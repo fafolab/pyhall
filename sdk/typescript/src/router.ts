@@ -45,7 +45,7 @@ import {
   govPrivilegeEnvelopeChecked,
   osTaskDenied,
 } from "./telemetry.js";
-import { uuidV4, nowUtc } from "./common.js";
+import { uuidV4, nowUtc, sha256Hex } from "./common.js";
 import {
   validateRequiredFields,
   validateRequiredTelemetry,
@@ -368,6 +368,24 @@ const DEFAULT_ESCALATION: Required<Escalation> = {
   human_required_if: [],
   rationale: null,
 };
+
+function canonicalizeForHash(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map((v) => canonicalizeForHash(v));
+  }
+  if (value !== null && typeof value === "object") {
+    const proto = Object.getPrototypeOf(value);
+    if (proto === Object.prototype || proto === null) {
+      const obj = value as Record<string, unknown>;
+      const out: Record<string, unknown> = {};
+      for (const k of Object.keys(obj).sort()) {
+        out[k] = canonicalizeForHash(obj[k]);
+      }
+      return out;
+    }
+  }
+  return value;
+}
 
 function buildPreconditions(raw: Record<string, unknown>): PreconditionsChecked {
   const result: PreconditionsChecked = {};
@@ -1200,6 +1218,8 @@ export function makeDecision(opts: MakeDecisionOptions): RouteDecision {
     dry_run: inp.dry_run ?? false,
     worker_attestation_checked: workerAttestationChecked,
     worker_attestation_valid: workerAttestationValid,
+    // Canonical recursive key sort, mirroring Python json.dumps(sort_keys=True).
+    artifact_hash: sha256Hex(JSON.stringify(canonicalizeForHash(inp))),
     telemetry_envelopes: telemetry,
   };
 

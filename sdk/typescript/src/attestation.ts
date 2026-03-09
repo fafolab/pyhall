@@ -102,13 +102,6 @@ function _sha256Hex(b: Buffer): string {
   return crypto.createHash("sha256").update(b).digest("hex");
 }
 
-function _namespaceFromSpecies(workerSpeciesId: string): string {
-  // @deprecated — use _tenantNamespaceFromWorkerId for trust statement generation.
-  // This returns the language protocol prefix ('wrk'), not the tenant signer namespace.
-  const dot = workerSpeciesId.indexOf(".");
-  return dot !== -1 ? workerSpeciesId.slice(0, dot) : workerSpeciesId;
-}
-
 /**
  * Extract tenant signer namespace from a workerId.
  *

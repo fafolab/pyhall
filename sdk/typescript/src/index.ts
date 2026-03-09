@@ -113,5 +113,5 @@ export { nowUtc, uuidV4, sha256Hex, ok, err, partial } from "./common.js";
 export type { ResultStatus, WorkerResultEnvelope } from "./common.js";
 
 // Package version
-export const VERSION = "0.1.0";
+export const VERSION = "0.3.0";
 export const WCP_VERSION = "0.1";

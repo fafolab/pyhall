@@ -187,6 +187,9 @@ export interface RouteDecision {
   /** true = hash matched. false = TAMPERED. null/undefined = attestation not checked. */
   worker_attestation_valid?: boolean | null;
 
+  /** SHA-256 artifact hash of the worker registry record at time of decision. Null if worker not enrolled. */
+  artifact_hash?: string | null;
+
   // Mandatory telemetry (WCP section 5.4)
   telemetry_envelopes: Record<string, unknown>[];
 }

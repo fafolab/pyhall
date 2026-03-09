@@ -87,15 +87,6 @@ func sha256Hex(b []byte) string {
 	return hex.EncodeToString(sum[:])
 }
 
-func namespaceFromSpecies(workerSpeciesID string) string {
-	// Deprecated: use tenantNamespaceFromWorkerID for trust statement generation.
-	// This returns the language protocol prefix ("wrk"), not the tenant signer namespace.
-	if idx := strings.Index(workerSpeciesID, "."); idx >= 0 {
-		return workerSpeciesID[:idx]
-	}
-	return workerSpeciesID
-}
-
 // tenantNamespaceFromWorkerID extracts the tenant signer namespace from a workerID.
 //
 // Trust attribution must be bound to the tenant key holder namespace, not to the
