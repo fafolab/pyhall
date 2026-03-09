@@ -103,8 +103,36 @@ function _sha256Hex(b: Buffer): string {
 }
 
 function _namespaceFromSpecies(workerSpeciesId: string): string {
+  // @deprecated — use _tenantNamespaceFromWorkerId for trust statement generation.
+  // This returns the language protocol prefix ('wrk'), not the tenant signer namespace.
   const dot = workerSpeciesId.indexOf(".");
   return dot !== -1 ? workerSpeciesId.slice(0, dot) : workerSpeciesId;
+}
+
+/**
+ * Extract tenant signer namespace from a workerId.
+ *
+ * Trust attribution MUST be bound to the tenant key holder namespace, not to the
+ * language protocol namespace prefix (`wrk`).
+ *
+ * Rules:
+ * - `x.<name>.*`   → `x.<name>`
+ * - `org.<name>.*` → `org.<name>`
+ * - Anything else  → throws (fail-closed; no silent fallback)
+ */
+function _tenantNamespaceFromWorkerId(workerId: string): string {
+  const parts = workerId.split(".");
+  if (workerId.startsWith("x.") && parts.length >= 2) {
+    return `x.${parts[1]}`;
+  }
+  if (workerId.startsWith("org.") && parts.length >= 2) {
+    return `org.${parts[1]}`;
+  }
+  throw new Error(
+    `attestation: cannot derive tenant namespace from workerId ${JSON.stringify(workerId)}. ` +
+    "workerId must begin with 'x.<name>.' or 'org.<name>.' (tenant namespace). " +
+    "Language protocol prefixes ('wrk', 'cap', etc.) are not valid signer namespaces."
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -240,7 +268,7 @@ export function buildManifest(opts: BuildManifestOptions): Record<string, unknow
   } = opts;
 
   const now = _utcNowIso();
-  const ns = _namespaceFromSpecies(workerSpeciesId);
+  const ns = _tenantNamespaceFromWorkerId(workerId);
   const pkgHash = canonicalPackageHash(packageRoot);
 
   const manifest: Record<string, unknown> = {
@@ -490,7 +518,7 @@ export class PackageAttestationVerifier {
     }
 
     // All checks passed
-    const ns = _namespaceFromSpecies(this.workerSpeciesId);
+    const ns = _tenantNamespaceFromWorkerId(this.workerId);
     const verifiedAt = _utcNowIso();
     const attestedAt = (manifest["attested_at_utc"] as string) ?? "unknown";
     return {

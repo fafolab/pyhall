@@ -105,7 +105,7 @@ ok, deny_code, meta = verifier.verify()
 if not ok:
     raise SystemExit(f"Attestation denied: {deny_code}")
 
-print(meta["trust_statement"])  # "Package attested by namespace wrk at <UTC>; package hash sha256:<hash>."
+print(meta["trust_statement"])  # "Package attested by namespace org.example at <UTC>; package hash sha256:<hash>."
 ```
 
 **Deny codes:**

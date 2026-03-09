@@ -173,7 +173,7 @@ func TestVerify_HappyPath(t *testing.T) {
 		t.Errorf("signature_hmac_sha256: expected 64-char hex, got %v", manifest["signature_hmac_sha256"])
 	}
 	ts, ok := manifest["trust_statement"].(string)
-	if !ok || !strings.Contains(ts, "namespace wrk") {
+	if !ok || !strings.Contains(ts, "namespace org.fafolab") {
 		t.Errorf("trust_statement unexpected: %v", ts)
 	}
 

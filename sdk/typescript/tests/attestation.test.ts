@@ -215,7 +215,7 @@ describe("buildManifest", () => {
     expect(m["built_at_utc"]).toBeTruthy();
     expect(m["attested_at_utc"]).toBeTruthy();
     expect(m["build_source"]).toBe("local");
-    expect(m["trust_statement"]).toContain("namespace wrk");
+    expect(m["trust_statement"]).toContain("namespace org.example");
     expect(m["signature_hmac_sha256"]).toBeTruthy();
   });
 
@@ -239,7 +239,7 @@ describe("buildManifest", () => {
       workerVersion: VERSION,
       signingSecret: SECRET,
     });
-    expect(m["trust_statement"]).toContain("Package attested by namespace wrk");
+    expect(m["trust_statement"]).toContain("Package attested by namespace org.example");
     expect(m["trust_statement"]).toContain("sha256:");
   });
 
@@ -501,7 +501,7 @@ describe("PackageAttestationVerifier", () => {
     expect(result.denyCode).toBeNull();
     expect(result.meta["package_hash"]).toHaveLength(64);
     expect(result.meta["manifest_schema"]).toBe("awp.v1");
-    expect(result.meta["trust_statement"]).toContain("namespace wrk");
+    expect(result.meta["trust_statement"]).toContain("namespace org.example");
     expect(result.meta["trust_statement"]).toContain("sha256:");
     expect(result.meta["verified_at_utc"]).toBeTruthy();
     expect(result.meta["attested_at_utc"]).toBeTruthy();

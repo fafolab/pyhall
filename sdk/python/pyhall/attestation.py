@@ -81,8 +81,43 @@ def _sha256_hex(b: bytes) -> str:
 
 
 def _namespace_from_species(worker_species_id: str) -> str:
-    """Extract namespace prefix from a species ID (e.g. 'wrk.doc.summarizer' → 'wrk')."""
+    """Extract namespace prefix from a species ID (e.g. 'wrk.doc.summarizer' → 'wrk').
+
+    .. deprecated::
+        Use :func:`_tenant_namespace_from_worker_id` for trust statement generation.
+        This function produces semantically incorrect output for attestation namespace
+        attribution — it returns the language protocol prefix ('wrk'), not the
+        tenant signer namespace ('x.*' / 'org.*').
+    """
     return worker_species_id.split(".")[0] if "." in worker_species_id else worker_species_id
+
+
+def _tenant_namespace_from_worker_id(worker_id: str) -> str:
+    """Extract tenant signer namespace from a worker_id.
+
+    Trust attribution MUST be bound to the tenant key holder namespace, not to the
+    language protocol namespace prefix (``wrk``).
+
+    Rules:
+    - ``x.<name>.*``   → ``x.<name>``
+    - ``org.<name>.*`` → ``org.<name>``
+    - Anything else    → raises ``ValueError`` (fail-closed; no silent fallback)
+
+    Examples::
+
+        _tenant_namespace_from_worker_id("x.alice.summarizer.i-1")    # "x.alice"
+        _tenant_namespace_from_worker_id("org.acme.invoicer.i-2")     # "org.acme"
+    """
+    parts = worker_id.split(".")
+    if worker_id.startswith("x.") and len(parts) >= 2:
+        return f"x.{parts[1]}"
+    if worker_id.startswith("org.") and len(parts) >= 2:
+        return f"org.{parts[1]}"
+    raise ValueError(
+        f"attestation: cannot derive tenant namespace from worker_id {worker_id!r}. "
+        "worker_id must begin with 'x.<name>.' or 'org.<name>.' (tenant namespace). "
+        "Language protocol prefixes ('wrk', 'cap', etc.) are not valid signer namespaces."
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -190,7 +225,7 @@ def build_manifest(
         Signed manifest dict ready to pass to ``write_manifest()``.
     """
     now = _utc_now_iso()
-    ns = _namespace_from_species(worker_species_id)
+    ns = _tenant_namespace_from_worker_id(worker_id)
     pkg_hash = canonical_package_hash(package_root)
 
     manifest: Dict[str, Any] = {
@@ -397,7 +432,7 @@ class PackageAttestationVerifier:
             return False, ATTEST_SIG_INVALID, {}
 
         # All checks passed
-        ns = _namespace_from_species(self.worker_species_id)
+        ns = _tenant_namespace_from_worker_id(self.worker_id)
         verified_at = _utc_now_iso()
         attested_at = manifest.get("attested_at_utc", "unknown")
         return True, None, {

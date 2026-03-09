@@ -52,6 +52,7 @@ const (
 	AttestHashMismatch       = "ATTEST_HASH_MISMATCH"
 	AttestSignatureMissing   = "ATTEST_SIGNATURE_MISSING"
 	AttestSigInvalid         = "ATTEST_SIG_INVALID"
+	AttestNamespaceInvalid   = "ATTEST_NAMESPACE_INVALID"
 )
 
 // manifestSchemaVersion is the schema version embedded in every manifest.
@@ -87,10 +88,37 @@ func sha256Hex(b []byte) string {
 }
 
 func namespaceFromSpecies(workerSpeciesID string) string {
+	// Deprecated: use tenantNamespaceFromWorkerID for trust statement generation.
+	// This returns the language protocol prefix ("wrk"), not the tenant signer namespace.
 	if idx := strings.Index(workerSpeciesID, "."); idx >= 0 {
 		return workerSpeciesID[:idx]
 	}
 	return workerSpeciesID
+}
+
+// tenantNamespaceFromWorkerID extracts the tenant signer namespace from a workerID.
+//
+// Trust attribution must be bound to the tenant key holder namespace, not to the
+// language protocol namespace prefix ("wrk").
+//
+// Rules:
+//   - "x.<name>.*"   → "x.<name>"
+//   - "org.<name>.*" → "org.<name>"
+//   - Anything else  → returns ("", error) — fail-closed, no silent fallback.
+func tenantNamespaceFromWorkerID(workerID string) (string, error) {
+	parts := strings.SplitN(workerID, ".", 3)
+	if strings.HasPrefix(workerID, "x.") && len(parts) >= 2 {
+		return "x." + parts[1], nil
+	}
+	if strings.HasPrefix(workerID, "org.") && len(parts) >= 2 {
+		return "org." + parts[1], nil
+	}
+	return "", fmt.Errorf(
+		"attestation: cannot derive tenant namespace from workerID %q; "+
+			"workerID must begin with \"x.<name>.\" or \"org.<name>.\" (tenant namespace). "+
+			"Language protocol prefixes (\"wrk\", \"cap\", etc.) are not valid signer namespaces",
+		workerID,
+	)
 }
 
 // ---------------------------------------------------------------------------
@@ -256,7 +284,10 @@ func BuildManifest(opts BuildManifestOptions) (map[string]any, error) {
 	}
 
 	now := utcNowISO()
-	ns := namespaceFromSpecies(opts.WorkerSpeciesID)
+	ns, err := tenantNamespaceFromWorkerID(opts.WorkerID)
+	if err != nil {
+		return nil, err
+	}
 
 	pkgHash, err := CanonicalPackageHash(opts.PackageRoot)
 	if err != nil {
@@ -432,7 +463,10 @@ func (v *PackageAttestationVerifier) Verify() AttestResult {
 	}
 
 	// All checks passed
-	ns := namespaceFromSpecies(v.WorkerSpeciesID)
+	ns, err := tenantNamespaceFromWorkerID(v.WorkerID)
+	if err != nil {
+		return AttestResult{OK: false, DenyCode: AttestNamespaceInvalid, Meta: map[string]any{}}
+	}
 	verifiedAt := utcNowISO()
 	attestedAt, _ := manifest["attested_at_utc"].(string)
 	if attestedAt == "" {

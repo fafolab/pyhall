@@ -34,7 +34,7 @@ from pyhall.attestation import (
 # ---------------------------------------------------------------------------
 
 SECRET = "test-secret-key"
-WORKER_ID = "wrk.example.my-worker.instance-1"
+WORKER_ID = "org.example.my-worker.instance-1"
 SPECIES_ID = "wrk.example.my-worker"
 VERSION = "1.0.0"
 SECRET_ENV = "WCP_ATTEST_HMAC_KEY"
@@ -174,7 +174,7 @@ class TestBuildManifest:
     def test_trust_statement_contains_namespace(self, tmp_path):
         pkg = _scaffolded(tmp_path)
         manifest = build_manifest(pkg, WORKER_ID, SPECIES_ID, VERSION, SECRET)
-        ns = SPECIES_ID.split(".")[0]  # "wrk"
+        ns = "org.example"  # tenant namespace derived from WORKER_ID "org.example.my-worker.instance-1"
         assert f"namespace {ns}" in manifest["trust_statement"]
 
     def test_timestamps_are_utc_iso8601(self, tmp_path):
