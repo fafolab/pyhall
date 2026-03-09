@@ -1,7 +1,7 @@
 {
   "name": "@pyhall/cli",
   "version": "0.3.0",
-  "description": "pyhall CLI — Worker Class Protocol taxonomy browser, search, and worker scaffolder",
+  "description": "pyhall CLI \u2014 Worker Class Protocol taxonomy browser, search, and worker scaffolder",
   "bin": {
     "pyhall": "./dist/index.js"
   },
@@ -22,7 +22,7 @@
   "homepage": "https://pyhall.dev",
   "repository": {
     "type": "git",
-    "url": "https://github.com/fafolab/pyhall.git"
+    "url": "https://github.com/pyhall/pyhall-cli.git"
   },
   "dependencies": {
     "chalk": "^5.3.0",

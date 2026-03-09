@@ -26,6 +26,7 @@ dependencies = [
     "rich>=13.0",
     "typer>=0.9",
     "python-dotenv>=1.0",
+    "flask>=2.0",
 ]
 
 [project.optional-dependencies]
@@ -40,8 +41,8 @@ discord = [
 [project.urls]
 Homepage = "https://pyhall.dev"
 Documentation = "https://pyhall.dev/introduction/"
-Repository = "https://github.com/fafolab/pyhall"
-Issues = "https://github.com/fafolab/pyhall/issues"
+Repository = "https://github.com/pyhall/pyhall-python"
+Issues = "https://github.com/pyhall/pyhall-python/issues"
 
 [project.scripts]
 pyhall = "pyhall.cli:main"
@@ -49,6 +50,17 @@ pyhall-mcp = "pyhall.mcp.__main__:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["pyhall"]
+artifacts = [
+    "pyhall/taxonomy/catalog.json",
+]
+
+[tool.hatch.build.targets.sdist]
+exclude = [
+    "hall.db",
+    "*.db",
+    ".env",
+    ".env.*",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
