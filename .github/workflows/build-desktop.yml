@@ -1,7 +1,10 @@
-# Hall Monitor — Cross-Platform Desktop Build
+# Hall Monitor — Cross-Platform Desktop Build + GPG Release Signing
 # Created (UTC): 2026-03-04T09:58:59Z
+# Updated (UTC): 2026-03-10T17:48:00Z
 # Owner: FΔFΌ★LΔB / Rob Kennedy
-# Triggers on apps/desktop/v* tags to build Linux, macOS, Windows installers
+# Triggers on apps/desktop/v* tags to build Linux, macOS, Windows installers.
+# All release artifacts are GPG-signed with the PyHall Release Signing key.
+# Public key: https://pyhall.dev/gpg.asc  (fingerprint: 3DEF56BB396202E668F7B3B5379C4D5BD7221164)
 
 name: Hall Monitor — Cross-Platform Desktop Build
 
@@ -70,7 +73,8 @@ jobs:
             librsvg2-dev \
             patchelf \
             libssl-dev \
-            libgtk-3-dev
+            libgtk-3-dev \
+            gnupg
 
       # ── Rust ──────────────────────────────────────────────────────────────
       - name: Set up Rust stable
@@ -94,6 +98,7 @@ jobs:
 
       # ── Build ─────────────────────────────────────────────────────────────
       - name: Build Tauri app
+        id: tauri
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -103,6 +108,17 @@ jobs:
           releaseName: "Hall Monitor ${{ github.ref_name }}"
           releaseBody: |
             Hall Monitor desktop release — connects to a local Hall server at localhost:8765.
+
+            **Verify release integrity:**
+            ```bash
+            # Import PyHall signing key (first time only)
+            curl -sS https://pyhall.dev/gpg.asc | gpg --import
+
+            # Verify your download
+            gpg --verify hall-monitor-<version>-<platform>.sig hall-monitor-<version>-<platform>.<ext>
+            ```
+
+            **Key fingerprint:** `3DEF56BB396202E668F7B3B5379C4D5BD7221164`
 
             **Install the Hall server first:**
             ```
@@ -114,17 +130,117 @@ jobs:
           includeDebug: false
           includeRelease: true
 
-      # ── Upload artifacts (for workflow_dispatch runs — no release created) ─
-      - name: Upload build artifacts
+      # ── GPG sign all artifacts (Linux/macOS — gpg available) ──────────────
+      - name: Import PyHall GPG signing key
+        if: matrix.platform != 'windows'
+        shell: bash
+        env:
+          PYHALL_GPG_PRIVATE_KEY_B64: ${{ secrets.PYHALL_GPG_PRIVATE_KEY_B64 }}
+        run: |
+          echo "$PYHALL_GPG_PRIVATE_KEY_B64" | base64 -d | gpg --batch --import
+          echo "GPG key imported"
+          gpg --list-secret-keys releases@pyhall.dev
+
+      - name: Sign release artifacts (Linux)
+        if: matrix.platform == 'linux'
+        shell: bash
+        env:
+          PYHALL_GPG_FINGERPRINT: ${{ secrets.PYHALL_GPG_FINGERPRINT }}
+        run: |
+          BUNDLE_DIR="src-tauri/target/release/bundle"
+          find "$BUNDLE_DIR" \( -name "*.deb" -o -name "*.AppImage" \) | while read -r f; do
+            echo "Signing: $f"
+            gpg --batch --yes --armor --detach-sign \
+              --local-user "$PYHALL_GPG_FINGERPRINT" \
+              "$f"
+            echo "Signature: ${f}.asc"
+          done
+
+      - name: Sign release artifacts (macOS)
+        if: matrix.platform == 'macos'
+        shell: bash
+        env:
+          PYHALL_GPG_FINGERPRINT: ${{ secrets.PYHALL_GPG_FINGERPRINT }}
+        run: |
+          BUNDLE_DIR="src-tauri/target/release/bundle"
+          find "$BUNDLE_DIR" -name "*.dmg" | while read -r f; do
+            echo "Signing: $f"
+            gpg --batch --yes --armor --detach-sign \
+              --local-user "$PYHALL_GPG_FINGERPRINT" \
+              "$f"
+            echo "Signature: ${f}.asc"
+          done
+
+      # Windows: sign via PowerShell + gpg4win (pre-installed on windows-2022)
+      - name: Import PyHall GPG signing key (Windows)
+        if: matrix.platform == 'windows'
+        shell: pwsh
+        env:
+          PYHALL_GPG_PRIVATE_KEY_B64: ${{ secrets.PYHALL_GPG_PRIVATE_KEY_B64 }}
+        run: |
+          $keyBytes = [System.Convert]::FromBase64String($env:PYHALL_GPG_PRIVATE_KEY_B64)
+          $keyPath = [System.IO.Path]::GetTempFileName() + ".asc"
+          [System.IO.File]::WriteAllBytes($keyPath, $keyBytes)
+          gpg --batch --import $keyPath
+          Remove-Item $keyPath -Force
+
+      - name: Sign release artifacts (Windows)
+        if: matrix.platform == 'windows'
+        shell: pwsh
+        env:
+          PYHALL_GPG_FINGERPRINT: ${{ secrets.PYHALL_GPG_FINGERPRINT }}
+        run: |
+          $bundleDir = "src-tauri\target\release\bundle"
+          Get-ChildItem -Path $bundleDir -Recurse -Include "*.msi","*.exe" | ForEach-Object {
+            Write-Host "Signing: $($_.FullName)"
+            gpg --batch --yes --armor --detach-sign `
+              --local-user $env:PYHALL_GPG_FINGERPRINT `
+              $_.FullName
+            Write-Host "Signature: $($_.FullName).asc"
+          }
+
+      # ── Upload signatures to GitHub release ───────────────────────────────
+      - name: Upload GPG signatures to release (Linux)
+        if: matrix.platform == 'linux' && github.event_name == 'push'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          files: |
+            apps/desktop/src-tauri/target/release/bundle/**/*.deb.asc
+            apps/desktop/src-tauri/target/release/bundle/**/*.AppImage.asc
+
+      - name: Upload GPG signatures to release (macOS)
+        if: matrix.platform == 'macos' && github.event_name == 'push'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          files: apps/desktop/src-tauri/target/release/bundle/**/*.dmg.asc
+
+      - name: Upload GPG signatures to release (Windows)
+        if: matrix.platform == 'windows' && github.event_name == 'push'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          files: |
+            apps/desktop/src-tauri/target/release/bundle/**/*.msi.asc
+            apps/desktop/src-tauri/target/release/bundle/**/*.exe.asc
+
+      # ── Upload all artifacts (workflow_dispatch — no release created) ──────
+      - name: Upload build + signature artifacts
         if: github.event_name == 'workflow_dispatch'
         uses: actions/upload-artifact@v4
         with:
           name: hall-monitor-${{ matrix.platform }}
           path: |
             apps/desktop/src-tauri/target/release/bundle/**/*.deb
+            apps/desktop/src-tauri/target/release/bundle/**/*.deb.asc
             apps/desktop/src-tauri/target/release/bundle/**/*.AppImage
+            apps/desktop/src-tauri/target/release/bundle/**/*.AppImage.asc
             apps/desktop/src-tauri/target/release/bundle/**/*.dmg
+            apps/desktop/src-tauri/target/release/bundle/**/*.dmg.asc
             apps/desktop/src-tauri/target/release/bundle/**/*.msi
+            apps/desktop/src-tauri/target/release/bundle/**/*.msi.asc
             apps/desktop/src-tauri/target/release/bundle/**/*.exe
+            apps/desktop/src-tauri/target/release/bundle/**/*.exe.asc
           retention-days: 14
           if-no-files-found: warn
