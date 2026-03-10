@@ -97,7 +97,10 @@ window.ProfileScreen = (() => {
           <div class="profile-name">${escHtml(github_login)}</div>
           <div class="profile-tier tier-badge tier-${escHtml(tier)}">${escHtml(tier.toUpperCase())}</div>
         </div>
-        <button class="btn-refresh" onclick="window.ProfileScreen.reload()" title="Refresh">↺</button>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button class="btn-refresh" onclick="window.ProfileScreen.reload()" title="Refresh">↺</button>
+          <button id="btn-profile-logout" class="btn btn-ghost btn-sm" style="font-size:11px;">Sign out</button>
+        </div>
       </div>
 
       <div class="profile-section">
@@ -140,6 +143,19 @@ window.ProfileScreen = (() => {
           </div>` : ''}
         </div>` : ''}
     `;
+
+    // Wire logout button
+    document.getElementById('btn-profile-logout')?.addEventListener('click', async () => {
+      const hallUrl = window.AppState?.hallUrl || 'http://localhost:8765';
+      try { await fetch(`${hallUrl}/api/auth/logout`, { method: 'POST' }); } catch (_) {}
+      window.AppState.sessionToken = null;
+      window.AppState.githubLogin = null;
+      window.AppState.githubAvatar = null;
+      window.pollHall && window.pollHall();
+      // Show login gate
+      const gate = document.getElementById('login-gate');
+      if (gate) gate.style.display = 'flex';
+    });
   }
 
   function renderNs(ns) {

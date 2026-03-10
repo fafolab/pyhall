@@ -159,7 +159,7 @@ window.StatusScreen = (() => {
     document.getElementById('stat-refusals').textContent = `${refusals} refused`;
 
     // Server info panel
-    const version = data.version ? `pyhall ${data.version} / WCP 0.2` : 'pyhall 0.3.0 / WCP 0.2';
+    const version = data.version ? `${data.version} / WCP 0.2` : 'pyhall 0.3.0 / WCP 0.2';
     document.getElementById('info-version').textContent = version;
     document.getElementById('info-uptime').textContent = formatUptime(data.uptime_seconds || 0);
 

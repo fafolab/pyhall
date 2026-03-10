@@ -172,15 +172,19 @@ window.navigateTo = navigateTo;
   window._updateServerBtns = function(state) {
     if (!startBtn) return;
     const isOffline = (state === 'offline');
-    startBtn.style.display = isOffline ? '' : 'none';
-    stopBtn.style.display  = (!isOffline && window._serverStartedByUs) ? '' : 'none';
+    const isRunning = (state === 'locked' || state === 'ready' || state === 'online');
+    // Show Start when offline; show Restart when server is running
+    startBtn.style.display = (isOffline || isRunning) ? '' : 'none';
+    startBtn.textContent = isOffline ? 'Start Hall Server' : 'Restart Server';
+    stopBtn.style.display = (isRunning && window._serverStartedByUs) ? '' : 'none';
   };
 
   startBtn?.addEventListener('click', async () => {
     const cfg = window.AppState?.config || {};
     const cmd = cfg.server_start_cmd || 'pyhall start';
+    const wasLabel = startBtn.textContent;
     startBtn.disabled = true;
-    startBtn.textContent = 'Starting…';
+    startBtn.textContent = wasLabel === 'Restart Server' ? 'Restarting…' : 'Starting…';
     if (msgEl) { msgEl.textContent = `Running: ${cmd}`; msgEl.style.display = ''; }
 
     try {
@@ -197,21 +201,20 @@ window.navigateTo = navigateTo;
             clearInterval(check);
             if (msgEl) msgEl.style.display = 'none';
             startBtn.disabled = false;
-            startBtn.textContent = 'Start Hall Server';
             window.pollHall && window.pollHall();
           }
         } catch (_) {}
         if (attempts >= 15) {
           clearInterval(check);
           startBtn.disabled = false;
-          startBtn.textContent = 'Start Hall Server';
+          startBtn.textContent = wasLabel;
           if (msgEl) { msgEl.textContent = 'Server did not respond after 15s. Check config.'; }
         }
       }, 1000);
 
     } catch (e) {
       startBtn.disabled = false;
-      startBtn.textContent = 'Start Hall Server';
+      startBtn.textContent = wasLabel;
       if (msgEl) { msgEl.textContent = `Error: ${e}`; msgEl.style.display = ''; }
     }
   });
@@ -277,18 +280,13 @@ window.navigateTo = navigateTo;
 
     try {
       await fetch(`${url}/api/server/restart`, { method: 'POST' });
-    } catch (_) { /* expected — server is restarting */ }
-
-    // Poll until server comes back (up to 30s)
-    let attempts = 0;
-    const check = setInterval(async () => {
-      attempts++;
-      if (attempts > 30) { clearInterval(check); return; }
-      try {
-        const r = await fetch(`${url}/api/health`);
-        if (r.ok) { clearInterval(check); window.pollHall && window.pollHall(); }
-      } catch (_) { /* still restarting */ }
-    }, 1000);
+    } catch (_) {}
+    window.AppState.sessionToken = null;
+    window.AppState.githubLogin  = null;
+    window.AppState.githubAvatar = null;
+    const gate = document.getElementById('login-gate');
+    if (gate) gate.style.display = 'flex';
+    window.pollHall && window.pollHall();
   });
 
   // Logout only (no restart)
@@ -297,6 +295,11 @@ window.navigateTo = navigateTo;
     dropdown.classList.add('hidden');
     const url = window.AppState.hallUrl || 'http://localhost:8765';
     try { await fetch(`${url}/api/auth/logout`, { method: 'POST' }); } catch (_) {}
+    window.AppState.sessionToken = null;
+    window.AppState.githubLogin  = null;
+    window.AppState.githubAvatar = null;
+    const gate = document.getElementById('login-gate');
+    if (gate) gate.style.display = 'flex';
     window.pollHall && window.pollHall();
   });
 
@@ -308,7 +311,16 @@ window.navigateTo = navigateTo;
     const lbl = document.getElementById('hall-indicator-label');
     if (lbl) lbl.textContent = 'ACTIVATING...';
     try {
-      const r = await fetch(`${url}/api/server/go-online`, { method: 'POST' });
+      // Include desktop binary hash in attestation chain
+      const body = {};
+      if (window.AppState.desktopBinaryHash) {
+        body.desktop_hash = window.AppState.desktopBinaryHash;
+      }
+      const r = await fetch(`${url}/api/server/go-online`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
       const d = await r.json();
       if (!d.ok) alert(`Cannot go online: ${d.message}`);
     } catch (_) {}
@@ -333,12 +345,19 @@ async function pollHall() {
   try {
     const status = await HallAPI.getHallStatus(url);
 
-    const online = status.online === true;
-    updateConnectionUI(online, status);
+    // HTTP succeeded — server is reachable.
+    // Map server-internal "offline" state (not registry-connected) to "locked"
+    // so the UI state machine reflects reachability correctly.
+    // "offline" in the UI is reserved for when the HTTP call fails entirely.
+    if (!status.state || status.state === 'offline') {
+      status.state = 'locked';
+    }
+    const online = (status.state === 'online');
+    updateConnectionUI(true, status);
 
     // Forward status to status screen
     if (window.StatusScreen) {
-      window.StatusScreen.onStatusUpdate(status, online);
+      window.StatusScreen.onStatusUpdate(status, true);
     }
 
     // Poll alerts for badge update — 0 when offline, no mock fallback
@@ -564,7 +583,7 @@ window.onPassphraseAccepted = onPassphraseAccepted;
     let attempts = 0;
     _loginPollInterval = setInterval(async () => {
       attempts++;
-      if (attempts > 90) {
+      if (attempts > 30) {  // 60s timeout — reset so user can retry
         clearInterval(_loginPollInterval);
         btn.disabled = false;
         btn.textContent = 'Sign in with GitHub';
@@ -703,12 +722,15 @@ window.updateConnectionUI = function(online, data = {}) {
   // Sync login gate button state with Hall availability
   const btn  = document.getElementById('btn-login-gate-github');
   const hint = document.getElementById('login-gate-hall-warn');
-  const sub  = btn?.parentElement?.querySelector('div:last-of-type');
   if (!btn) return;
 
-  // Login gate button is always enabled — Hall Server state does not block sign-in UI.
-  btn.disabled = false;
-  if (hint) hint.style.display = 'none';
+  // OAuth requires Hall Server to be running: it receives the GitHub callback at
+  // localhost:8765/api/auth/callback. If server is offline, the browser would hit
+  // ERR_CONNECTION_REFUSED and the one-time code expires before we can claim it.
+  const hallReachable = (online && ['locked', 'ready', 'online'].includes(data.state || 'locked'));
+  btn.disabled = !hallReachable;
+  btn.title = hallReachable ? '' : 'Start Hall Server before signing in';
+  if (hint) hint.style.display = hallReachable ? 'none' : '';
 };
 
 // ─── Startup ───────────────────────────────────────────────────────────────
@@ -740,6 +762,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     const cfgUrl = document.getElementById('cfg-hall-url');
     if (cfgUrl) cfgUrl.value = window.AppState.hallUrl;
   } catch (_) {}
+
+  // Compute desktop binary hash for attestation chain.
+  // Stored in AppState; passed to Hall Server on Go Online.
+  // Non-critical — failure is silent and attestation proceeds without it.
+  if (window.__TAURI__?.core?.invoke) {
+    try {
+      const hashResult = await window.__TAURI__.core.invoke('get_desktop_binary_hash');
+      window.AppState.desktopBinaryHash = hashResult?.hash || null;
+    } catch (_) {
+      window.AppState.desktopBinaryHash = null;
+    }
+  }
 
   // Check if a token already exists from a previous navigation (e.g. OAuth callback)
   const alreadyAuthed = await checkPendingAuth();

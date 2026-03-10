@@ -854,8 +854,25 @@ html, body {
   background: var(--bg-surface);
   border: 1px solid var(--bg-border);
   border-radius: var(--radius);
-  padding: 16px;
-  margin-bottom: 16px;
+  padding: 14px 16px;
+  margin-bottom: 0;
+}
+
+/* Two-column grid for config sections */
+.config-grid-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.config-grid-2col > .config-section {
+  margin-bottom: 0;
+}
+
+/* Single-column sections still get bottom margin */
+.config-section-full {
+  margin-bottom: 12px;
 }
 
 .config-section-title {

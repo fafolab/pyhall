@@ -166,17 +166,17 @@
       <span class="nav-label">Coordination</span>
     </div>
 
-    <div class="nav-item" data-screen="profile">
-      <span class="nav-icon">◉</span>
-      <span class="nav-label">My Profile</span>
+    <div class="nav-item" data-screen="enroll">
+      <span class="nav-icon">+</span>
+      <span class="nav-label">Enroll Worker</span>
     </div>
 
     <div class="nav-spacer"></div>
     <div class="nav-divider"></div>
 
-    <div class="nav-item" data-screen="enroll">
-      <span class="nav-icon">+</span>
-      <span class="nav-label">Enroll Worker</span>
+    <div class="nav-item" data-screen="profile">
+      <span class="nav-icon">◉</span>
+      <span class="nav-label">My Profile</span>
     </div>
     <div class="nav-item" data-screen="config">
       <span class="nav-icon">⚙</span>
@@ -603,8 +603,8 @@
         <span class="screen-title">Configuration</span>
       </div>
 
-      <!-- Hall Connection -->
-      <div class="config-section">
+      <!-- Hall Connection — full width -->
+      <div class="config-section config-section-full">
         <div class="config-section-title">Hall Connection</div>
 
         <div class="field">
@@ -651,52 +651,60 @@
         </div>
       </div>
 
-      <!-- Notifications -->
-      <div class="config-section">
-        <div class="config-section-title">Notifications</div>
-        <div class="field">
-          <label><input type="checkbox" id="notif-hall-offline" checked /> Desktop notification: Hall offline</label>
-        </div>
-        <div class="field">
-          <label><input type="checkbox" id="notif-worker-failure" checked /> Desktop notification: Worker failure spike</label>
-        </div>
-        <div class="field">
-          <label><input type="checkbox" id="notif-steward-hold" checked /> Desktop notification: Repeated steward holds</label>
-        </div>
-        <div class="field">
-          <label><input type="checkbox" id="notif-every-denial" /> Desktop notification: Every denied dispatch <span style="color:var(--text-muted);">(noisy)</span></label>
-        </div>
-      </div>
+      <!-- Row 2: Notifications + Display -->
+      <div class="config-grid-2col">
 
-      <!-- Display -->
-      <div class="config-section">
-        <div class="config-section-title">Display</div>
-        <div class="field">
-          <label><input type="checkbox" id="display-tray" checked /> Show Hall in system tray when minimized</label>
-        </div>
-        <div class="field">
-          <label><input type="checkbox" id="display-login" /> Launch at login</label>
-        </div>
-        <div class="field">
-          <label>Live feed max rows</label>
-          <input type="text" id="cfg-feed-max" value="500" style="width:100px;" />
-        </div>
-      </div>
-
-      <!-- Diagnostics -->
-      <div class="config-section">
-        <div class="config-section-title">Diagnostics</div>
-        <div class="field">
-          <label>Hall Server Log</label>
-          <div style="display:flex; gap:8px; align-items:center;">
-            <button class="btn btn-secondary btn-sm" id="btn-open-log">Open Log File</button>
-            <span id="log-path-display" style="font-size:11px; color:var(--text-dim); font-family:monospace;"></span>
+        <!-- Notifications -->
+        <div class="config-section">
+          <div class="config-section-title">Notifications</div>
+          <div class="field">
+            <label><input type="checkbox" id="notif-hall-offline" checked /> Hall offline</label>
+          </div>
+          <div class="field">
+            <label><input type="checkbox" id="notif-worker-failure" checked /> Worker failure spike</label>
+          </div>
+          <div class="field">
+            <label><input type="checkbox" id="notif-steward-hold" checked /> Repeated steward holds</label>
+          </div>
+          <div class="field">
+            <label><input type="checkbox" id="notif-every-denial" /> Every denied dispatch <span style="color:var(--text-muted);">(noisy)</span></label>
           </div>
         </div>
-      </div>
 
-      <!-- Security -->
-      <div class="config-section" id="config-security-section">
+        <!-- Display -->
+        <div class="config-section">
+          <div class="config-section-title">Display</div>
+          <div class="field">
+            <label><input type="checkbox" id="display-tray" checked /> System tray when minimized</label>
+          </div>
+          <div class="field">
+            <label><input type="checkbox" id="display-login" /> Launch at login</label>
+          </div>
+          <div class="field">
+            <label>Live feed max rows</label>
+            <input type="text" id="cfg-feed-max" value="500" style="width:80px;" />
+          </div>
+        </div>
+
+      </div><!-- /row 2 -->
+
+      <!-- Row 3: Diagnostics + Security -->
+      <div class="config-grid-2col">
+
+        <!-- Diagnostics -->
+        <div class="config-section">
+          <div class="config-section-title">Diagnostics</div>
+          <div class="field">
+            <label>Hall Server Log</label>
+            <div style="display:flex; gap:8px; align-items:center; margin-top:6px;">
+              <button class="btn btn-secondary btn-sm" id="btn-open-log">Open Log File</button>
+              <span id="log-path-display" style="font-size:11px; color:var(--text-dim); font-family:monospace;"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Security -->
+        <div class="config-section" id="config-security-section">
         <div class="config-section-title">Security</div>
 
         <!-- Change passphrase -->
@@ -733,10 +741,12 @@
             <button class="btn btn-ghost btn-sm" id="btn-change-passphrase-cancel">Cancel</button>
           </div>
         </div>
-      </div>
+        </div><!-- /security -->
 
-      <!-- Connected MCPs -->
-      <div class="config-section" id="config-mcp-section">
+      </div><!-- /row 3 -->
+
+      <!-- Connected MCPs — full width -->
+      <div class="config-section config-section-full" id="config-mcp-section">
         <div class="config-section-title">Connected MCPs</div>
         <div style="font-size:12px; color:var(--text-muted); margin-bottom:12px;">
           Connect your own MCP servers. Hall governs all tool calls from connected servers.
