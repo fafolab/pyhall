@@ -159,7 +159,7 @@ window.StatusScreen = (() => {
     document.getElementById('stat-refusals').textContent = `${refusals} refused`;
 
     // Server info panel
-    const version = data.version ? `pyhall ${data.version} / WCP 0.1` : 'pyhall 0.3.0 / WCP 0.1';
+    const version = data.version ? `pyhall ${data.version} / WCP 0.2` : 'pyhall 0.3.0 / WCP 0.2';
     document.getElementById('info-version').textContent = version;
     document.getElementById('info-uptime').textContent = formatUptime(data.uptime_seconds || 0);
 
@@ -189,8 +189,11 @@ window.StatusScreen = (() => {
     const config = window.AppState?.config || {};
     const signedInEl = document.getElementById('info-signed-in-user');
     if (signedInEl) {
-      if (config.auth_token) {
-        signedInEl.innerHTML = `<span style="color:var(--success)">● authenticated</span>
+      const sessionToken = window.AppState?.sessionToken;
+      const githubLogin = window.AppState?.githubLogin;
+      if (sessionToken || config.auth_token) {
+        const loginLabel = githubLogin ? `@${githubLogin}` : 'authenticated';
+        signedInEl.innerHTML = `<span style="color:var(--success)">● ${loginLabel}</span>
           — <a href="#" id="link-go-profile" style="color:var(--accent-hover);">view profile</a>`;
       } else {
         signedInEl.innerHTML = `<span style="color:var(--text-dim)">not logged in</span>
@@ -242,9 +245,7 @@ window.StatusScreen = (() => {
     }
     renderRecentRefusals(refusalEvents);
 
-    // Hall info (uses AppState which was updated by pollHall)
-    renderHallInfo(lastData || { url }, online);
-    _updateGraceBanner(online ? (lastData || {}) : {});
+    // Hall info is kept current by onStatusUpdate on every poll — no re-render needed here.
   }
 
   function onStatusUpdate(data, online) {

@@ -52,6 +52,7 @@ from .attestation import (
     ATTEST_HASH_MISMATCH,
     ATTEST_SIGNATURE_MISSING,
     ATTEST_SIG_INVALID,
+    ATTEST_BANNED_HASH,
 )
 
 __all__ = [
@@ -81,4 +82,5 @@ __all__ = [
     "ATTEST_HASH_MISMATCH",
     "ATTEST_SIGNATURE_MISSING",
     "ATTEST_SIG_INVALID",
+    "ATTEST_BANNED_HASH",
 ]

@@ -47,6 +47,7 @@ ATTEST_MANIFEST_ID_MISMATCH = "ATTEST_MANIFEST_ID_MISMATCH"
 ATTEST_HASH_MISMATCH = "ATTEST_HASH_MISMATCH"
 ATTEST_SIGNATURE_MISSING = "ATTEST_SIGNATURE_MISSING"
 ATTEST_SIG_INVALID = "ATTEST_SIG_INVALID"
+ATTEST_BANNED_HASH = "ATTEST_BANNED_HASH"
 
 # Manifest schema version
 MANIFEST_SCHEMA_VERSION = "awp.v1"
@@ -355,12 +356,14 @@ class PackageAttestationVerifier:
         worker_id: str,
         worker_species_id: str,
         secret_env: str = DEFAULT_SECRET_ENV,
+        banned_hashes: Optional[set] = None,
     ):
         self.package_root = package_root
         self.manifest_path = manifest_path
         self.worker_id = worker_id
         self.worker_species_id = worker_species_id
         self.secret_env = secret_env
+        self.banned_hashes: set = banned_hashes or set()
 
     def verify(self) -> Tuple[bool, Optional[str], Dict[str, Any]]:
         """
@@ -403,6 +406,13 @@ class PackageAttestationVerifier:
             return False, ATTEST_HASH_MISMATCH, {
                 "expected_hash": expected_hash,
                 "computed_hash": computed_hash,
+            }
+
+        # 3b. Check computed hash against the banned-hash list (if provided)
+        if self.banned_hashes and computed_hash in self.banned_hashes:
+            return False, ATTEST_BANNED_HASH, {
+                "computed_hash": computed_hash,
+                "ban_source": "registry-propagated",
             }
 
         # 4. Signature must be present and valid

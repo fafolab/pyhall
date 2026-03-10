@@ -86,6 +86,11 @@ function updateConnectionUI(online, data = {}) {
   window.AppState.hallOnline = (state === 'online');
   window.AppState.hallState  = state;
   window.AppState.loggedIn   = data.logged_in || false;
+  // Cache github_login from health response so status screen can display it
+  if (data.github_login && !window.AppState.githubLogin) {
+    window.AppState.githubLogin = data.github_login;
+    window.AppState.githubAvatar = `https://github.com/${data.github_login}.png`;
+  }
 
   const indicator = document.getElementById('hall-indicator');
   const indicatorLabel = document.getElementById('hall-indicator-label');
@@ -151,6 +156,7 @@ function updateAlertBadge(count) {
 
 window.updateAlertBadge = updateAlertBadge;
 window.updateConnectionUI = updateConnectionUI;
+window.navigateTo = navigateTo;
 
 // ─── Hall indicator click → restart dropdown ────────────────────────────────
 
@@ -356,10 +362,39 @@ function setPassphraseGate(show) {
 function onLoginConfirmed() {
   setLoginGate(false);
 
+  // Fetch GitHub identity to display on the passphrase gate.
+  _fetchAndShowIdentity();
+
   // Check if Hall Server has passphrase protection enabled.
   // If the server returns {passphrase_set: false}, go straight to set form.
   // If {passphrase_set: true} (or unknown), show unlock form.
   _showPassphraseGate();
+}
+
+async function _fetchAndShowIdentity() {
+  const token = window.AppState?.sessionToken;
+  if (!token) return;
+  // Route through local Hall server proxy to avoid CORS issues calling registry directly.
+  const hallUrl = window.AppState?.hallUrl || 'http://localhost:8765';
+  try {
+    const r = await fetch(`${hallUrl}/api/profile`, {
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
+    if (!r.ok) return;
+    const d = await r.json();
+    const login = (d.profile?.github_login) || d.github_login;
+    if (!login) return;
+    const avatarEl = document.getElementById('passphrase-avatar');
+    const loginEl  = document.getElementById('passphrase-github-login');
+    if (avatarEl) {
+      avatarEl.src = `https://github.com/${login}.png?size=72`;
+      avatarEl.style.display = 'block';
+    }
+    if (loginEl) loginEl.textContent = login;
+    // Store for use elsewhere (status screen, profile screen)
+    window.AppState.githubLogin = login;
+    window.AppState.githubAvatar = `https://github.com/${login}.png`;
+  } catch (_) {}
 }
 
 // Tracks whether the passphrase was unset when the gate was shown.
@@ -370,7 +405,8 @@ async function _showPassphraseGate() {
   const hallUrl = window.AppState?.hallUrl || 'http://localhost:8765';
 
   // Try to ask the server whether a passphrase has been set.
-  let passphraseSet = true; // default: assume yes, show unlock form
+  // Default: assume first run (show set form). Only show unlock if server explicitly confirms passphrase_set: true.
+  let passphraseSet = false;
   try {
     const r = await fetch(`${hallUrl}/api/auth/passphrase-status`, {
       headers: window.AppState.sessionToken
@@ -379,7 +415,7 @@ async function _showPassphraseGate() {
     });
     if (r.ok) {
       const d = await r.json();
-      passphraseSet = d.passphrase_set !== false; // false only if explicitly false
+      passphraseSet = d.passphrase_set === true;
     }
   } catch (_) {}
 
@@ -600,15 +636,9 @@ window.updateConnectionUI = function(online, data = {}) {
   const sub  = btn?.parentElement?.querySelector('div:last-of-type');
   if (!btn) return;
 
-  if (online) {
-    btn.disabled = false;
-    if (hint) hint.style.display = 'none';
-    if (sub) sub.textContent = '';
-  } else {
-    btn.disabled = true;
-    if (hint) hint.style.display = 'block';
-    if (sub) sub.textContent = 'Hall Server is offline.';
-  }
+  // Login gate button is always enabled — Hall Server state does not block sign-in UI.
+  btn.disabled = false;
+  if (hint) hint.style.display = 'none';
 };
 
 // ─── Startup ───────────────────────────────────────────────────────────────
