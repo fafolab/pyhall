@@ -110,6 +110,7 @@ function updateConnectionUI(online, data = {}) {
 
   // Update dropdown options based on state
   _updateRestartDropdown(state, data);
+  if (window._updateServerBtns) window._updateServerBtns(state);
 
   // Status bar counters
   if (state === 'online') {
@@ -157,6 +158,75 @@ function updateAlertBadge(count) {
 window.updateAlertBadge = updateAlertBadge;
 window.updateConnectionUI = updateConnectionUI;
 window.navigateTo = navigateTo;
+
+// ─── Start / Stop Hall Server ───────────────────────────────────────────────
+
+(function wireServerStartStop() {
+  const startBtn = document.getElementById('btn-start-server');
+  const stopBtn  = document.getElementById('btn-stop-server');
+  const msgEl    = document.getElementById('status-server-start-msg');
+
+  // Show Start when offline, Stop when server was started by us
+  window._serverStartedByUs = false;
+
+  window._updateServerBtns = function(state) {
+    if (!startBtn) return;
+    const isOffline = (state === 'offline');
+    startBtn.style.display = isOffline ? '' : 'none';
+    stopBtn.style.display  = (!isOffline && window._serverStartedByUs) ? '' : 'none';
+  };
+
+  startBtn?.addEventListener('click', async () => {
+    const cfg = window.AppState?.config || {};
+    const cmd = cfg.server_start_cmd || 'pyhall start';
+    startBtn.disabled = true;
+    startBtn.textContent = 'Starting…';
+    if (msgEl) { msgEl.textContent = `Running: ${cmd}`; msgEl.style.display = ''; }
+
+    try {
+      await window.__TAURI__.core.invoke('start_hall_server', { cmd });
+      window._serverStartedByUs = true;
+
+      // Poll until server responds (up to 15s)
+      let attempts = 0;
+      const check = setInterval(async () => {
+        attempts++;
+        try {
+          const r = await fetch(`${window.AppState?.hallUrl || 'http://localhost:8765'}/api/health`);
+          if (r.ok) {
+            clearInterval(check);
+            if (msgEl) msgEl.style.display = 'none';
+            startBtn.disabled = false;
+            startBtn.textContent = 'Start Hall Server';
+            window.pollHall && window.pollHall();
+          }
+        } catch (_) {}
+        if (attempts >= 15) {
+          clearInterval(check);
+          startBtn.disabled = false;
+          startBtn.textContent = 'Start Hall Server';
+          if (msgEl) { msgEl.textContent = 'Server did not respond after 15s. Check config.'; }
+        }
+      }, 1000);
+
+    } catch (e) {
+      startBtn.disabled = false;
+      startBtn.textContent = 'Start Hall Server';
+      if (msgEl) { msgEl.textContent = `Error: ${e}`; msgEl.style.display = ''; }
+    }
+  });
+
+  stopBtn?.addEventListener('click', async () => {
+    try {
+      await window.__TAURI__.core.invoke('stop_hall_server');
+      window._serverStartedByUs = false;
+      if (msgEl) { msgEl.textContent = 'Server stopped.'; msgEl.style.display = ''; setTimeout(() => { if (msgEl) msgEl.style.display = 'none'; }, 3000); }
+      window.pollHall && window.pollHall();
+    } catch (e) {
+      if (msgEl) { msgEl.textContent = `Stop error: ${e}`; msgEl.style.display = ''; }
+    }
+  });
+})();
 
 // ─── Hall indicator click → restart dropdown ────────────────────────────────
 

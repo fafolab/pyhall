@@ -12,18 +12,27 @@
 <div id="login-gate" style="position:fixed;inset:0;z-index:9999;background:var(--bg-primary);display:flex;align-items:center;justify-content:center;">
   <div id="login-gate-box" style="width:360px;background:var(--bg-surface);border:1px solid var(--bg-border);border-radius:var(--radius);padding:40px 36px;text-align:center;">
     <div style="font-size:18px;font-weight:700;color:var(--text-bright);letter-spacing:0.02em;margin-bottom:6px;">pyhall — Hall Monitor</div>
-    <div style="font-size:12px;color:var(--text-muted);margin-bottom:32px;">The Hall · every worker · every job · every decision.</div>
-    <div id="login-gate-hall-warn" style="display:none;margin-bottom:16px;padding:8px 12px;background:var(--error-muted);border:1px solid var(--error);border-radius:var(--radius-sm);font-size:11px;color:var(--error);">Hall Server must be running to complete sign-in.</div>
-    <button id="btn-login-gate-github" style="width:100%;padding:10px 0;background:var(--accent-blue);color:#fff;border:none;border-radius:var(--radius);font-size:13px;font-weight:600;cursor:pointer;letter-spacing:0.01em;" disabled>Sign in with GitHub</button>
-    <div style="margin-top:12px;font-size:11px;color:var(--text-dim);">Checking Hall Server...</div>
+    <div style="font-size:12px;color:var(--text-muted);margin-bottom:32px;">Sign in to monitor and govern your AI workers.</div>
+    <button id="btn-login-gate-github" style="width:100%;padding:10px 0;background:var(--accent-blue);color:#fff;border:none;border-radius:var(--radius);font-size:13px;font-weight:600;cursor:pointer;letter-spacing:0.01em;">Sign in with GitHub</button>
+    <div id="login-gate-hall-warn" style="display:none;margin-top:12px;font-size:11px;color:var(--text-dim);"></div>
   </div>
 </div>
 
 <!-- ── Passphrase Gate (shown after login, before full app) ─────────────── -->
 <div id="passphrase-gate" style="position:fixed;inset:0;z-index:9998;background:var(--bg-primary);display:none;align-items:center;justify-content:center;">
-  <div style="width:360px;background:var(--bg-surface);border:1px solid var(--bg-border);border-radius:var(--radius);padding:40px 36px;">
+  <div style="width:360px;background:var(--bg-surface);border:1px solid var(--bg-border);border-radius:var(--radius);padding:36px 36px 32px;">
 
-    <!-- Unlock form (default) -->
+    <!-- GitHub identity (shown after login) -->
+    <div id="passphrase-identity" style="display:flex;align-items:center;gap:12px;margin-bottom:28px;padding-bottom:20px;border-bottom:1px solid var(--bg-border);">
+      <img id="passphrase-avatar" src="" alt="" width="36" height="36"
+        style="border-radius:50%;border:1px solid var(--bg-border);display:none;" />
+      <div>
+        <div id="passphrase-github-login" style="font-size:13px;font-weight:600;color:var(--text-bright);"></div>
+        <div style="font-size:11px;color:var(--text-muted);">Signed in with GitHub</div>
+      </div>
+    </div>
+
+    <!-- Unlock form (returning user) -->
     <div id="passphrase-unlock-form">
       <div style="font-size:15px;font-weight:700;color:var(--text-bright);margin-bottom:6px;">Unlock your Hall</div>
       <div style="font-size:12px;color:var(--text-muted);margin-bottom:24px;">Enter your passphrase to continue.</div>
@@ -44,10 +53,10 @@
       </div>
     </div>
 
-    <!-- Set passphrase form (first-time / no passphrase set) -->
+    <!-- Set passphrase form (first-time setup) -->
     <div id="passphrase-set-form" style="display:none;">
-      <div style="font-size:15px;font-weight:700;color:var(--text-bright);margin-bottom:6px;">Set a passphrase</div>
-      <div style="font-size:12px;color:var(--text-muted);margin-bottom:24px;">Choose a passphrase to protect your Hall session.</div>
+      <div style="font-size:15px;font-weight:700;color:var(--text-bright);margin-bottom:6px;">Secure your Hall</div>
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:24px;">Create a passphrase to protect your local dispatch log. You'll enter this each time you open Hall Monitor.</div>
       <div style="margin-bottom:12px;">
         <input type="password" id="passphrase-new" placeholder="New passphrase" autocomplete="new-password"
           style="width:100%;padding:9px 12px;background:var(--bg-raised);border:1px solid var(--bg-border);border-radius:var(--radius-sm);color:var(--text-primary);font-size:13px;outline:none;" />
@@ -263,11 +272,14 @@
         </span>
       </div>
 
-      <div style="margin-top:16px; display:flex; gap:8px;">
+      <div style="margin-top:16px; display:flex; gap:8px; flex-wrap:wrap;">
+        <button class="btn btn-primary btn-sm" id="btn-start-server" style="display:none;">Start Hall Server</button>
+        <button class="btn btn-ghost btn-sm" id="btn-stop-server" style="display:none;">Stop Hall Server</button>
         <button class="btn btn-secondary btn-sm" id="btn-go-config-from-status">Open Hall Config</button>
         <button class="btn btn-ghost btn-sm" id="btn-go-feed-from-status">View Live Feed</button>
         <button class="btn btn-ghost btn-sm" id="btn-open-log-from-status" style="display:none;">Open Log File</button>
       </div>
+      <div id="status-server-start-msg" style="margin-top:6px; font-size:11px; color:var(--text-dim); font-family:monospace; display:none;"></div>
       <div id="status-log-path-display" style="margin-top:6px; font-size:11px; color:var(--text-dim); font-family:monospace; display:none;"></div>
     </section>
 
@@ -625,6 +637,12 @@
             <option value="prof.prod.strict">prof.prod.strict</option>
             <option value="prof.edge.isolated">prof.edge.isolated</option>
           </select>
+        </div>
+
+        <div class="field">
+          <label>Server Start Command</label>
+          <input type="text" id="cfg-server-start-cmd" value="pyhall start" style="font-family:monospace;" placeholder="pyhall start" />
+          <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Command to launch the Hall Server. Used by the Start Server button.</div>
         </div>
 
         <div style="display:flex; gap:8px; align-items:center;">

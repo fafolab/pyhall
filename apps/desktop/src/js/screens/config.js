@@ -50,6 +50,9 @@ window.ConfigScreen = (() => {
 
     const maxEl = document.getElementById('cfg-feed-max');
     if (maxEl) maxEl.value = cfg.display?.feed_max_rows ?? 500;
+
+    const startCmdEl = document.getElementById('cfg-server-start-cmd');
+    if (startCmdEl) startCmdEl.value = cfg.server_start_cmd || 'pyhall start';
   }
 
   function setCheck(id, val) {
@@ -79,6 +82,7 @@ window.ConfigScreen = (() => {
         launch_at_login:  document.getElementById('display-login')?.checked ?? false,
         feed_max_rows: parseInt(document.getElementById('cfg-feed-max')?.value || '500', 10),
       },
+      server_start_cmd: document.getElementById('cfg-server-start-cmd')?.value || 'pyhall start',
     };
   }
 
