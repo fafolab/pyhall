@@ -1,3 +1,6 @@
+/* Copyright (c) 2026 pyhall.dev — https://pyhall.dev
+ * All Rights Reserved.
+ */
 /**
  * alerts.js — Alerts screen (Screen 4)
  * Shows active + acknowledged alerts. Severity filters.
@@ -26,6 +29,14 @@ window.AlertsScreen = (() => {
 
     if (unresolvedEl) unresolvedEl.textContent = `${count} unresolved`;
     window.updateAlertBadge && window.updateAlertBadge(count);
+
+    // Show/hide worker mascot — think when all clear, alert+hide when active alerts
+    const alertsWorkerEl = document.getElementById('alerts-worker-container');
+    const alertsWorker   = document.getElementById('alerts-worker');
+    if (alertsWorkerEl) alertsWorkerEl.style.display = filtered.length === 0 ? '' : 'none';
+    if (alertsWorker && window.WorkerWidget) {
+      WorkerWidget.setAnimation(alertsWorker, filtered.length > 0 ? 'anim-alert' : 'anim-think');
+    }
 
     if (filtered.length === 0) {
       container.innerHTML = `

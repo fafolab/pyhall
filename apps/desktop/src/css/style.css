@@ -1,3 +1,78 @@
+/* Copyright (c) 2026 pyhall.dev — https://pyhall.dev
+ * All Rights Reserved.
+ */
+
+/* ── pyhall Brand Tokens v0.3.0 ─────────────────────────────────────────── */
+@font-face {
+  font-family: 'Montserrat'; font-weight: 700; font-style: normal;
+  src: url('../fonts/montserrat-latin-700-normal.woff2') format('woff2');
+  font-display: swap;
+}
+@font-face {
+  font-family: 'JetBrains Mono'; font-weight: 400; font-style: normal;
+  src: url('../fonts/jetbrains-mono-latin-400-normal.woff2') format('woff2');
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Space Grotesk'; font-weight: 400;
+  src: url('../fonts/space-grotesk-latin-400-normal.woff2') format('woff2');
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Space Grotesk'; font-weight: 500;
+  src: url('../fonts/space-grotesk-latin-500-normal.woff2') format('woff2');
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Space Grotesk'; font-weight: 600;
+  src: url('../fonts/space-grotesk-latin-600-normal.woff2') format('woff2');
+  font-display: swap;
+}
+
+:root {
+  /* Brand palette */
+  --bg:      #07090e;
+  --surface: #0d1117;
+  --card:    #111620;
+  --panel:   #0b0f18;
+  --border:  #1e2736;
+  --border2: #2a3548;
+  --blue:    #0050D4;
+  --pyblue:  #3776AB;
+  --cyan:    #38bdf8;
+  --amber:   #f59e0b;
+  --red:     #ef4444;
+  --green:   #22c55e;
+  --purple:  #a855f7;
+  --orange:  #f97316;
+  --text:    #e2e8f0;
+  --muted:   #4a5568;
+  --muted2:  #64748b;
+  --mono:    'JetBrains Mono', 'Fira Code', monospace;
+  --sans:    'Montserrat', sans-serif;
+  --grotesk: 'Space Grotesk', sans-serif;
+}
+
+[data-theme="light"] {
+  --bg:      #f8fafc;
+  --surface: #ffffff;
+  --card:    #f1f5f9;
+  --panel:   #e2e8f0;
+  --border:  #cbd5e1;
+  --border2: #94a3b8;
+  --text:    #0f172a;
+  --muted:   #64748b;
+  --muted2:  #94a3b8;
+  --bg-primary:  #f8fafc;
+  --bg-surface:  #ffffff;
+  --bg-raised:   #f1f5f9;
+  --bg-border:   #cbd5e1;
+  --text-primary: #374151;
+  --text-bright:  #0f172a;
+  --text-muted:   #64748b;
+  --text-dim:     #94a3b8;
+}
+
 /* ─── pyhall Desktop — Hall Monitor ─────────────────────────────────────────
    Theme: dark background, pyhall blue accent (#0050D4)
    ───────────────────────────────────────────────────────────────────────── */
@@ -21,7 +96,7 @@
   --text-bright:    #f8f9fa;
   --text-muted:     #6c757d;
   --text-dim:       #495057;
-  --font:           -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif;
+  --font:           'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
   --font-mono:      'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
   --sidebar-width:  200px;
   --statusbar-h:    28px;
@@ -35,7 +110,7 @@
 
 html, body {
   height: 100%;
-  font-family: var(--font);
+  font-family: var(--font-mono);
   font-size: 13px;
   background: var(--bg-primary);
   color: var(--text-primary);
@@ -281,6 +356,7 @@ html, body {
   font-weight: 600;
   color: var(--text-bright);
   letter-spacing: -0.02em;
+  font-family: var(--sans);
 }
 
 .screen-subtitle {
@@ -2019,4 +2095,196 @@ details[open] .coord-phase-done-summary::before { content: '▼ '; }
 .coord-lock-expires {
   color: var(--text-muted);
   white-space: nowrap;
+}
+
+/* ── Coordination Logs Panel ─────────────────────────────────────────────── */
+.coord-log-toolbar {
+  margin: 0 20px 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.coord-log-select {
+  width: 240px;
+  flex-shrink: 0;
+}
+.coord-log-path {
+  margin: 0 20px 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-dim);
+}
+.coord-log-view {
+  margin: 0 20px 16px;
+  min-height: 180px;
+  max-height: 300px;
+  overflow: auto;
+  background: var(--bg-raised);
+  border: 1px solid var(--bg-border);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--text-primary);
+  white-space: pre-wrap;
+}
+
+/* ── Enrollment Wizard ──────────────────────────────────────────────────── */
+
+.field-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.field-hint {
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-top: 3px;
+}
+.field-hint code {
+  background: var(--bg-border);
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+}
+
+.field-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 10px;
+  font-size: 13px;
+  background: var(--bg-raised);
+  border: 1px solid var(--bg-border);
+  border-radius: var(--radius-sm);
+  color: var(--text-bright);
+  outline: none;
+  transition: border-color 0.12s;
+  font-family: inherit;
+}
+.field-input:focus {
+  border-color: var(--accent-blue);
+}
+.field-input.monospace {
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+.field-input[type="range"] {
+  padding: 0;
+  border: none;
+  background: transparent;
+  accent-color: var(--accent-blue);
+}
+select.field-input {
+  cursor: pointer;
+  color: var(--text-bright);
+  background-color: var(--bg-raised);
+}
+select.field-input option {
+  background-color: var(--bg-raised);
+  color: var(--text-bright);
+}
+textarea.field-input {
+  resize: vertical;
+}
+
+/* ── Theme toggle button ─────────────────────────────────────────────────── */
+.theme-btn {
+  background: none;
+  border: 1px solid var(--bg-border);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 2px 6px;
+  line-height: 1;
+  transition: color 0.12s, border-color 0.12s;
+}
+.theme-btn:hover {
+  color: var(--text-bright);
+  border-color: var(--accent-blue);
+}
+
+/* ── About screen ────────────────────────────────────────────────────────── */
+.about-container {
+  max-width: 480px;
+  margin: 40px auto;
+  text-align: center;
+  padding: 0 20px;
+}
+.about-logo {
+  display: block;
+  margin: 0 auto 24px;
+}
+.about-title {
+  font-family: var(--sans);
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-bright);
+  letter-spacing: -0.02em;
+  margin-bottom: 4px;
+}
+.about-version {
+  font-size: 13px;
+  color: var(--accent-blue);
+  font-family: var(--font-mono);
+  margin-bottom: 8px;
+}
+.about-desc {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 24px;
+}
+.about-meta {
+  background: var(--bg-surface);
+  border: 1px solid var(--bg-border);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  font-size: 12px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  text-align: left;
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.about-meta span {
+  color: var(--text-bright);
+  font-weight: 600;
+}
+.about-container hr {
+  border: none;
+  border-top: 1px solid var(--bg-border);
+  margin: 20px 0;
+}
+.about-copy, .about-freeware {
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-bottom: 4px;
+}
+.about-links {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  margin-top: 16px;
+}
+.about-links a {
+  font-size: 12px;
+  color: var(--accent-hover);
+  text-decoration: none;
+}
+.about-links a:hover { text-decoration: underline; }
+
+/* ── Header brand logo ───────────────────────────────────────────────────── */
+#header-brand-logo {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
 }

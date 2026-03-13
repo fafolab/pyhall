@@ -1,3 +1,5 @@
+# Copyright (c) 2026 pyhall.dev — https://pyhall.dev
+# Licensed under the Apache License, Version 2.0 (see LICENSE)
 """
 pyhall/registry_client.py — HTTP client for the pyhall.dev registry API (v0.2.0).
 

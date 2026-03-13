@@ -1,3 +1,5 @@
+# Copyright (c) 2026 pyhall.dev — https://pyhall.dev
+# Licensed under the Apache License, Version 2.0 (see LICENSE)
 """
 pyhall.mcp.example_worker — WCP worker implementing cap.doc.summarize / wrk.doc.summarizer.
 

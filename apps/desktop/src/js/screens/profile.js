@@ -1,3 +1,6 @@
+/* Copyright (c) 2026 pyhall.dev — https://pyhall.dev
+ * All Rights Reserved.
+ */
 /**
  * profile.js — Profile & Namespaces screen
  *

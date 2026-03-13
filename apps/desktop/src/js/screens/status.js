@@ -1,3 +1,6 @@
+/* Copyright (c) 2026 pyhall.dev — https://pyhall.dev
+ * All Rights Reserved.
+ */
 /**
  * status.js — Hall Status screen (Screen 1)
  * Shows: connection card, agent count, dispatch stats, active jobs, recent refusals, server info.
@@ -182,6 +185,25 @@ window.StatusScreen = (() => {
       wcpMode.textContent = online && data.wcp_mode ? `${data.wcp_mode} mode` : '';
     }
 
+    // Attestation — binary build verification from registry
+    const attestBadge = document.getElementById('info-attest-badge');
+    if (attestBadge) {
+      if (!online) {
+        attestBadge.style.color = 'var(--text-dim)';
+        attestBadge.textContent = '—';
+      } else if (data.hall_hash_verified === true) {
+        attestBadge.style.color = 'var(--success)';
+        attestBadge.textContent = '● build verified';
+      } else if (data.hall_hash_verified === false) {
+        attestBadge.style.color = 'var(--error)';
+        attestBadge.textContent = '✕ TAMPER DETECTED — update Hall Monitor';
+      } else {
+        // null/undefined = endpoint not yet deployed (graceful rollout)
+        attestBadge.style.color = 'var(--text-dim)';
+        attestBadge.textContent = '○ build unverified';
+      }
+    }
+
     // Connected agents list
     renderAgentList(online ? (data.agents_list || []) : []);
 
@@ -253,6 +275,13 @@ window.StatusScreen = (() => {
     lastOnline = online;
     updateLogBtn(online);
     _updateGraceBanner(online ? data : {});
+
+    // Update worker mascot animation based on server state
+    const workerEl = document.getElementById('status-worker');
+    if (workerEl && window.WorkerWidget) {
+      WorkerWidget.setAnimation(workerEl, WorkerWidget.animForState(data, online));
+    }
+
     // Only repaint if status screen is active
     if (document.getElementById('screen-status').classList.contains('active')) {
       renderHallInfo(data, online);
@@ -304,6 +333,23 @@ window.StatusScreen = (() => {
       refresh();
     }
   }, 5000);
+
+  // ── Update check — runs once on startup, non-blocking ──────────────────────
+  async function checkForUpdates() {
+    try {
+      const result = await window.__TAURI__.core.invoke('check_updates');
+      if (result && result.available) {
+        const notice = document.createElement('div');
+        notice.className = 'update-notice';
+        notice.textContent = `Update available: v${result.version}`;
+        document.body.appendChild(notice);
+      }
+    } catch (e) {
+      // Silently ignore — update check is best-effort
+      console.warn('Update check failed:', e);
+    }
+  }
+  checkForUpdates().catch(() => {});
 
   return { refresh, onStatusUpdate, updateLogBtn, renderGraceBanner: _renderGraceBanner };
 })();

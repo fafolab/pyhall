@@ -1,3 +1,6 @@
+/* Copyright (c) 2026 pyhall.dev — https://pyhall.dev
+ * All Rights Reserved.
+ */
 /**
  * crew.js — Crew on the Books screen (Screen 3)
  * Shows enrolled workers from server or local registry.
@@ -90,6 +93,15 @@ window.CrewScreen = (() => {
       });
     });
 
+    // Task 9: Wire "Get a copy" buttons
+    container.querySelectorAll('[data-get-copy]').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const workerId = btn.dataset.getCopy;
+        await getCopyAction(workerId, btn);
+      });
+    });
+
     // Hydrate registry status badges for enrolled workers (async, non-blocking)
     if (window.HallAPI && window.HallAPI.checkRegistryStatus) {
       filtered.filter(w => w.status !== 'catalog').forEach(async (w) => {
@@ -127,6 +139,11 @@ window.CrewScreen = (() => {
       : `<div class="meta-label">Source</div>
          <div class="meta-value">WCP Catalog — available (not enrolled)</div>`;
 
+    // Task 9: "Get a copy" button for enrolled workers (not catalog)
+    const getCopyBtn = !isCatalog && w.worker_id
+      ? `<button class="btn btn-ghost btn-sm" data-get-copy="${esc(w.worker_id)}" title="Download manifest.json + worker_logic.py">Get a copy</button>`
+      : '';
+
     return `
       <div class="${cardClass}">
         <div class="worker-card-header">
@@ -145,7 +162,8 @@ window.CrewScreen = (() => {
           <span class="meta-value"><span class="blast-tier ${blastClass}">${blastLabel} (score: ${w.blast_score})</span>${w.status === 'gated' ? ' ← STEWARD HOLD ACTIVE' : ''}</span>
           ${statsRow}
         </div>
-        <div style="margin-top:10px; text-align:right;">
+        <div style="margin-top:10px; text-align:right; display:flex; gap:8px; justify-content:flex-end;">
+          ${getCopyBtn}
           <button class="btn btn-ghost btn-sm" data-details="${esc(w.species_id)}">Details</button>
         </div>
       </div>
@@ -162,6 +180,35 @@ window.CrewScreen = (() => {
     };
     const [icon, label, cls] = map[status] || ['?', status.toUpperCase(), 'idle'];
     return `<span class="status-badge ${cls}">${icon} ${label}</span>`;
+  }
+
+  // ── Task 9: Get a copy action ──────────────────────────────────────────────
+
+  async function getCopyAction(workerId, btn) {
+    const origText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Loading...';
+    try {
+      const result = await window.__TAURI__.core.invoke('get_enrolled_worker_files', { worker_id: workerId });
+      // Download manifest.json
+      await window.__TAURI__.core.invoke('save_text_file', {
+        filename: `manifest_${workerId.replace(/[^a-z0-9-]/gi, '_')}.json`,
+        content: result.manifest_json,
+      });
+      // Download worker_logic.py
+      if (result.python_code) {
+        await window.__TAURI__.core.invoke('save_text_file', {
+          filename: `worker_logic_${workerId.replace(/[^a-z0-9-]/gi, '_')}.py`,
+          content: result.python_code,
+        });
+      }
+      btn.textContent = 'Saved';
+      setTimeout(() => { btn.textContent = origText; btn.disabled = false; }, 2000);
+    } catch (err) {
+      btn.textContent = 'Error';
+      setTimeout(() => { btn.textContent = origText; btn.disabled = false; }, 2000);
+      console.error('Get a copy failed:', err);
+    }
   }
 
   function showWorkerDetails(w) {

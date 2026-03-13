@@ -1,3 +1,5 @@
+# Copyright (c) 2026 pyhall.dev — https://pyhall.dev
+# Licensed under the Apache License, Version 2.0 (see LICENSE)
 """Tests for P1 standing contract — go-online state mapping and route behavior."""
 import pytest
 from unittest.mock import patch, MagicMock
@@ -8,13 +10,16 @@ def test_ok_allows_online():
     from hall_api.server import _standing_allows_online
     assert _standing_allows_online('ok') is True
 
-def test_grace_allows_online():
+def test_grace_not_a_valid_standing():
+    # 'grace' is NOT a real registry standing value (confirmed @claude-web-db DEP_ACK 2026-03-12)
+    # Registry only emits: ok | degraded | suspended
     from hall_api.server import _standing_allows_online
-    assert _standing_allows_online('grace') is True
+    assert _standing_allows_online('grace') is False
 
-def test_degraded_blocks_online():
+def test_degraded_allows_online():
+    # degraded = free tier / billing issue — allowed online with limited standing
     from hall_api.server import _standing_allows_online
-    assert _standing_allows_online('degraded') is False
+    assert _standing_allows_online('degraded') is True
 
 def test_suspended_blocks_online():
     from hall_api.server import _standing_allows_online
@@ -34,7 +39,8 @@ def client():
         yield c
 
 def test_go_online_ok_standing(client):
-    with patch('hall_api.server._check_standing') as mock_check:
+    with patch('hall_api.server._check_standing') as mock_check, \
+         patch('hall_api.server._verify_hall_hash', return_value=None):
         mock_check.return_value = {
             'standing': 'ok',
             'tier_id': 'starter',
@@ -47,24 +53,12 @@ def test_go_online_ok_standing(client):
         assert data['ok'] is True
         assert data['account_standing'] == 'ok'
 
-def test_go_online_grace_standing(client):
+def test_go_online_unknown_standing_blocked(client):
+    # Unknown standing values are blocked — fail-closed
     with patch('hall_api.server._check_standing') as mock_check:
         mock_check.return_value = {
-            'standing': 'grace',
+            'standing': 'unknown_future_value',
             'tier_id': 'starter',
-            'github_login': 'testuser',
-            'checked_at': '2026-03-09T00:00:00Z',
-        }
-        resp = client.post('/api/server/go-online')
-        assert resp.status_code == 200
-        data = resp.get_json()
-        assert data['ok'] is True
-
-def test_go_online_degraded_blocked(client):
-    with patch('hall_api.server._check_standing') as mock_check:
-        mock_check.return_value = {
-            'standing': 'degraded',
-            'tier_id': 'free',
             'github_login': 'testuser',
             'checked_at': '2026-03-09T00:00:00Z',
         }
@@ -72,6 +66,21 @@ def test_go_online_degraded_blocked(client):
         assert resp.status_code == 403
         data = resp.get_json()
         assert data['ok'] is False
+
+def test_go_online_degraded_allowed(client):
+    # degraded standing is allowed — free tier users can go online
+    with patch('hall_api.server._check_standing') as mock_check, \
+         patch('hall_api.server._verify_hall_hash', return_value=None):
+        mock_check.return_value = {
+            'standing': 'degraded',
+            'tier_id': 'free',
+            'github_login': 'testuser',
+            'checked_at': '2026-03-09T00:00:00Z',
+        }
+        resp = client.post('/api/server/go-online')
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data['ok'] is True
         assert data['account_standing'] == 'degraded'
 
 def test_go_online_suspended_blocked(client):

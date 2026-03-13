@@ -1,3 +1,6 @@
+/* Copyright (c) 2026 pyhall.dev — https://pyhall.dev
+ * All Rights Reserved.
+ */
 /**
  * coordination.js — Multi-Agent Coordination screen
  * Shows live agent roster, WCP-governed task board (Kanban), and SSE event feed.
@@ -18,6 +21,7 @@ window.CoordinationScreen = (() => {
   let agents = [];
   let tasks  = [];
   let locks  = [];
+  let coordLogFiles = [];
   let eventLog = [];
   const MAX_EVENTS = 200;
 
@@ -718,6 +722,49 @@ window.CoordinationScreen = (() => {
     }).join('');
   }
 
+  async function fetchCoordLogFiles() {
+    const url = (window.AppState && window.AppState.hallUrl) || 'http://localhost:8765';
+    try {
+      const res = await fetch(`${url}/api/coord/logs/files`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      coordLogFiles = data.files || [];
+    } catch (_) {
+      coordLogFiles = [];
+    }
+    const select = document.getElementById('coord-log-file-select');
+    if (!select) return;
+    const current = select.value;
+    select.innerHTML = coordLogFiles.map(f =>
+      `<option value="${esc(f.log_key)}">${esc(f.file_name)}</option>`
+    ).join('');
+    if (coordLogFiles.length === 0) {
+      select.innerHTML = '<option value="">No logs available</option>';
+    }
+    if (current && [...select.options].some(o => o.value === current)) {
+      select.value = current;
+    }
+    const selected = select.value || (coordLogFiles[0] && coordLogFiles[0].log_key);
+    if (selected) await loadCoordLog(selected);
+  }
+
+  async function loadCoordLog(logKey) {
+    const url = (window.AppState && window.AppState.hallUrl) || 'http://localhost:8765';
+    const view = document.getElementById('coord-log-view');
+    const path = document.getElementById('coord-log-path');
+    if (!view || !path || !logKey) return;
+    try {
+      const res = await fetch(`${url}/api/coord/logs/${encodeURIComponent(logKey)}?lines=200`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      view.textContent = data.content || '';
+      path.textContent = data.full_path || '—';
+    } catch (e) {
+      view.textContent = `Failed to load log: ${e.message}`;
+      path.textContent = '—';
+    }
+  }
+
   async function poll() {
     await Promise.all([fetchAgents(), fetchTasks(), fetchLocks()]);
   }
@@ -752,9 +799,13 @@ window.CoordinationScreen = (() => {
         if (evt.type === 'file_lock') {
           fetchLocks();
         }
+        if (evt.type === 'log_append') {
+          const select = document.getElementById('coord-log-file-select');
+          if (select?.value) loadCoordLog(select.value);
+        }
         // Filter what goes into the visible event log
         if (!['tool_call', 'heartbeat', 'connected', 'mcp_tool_call', 'agent_ping',
-               'task_created', 'task_complete', 'dispatch'].includes(evt.type)) return;
+               'task_created', 'task_complete', 'dispatch', 'log_append'].includes(evt.type)) return;
 
         eventLog = [evt, ...eventLog].slice(0, MAX_EVENTS);
 
@@ -800,6 +851,7 @@ window.CoordinationScreen = (() => {
 
     // Fetch fresh data
     poll();
+    fetchCoordLogFiles();
 
     // Start poll loop (5s)
     if (!pollTimer) {
@@ -1137,6 +1189,16 @@ window.CoordinationScreen = (() => {
       if (!text) return;
       const url = (window.AppState && window.AppState.hallUrl) || 'http://localhost:8765';
       try {
+        // Persist human/operator comms to the canonical agent_comms log.
+        await fetch(`${url}/api/coord/logs/agent_comms/append`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            source: 'rob',
+            entry: `@${msgTo?.value || 'all'} ${text}`,
+          }),
+        });
+        // Best-effort legacy broadcast path (if implemented by server build).
         await fetch(`${url}/api/coord/messages`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -1146,8 +1208,9 @@ window.CoordinationScreen = (() => {
             message: text,
             msg_type: 'message',
           }),
-        });
+        }).catch(() => {});
         if (msgInput) msgInput.value = '';
+        await loadCoordLog('agent_comms');
       } catch (e) {}
     }
 
@@ -1155,7 +1218,34 @@ window.CoordinationScreen = (() => {
     msgInput?.addEventListener('keydown', e => { if (e.key === 'Enter') sendMessage(); });
   }
 
+  function initLogPanel() {
+    const select = document.getElementById('coord-log-file-select');
+    const refreshBtn = document.getElementById('coord-log-refresh');
+    const exportBtn = document.getElementById('coord-log-export');
+    const linesBtn = document.getElementById('coord-log-scroll-bottom');
+
+    select?.addEventListener('change', async () => {
+      if (select.value) await loadCoordLog(select.value);
+    });
+
+    refreshBtn?.addEventListener('click', async () => {
+      if (select?.value) await loadCoordLog(select.value);
+    });
+
+    exportBtn?.addEventListener('click', async () => {
+      if (!select?.value) return;
+      const url = (window.AppState && window.AppState.hallUrl) || 'http://localhost:8765';
+      window.open(`${url}/api/coord/logs/${encodeURIComponent(select.value)}/export`, '_blank');
+    });
+
+    linesBtn?.addEventListener('click', () => {
+      const view = document.getElementById('coord-log-view');
+      if (view) view.scrollTop = view.scrollHeight;
+    });
+  }
+
   initMessageBar();
+  initLogPanel();
 
   // ── Public API ────────────────────────────────────────────────────────────
 

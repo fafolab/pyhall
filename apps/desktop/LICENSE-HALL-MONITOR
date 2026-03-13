@@ -1,0 +1,39 @@
+Hall Monitor Desktop Application
+Copyright (c) 2026 pyhall.dev. All rights reserved.
+
+PROPRIETARY SOFTWARE LICENSE
+
+This software and associated documentation files (the "Hall Monitor") are
+proprietary software of pyhall.dev and are protected by copyright law and
+international treaties. Unauthorized reproduction, modification, distribution,
+or use of this software, in whole or in part, is strictly prohibited.
+
+GRANT OF LICENSE
+pyhall.dev grants you a personal, non-transferable, non-exclusive license to
+install and use one copy of the Hall Monitor software on a single device for
+your personal or commercial use in conjunction with the PyHall Worker Class
+Protocol SDK.
+
+RESTRICTIONS
+You may not:
+(a) copy, modify, or distribute the Hall Monitor binary or source code;
+(b) reverse engineer, decompile, or disassemble the Hall Monitor binary;
+(c) rent, lease, or lend the Hall Monitor to third parties;
+(d) use the Hall Monitor to build a competing product;
+(e) remove or alter any proprietary notices or labels.
+
+THE PYHALL SDK (sdk/python, sdk/typescript, sdk/go) AND CLI (apps/cli) ARE
+SEPARATE OPEN-SOURCE SOFTWARE LICENSED UNDER THE APACHE LICENSE 2.0 AND ARE
+NOT SUBJECT TO THIS PROPRIETARY LICENSE.
+
+DISCLAIMER OF WARRANTIES
+THE SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. PYHALL.DEV
+DISCLAIMS ALL WARRANTIES, EXPRESS OR IMPLIED, INCLUDING WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT.
+
+LIMITATION OF LIABILITY
+IN NO EVENT SHALL PYHALL.DEV BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL,
+EXEMPLARY, OR CONSEQUENTIAL DAMAGES ARISING OUT OF THE USE OR INABILITY TO USE
+THE SOFTWARE.
+
+For licensing inquiries: legal@pyhall.dev

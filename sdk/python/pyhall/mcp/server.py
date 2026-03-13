@@ -1,10 +1,16 @@
+# Copyright (c) 2026 pyhall.dev — https://pyhall.dev
+# Licensed under the Apache License, Version 2.0 (see LICENSE)
 """
-pyhall.mcp.server — MCP stdio server that exposes a WCP worker as an MCP tool.
+pyhall.mcp.server — MCP stdio server that exposes WCP workers as MCP tools.
 
 This is the MCP interop pattern for WCP. It proves that WCP workers can be
 surfaced as MCP tools with zero changes to the worker itself. The MCP server
-is a thin adapter: it translates MCP tool calls into WCP RouteInput, runs the
-Hall's governance check, and if APPROVED, calls the worker.
+is a thin adapter that:
+  - Queries the Hall Server for enrolled workers at session start
+  - Dynamically generates an MCP tool definition for each enrolled worker
+  - Routes tool calls to POST /api/route on the Hall Server
+  - Falls back to the local summarize_document example when Hall Server is
+    unreachable or no workers are enrolled
 
 Architecture:
 
@@ -14,6 +20,12 @@ Architecture:
         v
     pyhall.mcp.server  <-- this file
         |
+        | Dynamic path (enrolled workers):
+        | 1. refresh_tools() on initialize — GET /api/workers from Hall Server
+        | 2. build_tool_from_worker() — MCP tool schema per enrolled worker
+        | 3. tools/call  — POST /api/route on Hall Server (governed dispatch)
+        |
+        | Static fallback (example worker, no Hall Server):
         | 1. Build RouteInput from MCP tool call params
         | 2. Call pyhall.make_decision() -- governance check
         | 3. If APPROVED: call worker.execute()
@@ -25,9 +37,9 @@ Transport: stdio (NDJSON — one JSON object per line)
 Protocol:  JSON-RPC 2.0 (MCP 2024-11-05)
 
 Handled requests:
-    initialize         -- MCP handshake, returns server capabilities
-    tools/list         -- Returns the summarize_document tool definition
-    tools/call         -- Routes through WCP, executes worker, returns result
+    initialize         -- MCP handshake, returns server capabilities, refreshes dynamic tools
+    tools/list         -- Returns dynamically enrolled workers + summarize_document fallback
+    tools/call         -- Routes through Hall Server /api/route (dynamic) or WCP local (fallback)
     resources/list     -- Lists available WCP resources (workers, catalog, dispatches)
     resources/read     -- Reads a resource by URI (wrk://, cap://, hall://)
     resources/subscribe    -- Stub (not yet implemented, returns empty result)
@@ -242,6 +254,9 @@ TOOL_SUMMARIZE_DOCUMENT = {
 # ---------------------------------------------------------------------------
 
 def handle_initialize(params: dict, req_id: Any) -> dict:
+    # Re-query the Hall Server on every session start so the tool list
+    # reflects any workers enrolled since the last session.
+    refresh_tools()
     return {
         "jsonrpc": "2.0",
         "id": req_id,
@@ -259,7 +274,7 @@ def handle_initialize(params: dict, req_id: Any) -> dict:
                 "name": "pyhall-mcp",
                 "version": "0.3.0",
                 "description": (
-                    "WCP worker exposed as an MCP tool. "
+                    "WCP workers exposed as MCP tools via dynamic Hall Server registry. "
                     "Every tool call passes through WCP Hall governance."
                 ),
             },
@@ -268,11 +283,88 @@ def handle_initialize(params: dict, req_id: Any) -> dict:
 
 
 def handle_tools_list(params: dict, req_id: Any) -> dict:
+    # Build the tool list: dynamic enrolled workers from Hall Server,
+    # plus the static summarize_document example tool as a fallback.
+    # If no dynamic workers are available, the static tool ensures the
+    # server always exposes at least one tool.
+    dynamic_tools = [
+        {k: v for k, v in t.items() if not k.startswith("_")}
+        for t in _DYNAMIC_TOOLS
+    ]
+    tools = dynamic_tools if dynamic_tools else [TOOL_SUMMARIZE_DOCUMENT]
+    # Always include summarize_document when dynamic workers ARE present
+    # so the example / test harness continues to function.
+    if dynamic_tools:
+        tools = dynamic_tools + [TOOL_SUMMARIZE_DOCUMENT]
     return {
         "jsonrpc": "2.0",
         "id": req_id,
         "result": {
-            "tools": [TOOL_SUMMARIZE_DOCUMENT],
+            "tools": tools,
+        },
+    }
+
+
+def _handle_dynamic_tool_call(tool_def: dict, arguments: dict, req_id: Any) -> dict:
+    """
+    Route a dynamic enrolled-worker tool call through POST /api/route on Hall Server.
+
+    The Hall Server performs governance (rules engine + policy gate) and returns
+    the routing decision. If the worker is not directly callable by the Hall Server
+    (it only stores registry metadata), the response will contain the decision outcome.
+    """
+    worker_id = tool_def["_worker_id"]
+    primary_capability = tool_def["_primary_capability"]
+    payload = arguments.get("payload", {})
+    env = arguments.get("env", "dev")
+    tenant_id = arguments.get("tenant_id", "mcp-client")
+    correlation_id = str(uuid.uuid4())
+
+    if env not in ("dev", "stage", "prod"):
+        env = "dev"
+
+    route_body = {
+        "capability_id": primary_capability,
+        "env": env,
+        "data_label": "PUBLIC",
+        "tenant_id": tenant_id,
+        "tenant_risk": "low",
+        "qos_class": "P2",
+        "correlation_id": correlation_id,
+        "request": payload,
+    }
+
+    result = _post_hall_route(route_body)
+
+    if "error" in result:
+        return _mcp_error(
+            req_id, -32603,
+            f"Hall Server routing failed for worker '{worker_id}': {result['error']}"
+        )
+
+    response_payload = {
+        "routed_to": worker_id,
+        "result": result,
+        "routing_metadata": {
+            "worker_id": worker_id,
+            "capability": primary_capability,
+            "correlation_id": correlation_id,
+            "env": env,
+            "tenant_id": tenant_id,
+        },
+    }
+
+    return {
+        "jsonrpc": "2.0",
+        "id": req_id,
+        "result": {
+            "content": [
+                {
+                    "type": "text",
+                    "text": json.dumps(response_payload, indent=2),
+                }
+            ],
+            "isError": False,
         },
     }
 
@@ -283,6 +375,15 @@ def handle_tools_call(params: dict, req_id: Any) -> dict:
 
     tool_name = params.get("name", "")
     arguments = params.get("arguments", {})
+
+    # Check if this is a dynamic enrolled-worker tool call
+    dynamic_tool = next(
+        (t for t in _DYNAMIC_TOOLS if t.get("name") == tool_name), None
+    )
+    if dynamic_tool is not None:
+        if not isinstance(arguments, dict):
+            return _mcp_error(req_id, -32602, "Invalid arguments: expected object")
+        return _handle_dynamic_tool_call(dynamic_tool, arguments, req_id)
 
     if tool_name != "summarize_document":
         return _mcp_error(req_id, -32601, f"Unknown tool: {tool_name!r}")
@@ -751,6 +852,154 @@ def _fetch_hall_server(path: str) -> dict:
     except Exception as exc:
         print(f"[pyhall-mcp] Hall Server unreachable ({url}): {exc}", file=sys.stderr)
         return {"error": f"Hall Server unreachable: {exc}", "data": []}
+
+
+def _post_hall_route(body: dict, session_token: Optional[str] = None) -> dict:
+    """
+    POST http://localhost:8765/api/route with JSON body.
+    Returns parsed JSON dict, or a dict with 'error' key on failure.
+
+    Auth: token resolved in order of precedence:
+      1. session_token argument (explicit, e.g. from MCP session context)
+      2. HALL_SESSION_TOKEN environment variable
+    If neither is set the request is sent without Authorization — the Hall
+    Server will return 401, which is surfaced as an error dict to the caller.
+    """
+    url = f"{_HALL_SERVER_BASE}/api/route"
+    try:
+        data = json.dumps(body).encode("utf-8")
+        headers: Dict[str, str] = {
+            "User-Agent": "pyhall-mcp/0.3.0",
+            "Content-Type": "application/json",
+        }
+        token = session_token or os.environ.get("HALL_SESSION_TOKEN", "")
+        if token:
+            headers["Authorization"] = f"Bearer {token}"
+        req = urllib.request.Request(url, data=data, headers=headers, method="POST")
+        with urllib.request.urlopen(req, timeout=_HALL_SERVER_TIMEOUT) as resp:
+            raw = resp.read()
+            return json.loads(raw)
+    except Exception as exc:
+        print(f"[pyhall-mcp] POST /api/route failed: {exc}", file=sys.stderr)
+        return {"error": f"Hall Server route failed: {exc}"}
+
+
+# ---------------------------------------------------------------------------
+# Dynamic worker registry — enrolled workers from Hall Server
+# ---------------------------------------------------------------------------
+
+# Module-level cache of dynamically enrolled workers.
+# Populated by refresh_tools() on each session initialize.
+_DYNAMIC_TOOLS: list = []
+_DYNAMIC_WORKERS: list = []  # raw worker records from /api/workers
+
+
+def get_enrolled_workers() -> list:
+    """
+    Query GET /api/workers on the Hall Server and return the list of enrolled workers.
+
+    Each worker dict contains:
+        worker_id        — unique worker identifier
+        worker_species_id — species ID (e.g. wrk.doc.summarizer)
+        capabilities      — list of capability IDs (e.g. ["cap.doc.summarize"])
+        risk_tier         — "low" | "medium" | "high" | "critical"
+        enrolled_at       — ISO timestamp
+        status            — "active"
+
+    Returns [] if the Hall Server is unreachable or returns an error.
+    """
+    data = _fetch_hall_server("/api/workers")
+    if "error" in data:
+        return []
+    workers = data.get("workers", [])
+    if not isinstance(workers, list):
+        return []
+    return workers
+
+
+def build_tool_from_worker(worker: dict) -> dict:
+    """
+    Build an MCP tool definition dict from an enrolled worker's metadata.
+
+    The tool name is derived from the worker_id by replacing non-alphanumeric
+    characters with underscores and prefixing with 'hall_worker_' to avoid
+    collisions with the static summarize_document tool.
+
+    The tool's primary capability is the first element of worker['capabilities'].
+    """
+    worker_id = worker.get("worker_id", "unknown")
+    species = worker.get("worker_species_id", "")
+    capabilities = worker.get("capabilities", [])
+    primary_capability = capabilities[0] if capabilities else "cap.unknown"
+    risk_tier = worker.get("risk_tier", "low")
+
+    # Sanitize worker_id into a valid MCP tool name
+    safe_name = "hall_worker_" + "".join(
+        c if c.isalnum() else "_" for c in worker_id
+    )
+
+    capability_list = ", ".join(capabilities) if capabilities else primary_capability
+    description = (
+        f"Dispatch a task to enrolled WCP worker '{worker_id}' "
+        f"(species: {species}, capabilities: {capability_list}, risk: {risk_tier}). "
+        f"Routes through Hall Server governance (POST /api/route). "
+        f"Primary capability: {primary_capability}."
+    )
+
+    return {
+        "name": safe_name,
+        "description": description,
+        "_worker_id": worker_id,
+        "_primary_capability": primary_capability,
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "payload": {
+                    "type": "object",
+                    "description": (
+                        f"Task payload to send to worker '{worker_id}'. "
+                        "Contents depend on the worker's capability."
+                    ),
+                },
+                "env": {
+                    "type": "string",
+                    "description": "WCP environment: dev | stage | prod. Default: dev.",
+                    "enum": ["dev", "stage", "prod"],
+                    "default": "dev",
+                },
+                "tenant_id": {
+                    "type": "string",
+                    "description": "Tenant identifier for governance attribution. Default: mcp-client.",
+                    "default": "mcp-client",
+                },
+            },
+            "required": ["payload"],
+        },
+    }
+
+
+def refresh_tools() -> list:
+    """
+    Re-query the Hall Server for enrolled workers and rebuild the dynamic tool list.
+    Updates the module-level _DYNAMIC_TOOLS and _DYNAMIC_WORKERS caches.
+    Returns the updated list of MCP tool dicts (may be empty if Hall Server is down).
+    """
+    global _DYNAMIC_TOOLS, _DYNAMIC_WORKERS
+    workers = get_enrolled_workers()
+    _DYNAMIC_WORKERS = workers
+    _DYNAMIC_TOOLS = [build_tool_from_worker(w) for w in workers]
+    if workers:
+        print(
+            f"[pyhall-mcp] dynamic tools refreshed: {len(workers)} enrolled worker(s)",
+            file=sys.stderr,
+        )
+    else:
+        print(
+            "[pyhall-mcp] no enrolled workers found (Hall Server down or empty registry) "
+            "— falling back to static summarize_document tool",
+            file=sys.stderr,
+        )
+    return _DYNAMIC_TOOLS
 
 
 def _load_catalog() -> dict:

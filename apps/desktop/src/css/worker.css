@@ -1,0 +1,124 @@
+/* Copyright (c) 2026 pyhall.dev — https://pyhall.dev
+ * All Rights Reserved.
+ */
+/**
+ * worker.css — pyhall worker mascot animations + hat level colors
+ * Source: FAFO Lab brand catalog WRK-A-001 through WRK-A-021
+ */
+
+/* ── Hat level colors ───────────────────────────────────────────────────── */
+.hat-l0 .hat-element:not(.text-hat-element) { fill:#9ca3af !important; stroke:#6b7280 !important; }
+.hat-l1 .hat-element:not(.text-hat-element) { fill:#3b82f6 !important; stroke:#2563eb !important; }
+.hat-l2 .hat-element:not(.text-hat-element) { fill:#8b5cf6 !important; stroke:#7c3aed !important; }
+.hat-l3 .hat-element:not(.text-hat-element) { fill:#06b6d4 !important; stroke:#0891b2 !important; }
+.hat-l4 .hat-element:not(.text-hat-element) { fill:#eab308 !important; stroke:#ca8a04 !important; }
+.hat-l5 .hat-element:not(.text-hat-element) { fill:#f97316 !important; stroke:#ea580c !important; }
+.hat-l6 .hat-element:not(.text-hat-element) { fill:#22c55e !important; stroke:#16a34a !important; }
+.hat-l7 .hat-element:not(.text-hat-element) { fill:#ef4444 !important; stroke:#dc2626 !important; }
+.hat-l8 .hat-element:not(.text-hat-element) { fill:#111827 !important; stroke:#d97706 !important; }
+
+.hat-l0 .text-hat-element { fill:#374151; }
+.hat-l1 .text-hat-element { fill:#1d4ed8; }
+.hat-l2 .text-hat-element { fill:#6d28d9; }
+.hat-l3 .text-hat-element { fill:#0e7490; }
+.hat-l4 .text-hat-element { fill:#92400e; }
+.hat-l5 .text-hat-element { fill:#c2410c; }
+.hat-l6 .text-hat-element { fill:#15803d; }
+.hat-l7 .text-hat-element { fill:#b91c1c; }
+.hat-l8 .text-hat-element { fill:#92400e; }
+
+/* ── Keyframe definitions ───────────────────────────────────────────────── */
+@keyframes kf-float    { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+@keyframes kf-think    { 0%,100%{transform:rotate(0)translateY(0)} 25%{transform:rotate(-4deg)translateY(-3px)} 75%{transform:rotate(4deg)translateY(-1px)} }
+@keyframes kf-patrol   { 0%,100%{transform:translateX(-22px)} 50%{transform:translateX(22px)} }
+@keyframes kf-nod      { 0%,40%,100%{transform:rotate(0)} 15%{transform:rotate(-7deg)translateY(-2px)} 28%{transform:rotate(-3deg)} }
+@keyframes kf-shine    { 0%,100%{filter:brightness(1)} 50%{filter:brightness(1.2)drop-shadow(0 2px 8px rgba(240,240,240,.3))} }
+@keyframes kf-badge    { 0%,100%{transform:scale(1);filter:none} 45%{transform:scale(1.8);filter:drop-shadow(0 0 6px #0050D4)drop-shadow(0 0 14px rgba(0,80,212,.6))} 55%{transform:scale(1.5);filter:drop-shadow(0 0 10px #38bdf8)drop-shadow(0 0 22px rgba(56,189,248,.4))} }
+@keyframes kf-dig      { 0%,100%{transform:rotate(0)} 20%{transform:rotate(-9deg)translateY(-2px)} 50%{transform:rotate(0)} 70%{transform:rotate(9deg)translateY(-2px)} }
+@keyframes kf-spin     { from{transform:rotate(0)} to{transform:rotate(360deg)} }
+@keyframes kf-type     { 0%{transform:translate(0,0)rotate(0)} 12%{transform:translate(-1px,-1.5px)rotate(-.5deg)} 25%{transform:translate(1.5px,-.5px)rotate(.5deg)} 37%{transform:translate(-.5px,1px)rotate(-.3deg)} 50%{transform:translate(1px,-1px)rotate(.4deg)} 62%{transform:translate(-1.5px,.5px)rotate(-.5deg)} 75%{transform:translate(.5px,1.5px)rotate(.3deg)} 87%{transform:translate(-1px,-1px)rotate(-.4deg)} 100%{transform:translate(0,0)rotate(0)} }
+@keyframes kf-bob      { 0%,100%{transform:translateY(0)scaleX(1)scaleY(1)} 15%{transform:translateY(-14px)scaleX(.94)scaleY(1.06)} 30%{transform:translateY(0)scaleX(1.1)scaleY(.9)} 45%{transform:translateY(-6px)scaleX(.97)scaleY(1.03)} 60%{transform:translateY(0)scaleX(1.04)scaleY(.96)} }
+@keyframes kf-celebrate{ 0%{transform:translateY(0)scaleX(1)scaleY(1)} 8%{transform:translateY(-22px)scaleX(.88)scaleY(1.12)} 18%{transform:translateY(-28px)scaleX(.84)scaleY(1.18)} 30%{transform:translateY(2px)scaleX(1.18)scaleY(.82)} 42%{transform:translateY(-12px)scaleX(.96)scaleY(1.04)} 55%{transform:translateY(1px)scaleX(1.08)scaleY(.92)} 67%{transform:translateY(-5px)} 80%{transform:translateY(0)scaleX(1.03)scaleY(.97)} 100%{transform:translateY(0)scaleX(1)scaleY(1)} }
+@keyframes kf-shake    { 0%,72%,100%{transform:translateX(0)rotate(0)} 8%{transform:translateX(-7px)rotate(-3deg)} 16%{transform:translateX(7px)rotate(3deg)} 24%{transform:translateX(-6px)rotate(-2deg)} 32%{transform:translateX(6px)rotate(2deg)} 40%{transform:translateX(-4px)rotate(-1deg)} 48%{transform:translateX(4px)} 56%{transform:translateX(-2px)} 64%{transform:translateX(2px)} }
+@keyframes kf-angry    { 0%,80%,100%{transform:translateX(0)rotate(0)} 10%{transform:translateX(-6px)rotate(-4deg)} 20%{transform:translateX(6px)rotate(4deg)} 30%{transform:translateX(-5px)rotate(-3deg)} 40%{transform:translateX(5px)rotate(3deg)} 50%{transform:translateX(-4px)rotate(-2deg)} 60%{transform:translateX(4px)rotate(2deg)} 70%{transform:translateX(-2px)} }
+@keyframes kf-glitch   { 0%,100%{transform:translate(0,0);filter:none;opacity:1} 4%{transform:translate(-4px,1px);filter:hue-rotate(80deg)saturate(300%)brightness(1.4);opacity:.9} 8%{transform:translate(4px,-1px);filter:hue-rotate(180deg)} 10%{transform:translate(0,0);filter:none} 22%{transform:translate(-3px,2px)skewX(-3deg);filter:hue-rotate(260deg)saturate(200%);opacity:.85} 26%{transform:translate(3px,-2px)skewX(3deg);filter:saturate(400%)brightness(1.6)} 28%{transform:translate(0,0);filter:none} 84%{transform:translate(-5px,0)skewX(-5deg);filter:hue-rotate(45deg)saturate(400%)} 88%{transform:translate(5px,0)skewX(5deg);filter:hue-rotate(270deg)brightness(2)} 92%{transform:translate(0,0);filter:none} }
+@keyframes kf-alert    { 0%,100%{filter:drop-shadow(0 0 0 #f59e0b);transform:scale(1)} 40%{filter:drop-shadow(0 0 12px #f59e0b)drop-shadow(0 0 28px rgba(245,158,11,.5));transform:scale(1.04)} 60%{filter:drop-shadow(0 0 18px #f59e0b)drop-shadow(0 0 36px rgba(245,158,11,.6));transform:scale(1.06)} }
+@keyframes kf-powerup  { 0%{transform:scale(.6);opacity:0;filter:brightness(3)saturate(0)} 30%{transform:scale(1.15);opacity:1;filter:brightness(1.5)saturate(150%)} 50%{transform:scale(.97);filter:brightness(1)} 70%{transform:scale(1.04)} 100%{transform:scale(1);opacity:1;filter:none} }
+@keyframes kf-hat-tip  { 0%,55%,100%{transform:rotate(0)translateY(0)} 20%{transform:rotate(-14deg)translateY(-2px)} 38%{transform:rotate(-8deg)translateY(-1px)} }
+@keyframes kf-enter    { 0%{transform:translateY(36px);opacity:0} 100%{transform:translateY(0);opacity:1} }
+@keyframes kf-warp     { 0%{transform:scale(0)rotate(200deg);opacity:0;filter:hue-rotate(180deg)saturate(300%)} 60%{transform:scale(1.12)rotate(-8deg);opacity:1;filter:none} 80%{transform:scale(.96)rotate(3deg)} 100%{transform:scale(1)rotate(0);opacity:1} }
+@keyframes kf-direct   { 0%,12%{transform:rotate(-14deg)translateX(-3px)} 25%,44%{transform:rotate(0)translateX(0)} 56%,72%{transform:rotate(14deg)translateX(3px)} 85%,100%{transform:rotate(0)translateX(0)} }
+@keyframes kf-tongue-dart  { 0%,15%,85%,100%{opacity:0;transform:scaleY(0.05)} 38%,62%{opacity:1;transform:scaleY(1)} }
+@keyframes kf-process-text { 0%{fill:#3776AB} 14%{fill:#f59e0b} 28%{fill:#ef4444} 42%{fill:#22c55e} 56%{fill:#a855f7} 70%{fill:#f97316} 84%{fill:#38bdf8} 100%{fill:#3776AB} }
+
+/* ── Animation class bindings ───────────────────────────────────────────── */
+.anim-float    .anim-target { animation:kf-float 2.8s ease-in-out infinite; }
+.anim-think    .anim-target { animation:kf-think 3.5s ease-in-out infinite; transform-box:fill-box; transform-origin:bottom center; }
+.anim-patrol   .anim-target { animation:kf-patrol 3.2s ease-in-out infinite; }
+.anim-nod      .anim-target { animation:kf-nod 2.2s ease-in-out infinite; transform-box:fill-box; transform-origin:top center; }
+.anim-shine    .anim-target { animation:kf-shine 2.5s ease-in-out infinite; }
+.anim-badge    .badge-element { animation:kf-badge 2s ease-in-out infinite; transform-box:fill-box; transform-origin:center; }
+.anim-dig      .anim-target { animation:kf-dig 0.8s ease-in-out infinite; transform-box:fill-box; transform-origin:bottom center; }
+.anim-spin     .anim-target { animation:kf-spin 1.8s linear infinite; transform-box:fill-box; transform-origin:center; }
+.anim-type     .anim-target { animation:kf-type 0.12s ease-in-out infinite; }
+.anim-bob      .anim-target { animation:kf-bob 1.2s cubic-bezier(.36,.07,.19,.97) infinite; transform-box:fill-box; transform-origin:bottom center; }
+.anim-celebrate .anim-target { animation:kf-celebrate 1.4s cubic-bezier(.36,.07,.19,.97) infinite; transform-box:fill-box; transform-origin:bottom center; }
+.anim-shake    .anim-target { animation:kf-shake 1.6s ease-in-out infinite; }
+.anim-angry    .anim-target { animation:kf-angry 0.6s ease-in-out infinite; }
+.anim-glitch   .anim-target { animation:kf-glitch 3.2s ease-in-out infinite; }
+.anim-alert    .anim-target { animation:kf-alert 1.4s ease-in-out infinite; }
+.anim-powerup  .anim-target { animation:kf-powerup 1.4s cubic-bezier(.22,1,.36,1) forwards; animation-delay:.4s; }
+.anim-hat-tip  .hat-group   { animation:kf-hat-tip 3s ease-in-out infinite; transform-box:fill-box; transform-origin:50% 100%; }
+.anim-enter    .anim-target { animation:kf-enter .7s cubic-bezier(.22,1,.36,1) forwards; }
+.anim-warp     .anim-target { animation:kf-warp 1s cubic-bezier(.22,1,.36,1) forwards; }
+.anim-direct   .anim-target { animation:kf-direct 2.4s ease-in-out infinite; transform-box:fill-box; transform-origin:bottom center; }
+.anim-process  .anim-target { animation:kf-float 3.2s ease-in-out infinite; }
+.anim-process  .tongue-element { animation:kf-tongue-dart 2s ease-in-out infinite; transform-box:fill-box; transform-origin:top center; fill-opacity:1 !important; }
+.anim-process  .text-hat-element { animation:kf-process-text 2.4s linear infinite; animation-delay:var(--letter-delay,0s); }
+
+.anim-paused .anim-target,
+.anim-paused .hat-group,
+.anim-paused .badge-element,
+.anim-paused .tongue-element,
+.anim-paused .text-hat-element { animation-play-state:paused !important; }
+
+/* ── Worker widget container ────────────────────────────────────────────── */
+.worker-widget {
+  display: inline-block;
+  position: relative;
+  line-height: 0;
+  flex-shrink: 0;
+}
+
+.worker-widget svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+/* Size variants */
+.worker-widget-sm  { width: 48px;  height: 43px;  }
+.worker-widget-md  { width: 72px;  height: 65px;  }
+.worker-widget-lg  { width: 96px;  height: 86px;  }
+.worker-widget-xl  { width: 128px; height: 115px; }
+
+/* Login gate worker — centered, larger */
+#login-gate-worker {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+/* Status screen worker — floated right of connection card */
+#status-worker-container {
+  float: right;
+  margin: -4px 0 0 12px;
+}
+
+/* Alerts empty state worker — centered */
+#alerts-worker-container {
+  display: flex;
+  justify-content: center;
+  padding: 24px 0 8px;
+}

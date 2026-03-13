@@ -1,3 +1,5 @@
+// Copyright (c) 2026 pyhall.dev — https://pyhall.dev
+// Licensed under the Apache License, Version 2.0 (see LICENSE)
 package main
 
 import (
@@ -35,6 +37,7 @@ and scaffold new workers with pre-filled registry records.
 		newBrowseCmd(),
 		newScaffoldCmd(),
 		newRegistryCmd(),
+		newSkillCmd(),
 	)
 
 	if err := root.Execute(); err != nil {

@@ -1,3 +1,6 @@
+/* Copyright (c) 2026 pyhall.dev — https://pyhall.dev
+ * All Rights Reserved.
+ */
 /**
  * app.js — Main application logic
  * - Navigation / screen switching
@@ -8,7 +11,7 @@
 
 // ─── Navigation ────────────────────────────────────────────────────────────
 
-const SCREENS = ['status', 'feed', 'crew', 'alerts', 'coordination', 'profile', 'enroll', 'config'];
+const SCREENS = ['status', 'feed', 'crew', 'alerts', 'coordination', 'profile', 'enroll', 'config', 'doctor', 'about'];
 
 function navigateTo(screen) {
   if (!SCREENS.includes(screen)) return;
@@ -38,6 +41,8 @@ function navigateTo(screen) {
     profile:      () => window.ProfileScreen && window.ProfileScreen.init(),
     enroll:       () => window.EnrollScreen && window.EnrollScreen.reset(),
     config:       () => window.ConfigScreen && window.ConfigScreen.load(),
+    doctor:       () => window.DoctorScreen && window.DoctorScreen.onActivate(),
+    about:        () => _refreshAboutScreen(),
   };
   if (handlers[screen]) handlers[screen]();
 }
@@ -47,9 +52,19 @@ document.querySelectorAll('.nav-item').forEach(el => {
   el.addEventListener('click', () => navigateTo(el.dataset.screen));
 });
 
+// Wire config tab chip active states
+document.querySelectorAll('[data-config-tab]').forEach(chip => {
+  chip.addEventListener('click', () => {
+    document.querySelectorAll('[data-config-tab]').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+  });
+});
+
 // Cross-screen navigation buttons
 document.getElementById('btn-go-config-from-status')?.addEventListener('click', () => navigateTo('config'));
 document.getElementById('btn-go-feed-from-status')?.addEventListener('click', () => navigateTo('feed'));
+document.getElementById('btn-go-online-status')?.addEventListener('click', () => window.goOnline && window.goOnline());
+document.getElementById('btn-go-offline-status')?.addEventListener('click', () => window.goOffline && window.goOffline());
 document.getElementById('btn-go-enroll')?.addEventListener('click', () => navigateTo('enroll'));
 document.getElementById('btn-view-crew')?.addEventListener('click', () => navigateTo('crew'));
 
@@ -173,22 +188,32 @@ window.navigateTo = navigateTo;
     if (!startBtn) return;
     const isOffline = (state === 'offline');
     const isRunning = (state === 'locked' || state === 'ready' || state === 'online');
-    // Show Start when offline; show Restart when server is running
+    const isOnline  = (state === 'online');
+
+    // Start/Restart button
     startBtn.style.display = (isOffline || isRunning) ? '' : 'none';
     startBtn.textContent = isOffline ? 'Start Hall Server' : 'Restart Server';
+
+    // Stop button (only if we started it)
     stopBtn.style.display = (isRunning && window._serverStartedByUs) ? '' : 'none';
+
+    // Go Online (show when server is running but not online)
+    const goOnlineBtn = document.getElementById('btn-go-online-status');
+    if (goOnlineBtn) goOnlineBtn.style.display = (isRunning && !isOnline) ? '' : 'none';
+
+    // Go Offline (show when fully online)
+    const goOfflineBtn = document.getElementById('btn-go-offline-status');
+    if (goOfflineBtn) goOfflineBtn.style.display = isOnline ? '' : 'none';
   };
 
   startBtn?.addEventListener('click', async () => {
-    const cfg = window.AppState?.config || {};
-    const cmd = cfg.server_start_cmd || 'pyhall start';
     const wasLabel = startBtn.textContent;
     startBtn.disabled = true;
     startBtn.textContent = wasLabel === 'Restart Server' ? 'Restarting…' : 'Starting…';
-    if (msgEl) { msgEl.textContent = `Running: ${cmd}`; msgEl.style.display = ''; }
+    if (msgEl) { msgEl.textContent = 'Starting Hall Server…'; msgEl.style.display = ''; }
 
     try {
-      await window.__TAURI__.core.invoke('start_hall_server', { cmd });
+      await window.__TAURI__.core.invoke('start_hall_server_sidecar');
       window._serverStartedByUs = true;
 
       // Poll until server responds (up to 15s)
@@ -202,6 +227,11 @@ window.navigateTo = navigateTo;
             if (msgEl) msgEl.style.display = 'none';
             startBtn.disabled = false;
             window.pollHall && window.pollHall();
+            // Server is now running — show passphrase gate so user can unlock
+            // (the passphrase gate transitions: first-time setup or unlock existing)
+            if (window.AppState?.sessionToken) {
+              _showPassphraseGate();
+            }
           }
         } catch (_) {}
         if (attempts >= 15) {
@@ -231,111 +261,151 @@ window.navigateTo = navigateTo;
   });
 })();
 
-// ─── Hall indicator click → restart dropdown ────────────────────────────────
+// ─── Hall indicator click → server/auth dropdown ───────────────────────────
 
 (function wireRestartDropdown() {
   const indicator = document.getElementById('hall-indicator');
   if (!indicator) return;
 
-  // Make it look clickable
   indicator.style.cursor = 'pointer';
-  indicator.title = 'Click to restart Hall Server';
+  indicator.title = 'Server options';
 
-  // Create dropdown (hidden by default)
+  // Dropdown:
+  //   Start Server   (disabled when server is running)
+  //   Restart Server (disabled when server is offline)
+  //   ─────────────
+  //   Log Out        (stops server + logout → login screen)
+  //   Log Out, Exit App
   const dropdown = document.createElement('div');
   dropdown.id = 'hall-restart-dropdown';
   dropdown.className = 'hall-restart-dropdown hidden';
   dropdown.innerHTML = `
-    <div class="hall-restart-item muted" id="hall-locked-msg" style="display:none">Log in to activate Hall</div>
-    <div class="hall-restart-item accent" id="btn-go-online" style="display:none">Go Online</div>
-    <div class="hall-restart-item" id="btn-go-offline" style="display:none">Go Offline</div>
+    <div class="hall-restart-item" id="btn-dd-start-server">Start Server</div>
+    <div class="hall-restart-item" id="btn-dd-restart-server">Restart Server</div>
     <div class="hall-restart-divider"></div>
-    <div class="hall-restart-item" id="btn-logout-restart">Logout &amp; Restart Hall Server</div>
-    <div class="hall-restart-item danger" id="btn-logout-only">Logout Only</div>
+    <div class="hall-restart-item danger" id="btn-dd-logout">Log Out</div>
+    <div class="hall-restart-item danger" id="btn-dd-logout-exit">Log Out, Exit App</div>
   `;
   document.getElementById('header-status').appendChild(dropdown);
 
-  // Toggle dropdown on indicator click
   indicator.addEventListener('click', (e) => {
     e.stopPropagation();
     dropdown.classList.toggle('hidden');
   });
-
-  // Close on outside click
   document.addEventListener('click', () => dropdown.classList.add('hidden'));
 
-  // Logout + hard restart
-  document.getElementById('btn-logout-restart').addEventListener('click', async (e) => {
-    e.stopPropagation();
-    dropdown.classList.add('hidden');
-    const url = window.AppState.hallUrl || 'http://localhost:8765';
+  // ── Internal helpers ──────────────────────────────────────────────────────
 
-    // Show restarting state immediately
-    const ind = document.getElementById('hall-indicator');
-    const lbl = document.getElementById('hall-indicator-label');
-    if (ind) ind.className = 'hall-indicator connecting';
-    if (lbl) lbl.textContent = 'RESTARTING...';
-    const sbStatus = document.getElementById('sb-hall-status');
-    if (sbStatus) { sbStatus.className = 'status-connecting'; sbStatus.textContent = 'RESTARTING...'; }
+  async function _stopServer() {
+    try { await window.__TAURI__.core.invoke('stop_hall_server'); } catch (_) {}
+    // Also ask Hall Server to clear its state (best-effort)
+    const url = window.AppState?.hallUrl || 'http://localhost:8765';
+    try { await fetch(`${url}/api/auth/logout`, { method: 'POST', signal: AbortSignal.timeout(1500) }); } catch (_) {}
+    window._serverStartedByUs = false;
+  }
 
-    try {
-      await fetch(`${url}/api/server/restart`, { method: 'POST' });
-    } catch (_) {}
+  async function _clearSession() {
     window.AppState.sessionToken = null;
     window.AppState.githubLogin  = null;
     window.AppState.githubAvatar = null;
+    window.AppState.hallState    = 'offline';
+    window.AppState.hallOnline   = false;
+    window.AppState.loggedIn     = false;
+  }
+
+  function _showLoginGate() {
     const gate = document.getElementById('login-gate');
     if (gate) gate.style.display = 'flex';
+    // Re-enable login button in case it was waiting
+    const btn = document.getElementById('btn-login-gate-github');
+    if (btn) { btn.disabled = false; btn.textContent = 'Sign in with GitHub'; }
     window.pollHall && window.pollHall();
-  });
+  }
 
-  // Logout only (no restart)
-  document.getElementById('btn-logout-only').addEventListener('click', async (e) => {
+  // ── Start Server ──────────────────────────────────────────────────────────
+  document.getElementById('btn-dd-start-server').addEventListener('click', async (e) => {
     e.stopPropagation();
     dropdown.classList.add('hidden');
-    const url = window.AppState.hallUrl || 'http://localhost:8765';
-    try { await fetch(`${url}/api/auth/logout`, { method: 'POST' }); } catch (_) {}
-    window.AppState.sessionToken = null;
-    window.AppState.githubLogin  = null;
-    window.AppState.githubAvatar = null;
-    const gate = document.getElementById('login-gate');
-    if (gate) gate.style.display = 'flex';
-    window.pollHall && window.pollHall();
+    if (window.AppState?.hallState !== 'offline') return; // already running
+    // Delegate to the start button logic already wired in wireServerStartStop()
+    document.getElementById('btn-start-server')?.click();
   });
 
-  // Go Online — activate Hall after login
-  document.getElementById('btn-go-online').addEventListener('click', async (e) => {
+  // ── Restart Server ────────────────────────────────────────────────────────
+  document.getElementById('btn-dd-restart-server').addEventListener('click', async (e) => {
     e.stopPropagation();
     dropdown.classList.add('hidden');
-    const url = window.AppState.hallUrl || 'http://localhost:8765';
-    const lbl = document.getElementById('hall-indicator-label');
-    if (lbl) lbl.textContent = 'ACTIVATING...';
-    try {
-      // Include desktop binary hash in attestation chain
-      const body = {};
-      if (window.AppState.desktopBinaryHash) {
-        body.desktop_hash = window.AppState.desktopBinaryHash;
-      }
-      const r = await fetch(`${url}/api/server/go-online`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-      const d = await r.json();
-      if (!d.ok) alert(`Cannot go online: ${d.message}`);
-    } catch (_) {}
-    window.pollHall && window.pollHall();
+    if (window.AppState?.hallState === 'offline') return; // not running
+    document.getElementById('btn-start-server')?.click();
   });
 
-  // Go Offline — without logout
-  document.getElementById('btn-go-offline').addEventListener('click', async (e) => {
+  // ── Log Out ───────────────────────────────────────────────────────────────
+  document.getElementById('btn-dd-logout').addEventListener('click', async (e) => {
     e.stopPropagation();
     dropdown.classList.add('hidden');
-    const url = window.AppState.hallUrl || 'http://localhost:8765';
-    try { await fetch(`${url}/api/server/go-offline`, { method: 'POST' }); } catch (_) {}
-    window.pollHall && window.pollHall();
+    await _stopServer();
+    await _clearSession();
+    setPassphraseGate(false);
+    _showLoginGate();
   });
+
+  // ── Log Out, Exit App ─────────────────────────────────────────────────────
+  document.getElementById('btn-dd-logout-exit').addEventListener('click', async (e) => {
+    e.stopPropagation();
+    dropdown.classList.add('hidden');
+    await _stopServer();
+    await _clearSession();
+    if (window.__TAURI__?.core?.invoke) {
+      window.__TAURI__.core.invoke('exit_app').catch(() => window.__TAURI__.process?.exit(0));
+    }
+  });
+
+  // ── Keep dropdown items enabled/disabled based on server state ────────────
+  const _origUpdate = window._updateRestartDropdown || (() => {});
+  window._updateRestartDropdown = function(state, data) {
+    _origUpdate(state, data);
+
+    const startBtn   = document.getElementById('btn-dd-start-server');
+    const restartBtn = document.getElementById('btn-dd-restart-server');
+    if (!startBtn) return;
+
+    const isOffline = (state === 'offline');
+    // Show "Start Server" only when offline; show "Restart Server" only when running
+    startBtn.style.display   = isOffline ? '' : 'none';
+    restartBtn.style.display = isOffline ? 'none' : '';
+  };
 })();
+
+// ── Go Online / Go Offline — exposed globally for status screen ─────────────
+
+window.goOnline = async function() {
+  if (!window.AppState?.sessionToken) {
+    alert('Not logged into registry. Use "Log In" to authenticate with pyhall.dev first.');
+    return;
+  }
+  const url = window.AppState?.hallUrl || 'http://localhost:8765';
+  const body = {};
+  if (window.AppState?.desktopBinaryHash) body.desktop_hash = window.AppState.desktopBinaryHash;
+  try {
+    const r = await fetch(`${url}/api/server/go-online`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${window.AppState.sessionToken}`,
+      },
+      body: JSON.stringify(body),
+    });
+    const d = await r.json();
+    if (!d.ok) { alert(`Cannot go online: ${d.message || 'unknown error'}`); return; }
+  } catch (_) {}
+  window.pollHall && window.pollHall();
+};
+
+window.goOffline = async function() {
+  const url = window.AppState?.hallUrl || 'http://localhost:8765';
+  try { await fetch(`${url}/api/server/go-offline`, { method: 'POST' }); } catch (_) {}
+  window.pollHall && window.pollHall();
+};
 
 // ─── Global poll loop ──────────────────────────────────────────────────────
 
@@ -354,6 +424,9 @@ async function pollHall() {
     }
     const online = (status.state === 'online');
     updateConnectionUI(true, status);
+
+    // Cache Hall Server version for About screen
+    if (status.version) window.AppState.hallVersion = status.version;
 
     // Forward status to status screen
     if (window.StatusScreen) {
@@ -411,12 +484,21 @@ function restartPollLoop(ms) {
 
 window.restartPollLoop = restartPollLoop;
 
-// ─── Tauri event listener (tray navigation) ────────────────────────────────
+// ─── Tauri event listeners ─────────────────────────────────────────────────
 
 if (typeof window.__TAURI__ !== 'undefined') {
   try {
+    // Tray navigation
     window.__TAURI__.event.listen('navigate', (event) => {
       navigateTo(event.payload);
+    });
+
+    // X button: stop server + logout + exit
+    window.__TAURI__.event.listen('app_close_requested', async () => {
+      try { await window.__TAURI__.core.invoke('stop_hall_server'); } catch (_) {}
+      const url = window.AppState?.hallUrl || 'http://localhost:8765';
+      try { await fetch(`${url}/api/auth/logout`, { method: 'POST', signal: AbortSignal.timeout(1000) }); } catch (_) {}
+      window.__TAURI__.core.invoke('exit_app').catch(() => {});
     });
   } catch (e) {
     console.warn('Tauri event listener not available:', e);
@@ -445,45 +527,114 @@ function setPassphraseGate(show) {
 }
 
 /**
- * Called once login is confirmed (token received).
- * Hides login gate, then shows passphrase gate.
+ * Check if the user's pyhall.dev account is fully set up.
+ * Calls registry /api/v1/me and /api/v1/namespaces directly.
+ * Returns { complete: bool, missing: string[] }
  */
-function onLoginConfirmed() {
+async function checkAccountComplete(token) {
+  const missing = [];
+  try {
+    const [meRes, nsRes] = await Promise.all([
+      fetch('https://api.pyhall.dev/api/v1/me', {
+        headers: { 'Authorization': `Bearer ${token}` },
+        signal: AbortSignal.timeout(5000),
+      }),
+      fetch('https://api.pyhall.dev/api/v1/namespaces', {
+        headers: { 'Authorization': `Bearer ${token}` },
+        signal: AbortSignal.timeout(5000),
+      }),
+    ]);
+
+    if (meRes.ok) {
+      const me = await meRes.json();
+      if (!me.email_contact) missing.push('Add a contact email to your account');
+      else if (!me.email_verified) missing.push('Verify your contact email address');
+    }
+
+    if (nsRes.ok) {
+      const ns = await nsRes.json();
+      if (!ns || ns.length === 0) missing.push('Claim at least one namespace (x.yourname or org.yourname)');
+    }
+  } catch (_) {
+    // Network error — let them through rather than blocking on connectivity
+    return { complete: true, missing: [] };
+  }
+
+  return { complete: missing.length === 0, missing };
+}
+
+/**
+ * Called once login is confirmed (token received from registry).
+ * Checks account completeness first — shows incomplete screen if needed.
+ * If complete: hides login gate, shows passphrase gate or status.
+ */
+async function onLoginConfirmed() {
+  const token = window.AppState?.sessionToken;
+
+  // Check account completeness before letting them past the gate
+  const { complete, missing } = await checkAccountComplete(token);
+  if (!complete) {
+    // Show incomplete panel with specific items missing
+    const listEl = document.getElementById('gate-incomplete-list');
+    if (listEl) listEl.innerHTML = missing.map(m => `• ${m}`).join('<br>');
+    _showGatePanel('incomplete');
+    return;
+  }
+
   setLoginGate(false);
 
-  // Fetch GitHub identity to display on the passphrase gate.
+  // Fetch GitHub identity for display (uses registry directly if Hall is offline)
   _fetchAndShowIdentity();
 
-  // Check if Hall Server has passphrase protection enabled.
-  // If the server returns {passphrase_set: false}, go straight to set form.
-  // If {passphrase_set: true} (or unknown), show unlock form.
-  _showPassphraseGate();
+  // Check if Hall Server is reachable. If yes, show passphrase gate.
+  // If no, go straight to status — user can start Hall Server from there.
+  const hallUrl = window.AppState?.hallUrl || 'http://localhost:8765';
+  fetch(`${hallUrl}/api/health`, { signal: AbortSignal.timeout(1500) })
+    .then(r => { if (r.ok) _showPassphraseGate(); else navigateTo('status'); })
+    .catch(() => navigateTo('status'));
 }
 
 async function _fetchAndShowIdentity() {
   const token = window.AppState?.sessionToken;
   if (!token) return;
-  // Route through local Hall server proxy to avoid CORS issues calling registry directly.
   const hallUrl = window.AppState?.hallUrl || 'http://localhost:8765';
+
+  let login = null;
   try {
+    // Try Hall Server proxy first (works when server is running)
     const r = await fetch(`${hallUrl}/api/profile`, {
       headers: { 'Authorization': `Bearer ${token}` },
+      signal: AbortSignal.timeout(1500),
     });
-    if (!r.ok) return;
-    const d = await r.json();
-    const login = (d.profile?.github_login) || d.github_login;
-    if (!login) return;
-    const avatarEl = document.getElementById('passphrase-avatar');
-    const loginEl  = document.getElementById('passphrase-github-login');
-    if (avatarEl) {
-      avatarEl.src = `https://github.com/${login}.png?size=72`;
-      avatarEl.style.display = 'block';
+    if (r.ok) {
+      const d = await r.json();
+      login = (d.profile?.github_login) || d.github_login;
     }
-    if (loginEl) loginEl.textContent = login;
-    // Store for use elsewhere (status screen, profile screen)
-    window.AppState.githubLogin = login;
-    window.AppState.githubAvatar = `https://github.com/${login}.png`;
   } catch (_) {}
+
+  if (!login) {
+    // Fallback: call registry directly (Hall Server not running)
+    try {
+      const r = await fetch('https://api.pyhall.dev/api/v1/me', {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (r.ok) {
+        const d = await r.json();
+        login = d.github_login;
+      }
+    } catch (_) {}
+  }
+
+  if (!login) return;
+  const avatarEl = document.getElementById('passphrase-avatar');
+  const loginEl  = document.getElementById('passphrase-github-login');
+  if (avatarEl) {
+    avatarEl.src = `https://github.com/${login}.png?size=72`;
+    avatarEl.style.display = 'block';
+  }
+  if (loginEl) loginEl.textContent = login;
+  window.AppState.githubLogin = login;
+  window.AppState.githubAvatar = `https://github.com/${login}.png`;
 }
 
 // Tracks whether the passphrase was unset when the gate was shown.
@@ -521,16 +672,23 @@ async function _showPassphraseGate() {
 }
 
 function _switchPassphraseForm(which) {
-  const unlockForm = document.getElementById('passphrase-unlock-form');
-  const setForm    = document.getElementById('passphrase-set-form');
-  if (unlockForm) unlockForm.style.display = which === 'unlock' ? 'block' : 'none';
-  if (setForm)    setForm.style.display    = which === 'set'    ? 'block' : 'none';
+  const forms = {
+    'unlock':        document.getElementById('passphrase-unlock-form'),
+    'set':           document.getElementById('passphrase-set-form'),
+    'reset-request': document.getElementById('passphrase-reset-request-form'),
+    'reset-confirm': document.getElementById('passphrase-reset-confirm-form'),
+  };
+  Object.entries(forms).forEach(([key, el]) => {
+    if (el) el.style.display = (key === which) ? 'block' : 'none';
+  });
   // Clear inputs and errors on switch
-  ['passphrase-input', 'passphrase-new', 'passphrase-new-confirm'].forEach(id => {
+  ['passphrase-input', 'passphrase-new', 'passphrase-new-confirm',
+   'passphrase-reset-token', 'passphrase-reset-new', 'passphrase-reset-confirm'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
-  ['passphrase-unlock-error', 'passphrase-set-error'].forEach(id => {
+  ['passphrase-unlock-error', 'passphrase-set-error',
+   'passphrase-reset-error', 'passphrase-reset-confirm-error'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
@@ -549,10 +707,73 @@ function onPassphraseAccepted() {
   } else {
     navigateTo('status');
   }
+  // Auto go-online immediately after unlock (if logged into registry)
+  if (window.AppState?.sessionToken) {
+    setTimeout(() => window.goOnline && window.goOnline(), 300);
+  }
 }
 
 window.onLoginConfirmed   = onLoginConfirmed;
 window.onPassphraseAccepted = onPassphraseAccepted;
+
+// ─── Login gate panel switching ────────────────────────────────────────────
+
+function _showGatePanel(name) {
+  ['welcome', 'new-user', 'login', 'incomplete'].forEach(p => {
+    const el = document.getElementById(`gate-panel-${p}`);
+    if (el) el.style.display = (p === name) ? '' : 'none';
+  });
+  // Animate login worker on panel transitions
+  const loginWorker = document.getElementById('login-worker');
+  if (loginWorker && window.WorkerWidget) {
+    WorkerWidget.setAnimation(loginWorker, 'anim-enter');
+    setTimeout(() => WorkerWidget.setAnimation(loginWorker, 'anim-float'), 750);
+  }
+}
+
+// Ensure welcome panel is shown first (default)
+_showGatePanel('welcome');
+
+// Welcome → new user
+document.getElementById('btn-gate-new-user')?.addEventListener('click', () => _showGatePanel('new-user'));
+
+// Welcome → login
+document.getElementById('btn-gate-has-account')?.addEventListener('click', () => _showGatePanel('login'));
+
+// New user → back
+document.getElementById('btn-gate-new-user-back')?.addEventListener('click', () => _showGatePanel('welcome'));
+
+// New user → create account online
+document.getElementById('btn-gate-create-account')?.addEventListener('click', () => {
+  const url = 'https://pyhall.dev/signup';
+  if (window.__TAURI__?.opener?.openUrl) {
+    window.__TAURI__.opener.openUrl(url).catch(() => window.open(url, '_blank'));
+  } else {
+    window.open(url, '_blank');
+  }
+});
+
+// Login → back
+document.getElementById('btn-gate-login-back')?.addEventListener('click', () => _showGatePanel('welcome'));
+
+// Incomplete → complete setup online
+document.getElementById('btn-gate-complete-setup')?.addEventListener('click', () => {
+  const url = 'https://pyhall.dev/account/setup';
+  if (window.__TAURI__?.opener?.openUrl) {
+    window.__TAURI__.opener.openUrl(url).catch(() => window.open(url, '_blank'));
+  } else {
+    window.open(url, '_blank');
+  }
+});
+
+// Incomplete → back to sign in
+document.getElementById('btn-gate-incomplete-back')?.addEventListener('click', () => {
+  window.AppState.sessionToken = null;
+  _showGatePanel('login');
+  // Reset GitHub button in case it was in waiting state
+  const ghBtn = document.getElementById('btn-login-gate-github');
+  if (ghBtn) { ghBtn.disabled = false; ghBtn.textContent = 'Sign in with GitHub'; }
+});
 
 // ─── Login gate wiring ─────────────────────────────────────────────────────
 
@@ -560,16 +781,17 @@ window.onPassphraseAccepted = onPassphraseAccepted;
   const btn = document.getElementById('btn-login-gate-github');
   if (!btn) return;
 
-  // The login gate starts with the button disabled and "Checking Hall Server..."
-  // Once first poll completes (updateConnectionUI is called), we enable/disable
-  // the button depending on whether the Hall is reachable.
-  // The actual OAuth flow is identical to profile.js startGitHubLogin().
+  // New flow: desktop generates a UUID session_id, includes it in the OAuth URL.
+  // After GitHub auth, registry stores JWT keyed by session_id (no localhost redirect).
+  // Desktop polls api.pyhall.dev/auth/desktop-poll?session=<id> directly.
+  // Hall Server does NOT need to be running for login.
 
   let _loginPollInterval = null;
 
   btn.addEventListener('click', () => {
-    const hallUrl = window.AppState?.hallUrl || 'http://localhost:8765';
-    const oauthUrl = `https://api.pyhall.dev/auth/github?desktop=1`;
+    // Generate unique session ID for this login attempt
+    const sessionId = crypto.randomUUID();
+    const oauthUrl = `https://api.pyhall.dev/auth/github?desktop=1&session=${sessionId}`;
 
     if (window.__TAURI__?.opener?.openUrl) {
       window.__TAURI__.opener.openUrl(oauthUrl).catch(() => window.open(oauthUrl, '_blank'));
@@ -581,16 +803,19 @@ window.onPassphraseAccepted = onPassphraseAccepted;
     btn.textContent = 'Waiting for GitHub...';
 
     let attempts = 0;
+    // Poll at 8s — registry rate-limits desktop-poll at 10 req/min (1 per 6s min).
+    // 8s keeps us safely under the limit. 15 attempts × 8s = 120s total timeout.
     _loginPollInterval = setInterval(async () => {
       attempts++;
-      if (attempts > 30) {  // 60s timeout — reset so user can retry
+      if (attempts > 15) {  // 120s timeout — reset so user can retry
         clearInterval(_loginPollInterval);
         btn.disabled = false;
         btn.textContent = 'Sign in with GitHub';
         return;
       }
       try {
-        const r = await fetch(`${hallUrl}/api/auth/pending`);
+        // Poll registry directly — no Hall Server required
+        const r = await fetch(`https://api.pyhall.dev/auth/desktop-poll?session=${sessionId}`);
         if (r.ok) {
           const d = await r.json();
           if (d?.token) {
@@ -598,9 +823,18 @@ window.onPassphraseAccepted = onPassphraseAccepted;
             window.AppState.sessionToken = d.token;
             onLoginConfirmed();
           }
+          // d.pending === true means not yet authenticated — keep polling
+        } else if (r.status === 410) {
+          // Expired or already claimed — reset
+          clearInterval(_loginPollInterval);
+          btn.disabled = false;
+          btn.textContent = 'Sign in with GitHub';
+        } else if (r.status === 429) {
+          // Rate limited — slow down poll automatically by skipping next 2 cycles
+          attempts += 2;
         }
       } catch (_) {}
-    }, 2000);
+    }, 8000);
   });
 })();
 
@@ -711,45 +945,146 @@ window.onPassphraseAccepted = onPassphraseAccepted;
       btn.textContent = 'Set Passphrase';
     }
   });
+
+  // "Forgot passphrase?" link — show reset step 1
+  document.getElementById('link-forgot-passphrase')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    _switchPassphraseForm('reset-request');
+  });
+
+  // Back links from reset forms
+  document.getElementById('link-reset-back-to-unlock')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    _switchPassphraseForm('unlock');
+  });
+  document.getElementById('link-reset-back-to-unlock2')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    _switchPassphraseForm('unlock');
+  });
+
+  // "Send Reset Email" button
+  document.getElementById('btn-passphrase-reset-send')?.addEventListener('click', async () => {
+    const hallUrl = window.AppState?.hallUrl || 'http://localhost:8765';
+    const btn = document.getElementById('btn-passphrase-reset-send');
+    const errEl = document.getElementById('passphrase-reset-error');
+    if (errEl) errEl.style.display = 'none';
+    btn.disabled = true;
+    btn.textContent = 'Sending...';
+    try {
+      const r = await fetch(`${hallUrl}/api/auth/passphrase-reset/request`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(window.AppState?.sessionToken ? { 'Authorization': `Bearer ${window.AppState.sessionToken}` } : {}),
+        },
+        body: JSON.stringify({}),
+      });
+      const d = await r.json();
+      if (d.ok) {
+        _switchPassphraseForm('reset-confirm');
+      } else {
+        if (errEl) { errEl.textContent = d.error || 'Could not send reset email.'; errEl.style.display = 'block'; }
+      }
+    } catch (e) {
+      if (errEl) { errEl.textContent = 'Could not reach Hall Server.'; errEl.style.display = 'block'; }
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Send Reset Email';
+    }
+  });
+
+  // "Reset Passphrase" confirm button
+  document.getElementById('btn-passphrase-reset-confirm')?.addEventListener('click', async () => {
+    const hallUrl = window.AppState?.hallUrl || 'http://localhost:8765';
+    const tokenEl = document.getElementById('passphrase-reset-token');
+    const newEl = document.getElementById('passphrase-reset-new');
+    const confirmEl = document.getElementById('passphrase-reset-confirm');
+    const errEl = document.getElementById('passphrase-reset-confirm-error');
+    const btn = document.getElementById('btn-passphrase-reset-confirm');
+    const token = tokenEl?.value?.trim() || '';
+    const newPass = newEl?.value || '';
+    const confirmPass = confirmEl?.value || '';
+    if (!token) { if (errEl) { errEl.textContent = 'Enter the token from your email.'; errEl.style.display = 'block'; } return; }
+    if (!newPass) { if (errEl) { errEl.textContent = 'Enter a new passphrase.'; errEl.style.display = 'block'; } return; }
+    if (newPass !== confirmPass) { if (errEl) { errEl.textContent = 'Passphrases do not match.'; errEl.style.display = 'block'; } return; }
+    btn.disabled = true;
+    btn.textContent = 'Resetting...';
+    if (errEl) errEl.style.display = 'none';
+    try {
+      const r = await fetch(`${hallUrl}/api/auth/passphrase-reset/confirm`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, new_passphrase: newPass }),
+      });
+      const d = await r.json();
+      if (d.ok) {
+        onPassphraseAccepted();
+      } else {
+        if (errEl) { errEl.textContent = d.reason || 'Reset failed.'; errEl.style.display = 'block'; }
+      }
+    } catch (e) {
+      if (errEl) { errEl.textContent = 'Could not reach Hall Server.'; errEl.style.display = 'block'; }
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Reset Passphrase';
+    }
+  });
 })();
 
 // ─── Update login gate UI when Hall connection state changes ───────────────
+// Login no longer requires Hall Server — button is always enabled.
+// Hall Server status updates the header indicator only.
 
-const _origUpdateConnectionUI = window.updateConnectionUI;
-window.updateConnectionUI = function(online, data = {}) {
-  _origUpdateConnectionUI && _origUpdateConnectionUI(online, data);
+// ─── Theme toggle ──────────────────────────────────────────────────────────
 
-  // Sync login gate button state with Hall availability
-  const btn  = document.getElementById('btn-login-gate-github');
-  const hint = document.getElementById('login-gate-hall-warn');
-  if (!btn) return;
+function initTheme() {
+  const saved = localStorage.getItem('pyhall-theme') || 'dark';
+  document.documentElement.setAttribute('data-theme', saved);
+  document.getElementById('theme-toggle')?.addEventListener('click', () => {
+    const current = document.documentElement.getAttribute('data-theme');
+    const next = current === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('pyhall-theme', next);
+  });
+}
 
-  // OAuth requires Hall Server to be running: it receives the GitHub callback at
-  // localhost:8765/api/auth/callback. If server is offline, the browser would hit
-  // ERR_CONNECTION_REFUSED and the one-time code expires before we can claim it.
-  const hallReachable = (online && ['locked', 'ready', 'online'].includes(data.state || 'locked'));
-  btn.disabled = !hallReachable;
-  btn.title = hallReachable ? '' : 'Start Hall Server before signing in';
-  if (hint) hint.style.display = hallReachable ? 'none' : '';
-};
+// ─── About screen ──────────────────────────────────────────────────────────
+
+function _refreshAboutScreen() {
+  // Populate platform info
+  const platformEl = document.getElementById('about-platform');
+  if (platformEl) {
+    if (window.__TAURI__?.os?.platform) {
+      window.__TAURI__.os.platform().then(p => { platformEl.textContent = p; }).catch(() => { platformEl.textContent = navigator.platform || '—'; });
+    } else {
+      platformEl.textContent = navigator.platform || '—';
+    }
+  }
+  // Populate Hall Server version from cached AppState
+  const hallVerEl = document.getElementById('about-hall-version');
+  if (hallVerEl) {
+    const ver = window.AppState?.hallVersion || '—';
+    hallVerEl.textContent = ver;
+  }
+}
+
+window._refreshAboutScreen = _refreshAboutScreen;
 
 // ─── Startup ───────────────────────────────────────────────────────────────
 
 async function checkPendingAuth() {
-  try {
-    const hallUrl = window.AppState?.hallUrl || 'http://localhost:8765';
-    const r = await fetch(`${hallUrl}/api/auth/pending`);
-    if (r.ok) {
-      const d = await r.json();
-      if (d?.token) { window.AppState.sessionToken = d.token; return true; }
-    }
-  } catch (_) {}
-  return false;
+  // Session tokens are held in memory only (session-scoped, never persisted to disk).
+  // On app start, token is always null — user must log in again.
+  // (Legacy: previously polled localhost:8765/api/auth/pending; no longer needed.)
+  return window.AppState?.sessionToken != null;
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
   // Gates start: login-gate shown, passphrase-gate hidden.
   // The login gate is shown by default via inline style in index.html.
+
+  // Initialize theme before rendering
+  initTheme();
 
   // Load config so hallUrl is set before first poll
   try {

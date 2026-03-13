@@ -1,3 +1,5 @@
+// Copyright (c) 2026 pyhall.dev — https://pyhall.dev
+// Licensed under the Apache License, Version 2.0 (see LICENSE)
 #!/usr/bin/env node
 /**
  * index.ts — pyhall CLI entry point
@@ -13,6 +15,7 @@ import { runExplain } from './commands/explain.js';
 import { runBrowse } from './commands/browse.js';
 import { runScaffold } from './commands/scaffold.js';
 import { runRegistryVerify, runRegistryCheckHash, runRegistryBanList, runRegistryStatus } from './commands/registry.js';
+import { runSkillInit, runSkillBuild, runSkillCertify, runSkillPublish, runSkillInstall, runSkillVerify } from './commands/skill.js';
 import { theme } from './theme.js';
 
 const CLI_VERSION = '0.3.0';
@@ -146,6 +149,80 @@ registryCmd
   .description('Check registry API health and version')
   .action(async () => {
     await runRegistryStatus();
+  });
+
+// ---------------------------------------------------------------------------
+// skill
+// ---------------------------------------------------------------------------
+const skillCmd = program
+  .command('skill')
+  .description('Skill lifecycle — scaffold, build, certify, publish, install, verify');
+
+skillCmd
+  .command('init')
+  .description('Scaffold a new SKILL.md in the current directory')
+  .addHelpText('after', `
+${theme.dim('Examples:')}
+  ${theme.primary('pyhall skill init')}
+`)
+  .action(async () => {
+    await runSkillInit();
+  });
+
+skillCmd
+  .command('build')
+  .description('Compile SKILL.md into platform adapter files (MCP, OpenAI, Gemini)')
+  .addHelpText('after', `
+${theme.dim('Examples:')}
+  ${theme.primary('pyhall skill build')}
+`)
+  .action(async () => {
+    await runSkillBuild();
+  });
+
+skillCmd
+  .command('certify')
+  .description('Submit manifest to pyhall registry for certification')
+  .addHelpText('after', `
+${theme.dim('Examples:')}
+  ${theme.primary('pyhall skill certify')}
+`)
+  .action(async () => {
+    await runSkillCertify();
+  });
+
+skillCmd
+  .command('publish')
+  .description('Publish certified skill to pyhall registry')
+  .addHelpText('after', `
+${theme.dim('Examples:')}
+  ${theme.primary('pyhall skill publish')}
+`)
+  .action(async () => {
+    await runSkillPublish();
+  });
+
+skillCmd
+  .command('install <skill-id>')
+  .description('Install a skill into the current AI environment (.pyhall/skills/)')
+  .addHelpText('after', `
+${theme.dim('Examples:')}
+  ${theme.primary('pyhall skill install pyhall/python-sdk')}
+  ${theme.primary('pyhall skill install org/skill-name')}
+`)
+  .action(async (skillId: string) => {
+    await runSkillInstall(skillId);
+  });
+
+skillCmd
+  .command('verify')
+  .description('Check integrity of installed skills against registry')
+  .addHelpText('after', `
+${theme.dim('Examples:')}
+  ${theme.primary('pyhall skill verify')}
+`)
+  .action(async () => {
+    await runSkillVerify();
   });
 
 // ---------------------------------------------------------------------------

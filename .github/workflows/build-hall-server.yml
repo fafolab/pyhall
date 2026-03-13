@@ -1,0 +1,74 @@
+name: Build Hall Server Binary
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: |
+          cd sdk/python
+          pip install pydantic requests rich typer python-dotenv flask pyinstaller
+      - name: Build hall-server binary
+        run: |
+          cd sdk/python
+          pyinstaller --distpath dist --workpath build hall_api/hall_server.spec
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: hall-server-linux-x64
+          path: sdk/python/dist/hall-server
+
+  build-macos-arm:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: |
+          cd sdk/python
+          pip install pydantic requests rich typer python-dotenv flask pyinstaller
+      - name: Build hall-server binary
+        run: |
+          cd sdk/python
+          pyinstaller --distpath dist --workpath build hall_api/hall_server.spec
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: hall-server-macos-arm64
+          path: sdk/python/dist/hall-server
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: |
+          cd sdk/python
+          pip install pydantic requests rich typer python-dotenv flask pyinstaller
+      - name: Build hall-server binary
+        run: |
+          cd sdk/python
+          pyinstaller --distpath dist --workpath build hall_api/hall_server.spec
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: hall-server-windows-x64
+          path: sdk/python/dist/hall-server.exe

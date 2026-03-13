@@ -1,3 +1,6 @@
+/* Copyright (c) 2026 pyhall.dev — https://pyhall.dev
+ * All Rights Reserved.
+ */
 /**
  * config.js — Configuration screen (Screen 6)
  * Hall URL, poll interval, default profile, notifications, display options.
@@ -53,6 +56,9 @@ window.ConfigScreen = (() => {
 
     const startCmdEl = document.getElementById('cfg-server-start-cmd');
     if (startCmdEl) startCmdEl.value = cfg.server_start_cmd || 'pyhall start';
+
+    const archiveDaysEl = document.getElementById('cfg-archive-days');
+    if (archiveDaysEl) archiveDaysEl.value = cfg.archive_days ?? 90;
   }
 
   function setCheck(id, val) {
@@ -83,6 +89,7 @@ window.ConfigScreen = (() => {
         feed_max_rows: parseInt(document.getElementById('cfg-feed-max')?.value || '500', 10),
       },
       server_start_cmd: document.getElementById('cfg-server-start-cmd')?.value || 'pyhall start',
+      archive_days: parseInt(document.getElementById('cfg-archive-days')?.value || '90', 10),
     };
   }
 
@@ -585,6 +592,80 @@ window.ConfigScreen = (() => {
       btn.textContent = 'Add Server';
     }
   });
+
+  // ── Data & Archive ────────────────────────────────────────────────────────
+
+  // Show DB path from health endpoint
+  async function loadDbPath() {
+    const url = window.AppState?.hallUrl || 'http://localhost:8765';
+    try {
+      const res = await fetch(`${url}/api/health`);
+      const data = await res.json();
+      const el = document.getElementById('cfg-db-path');
+      if (el && data.db_path) el.textContent = data.db_path;
+    } catch (_) {}
+  }
+  loadDbPath();
+
+  // Archive Now
+  document.getElementById('btn-archive-now')?.addEventListener('click', async () => {
+    const url      = window.AppState?.hallUrl || 'http://localhost:8765';
+    const resultEl = document.getElementById('archive-result');
+    const btn      = document.getElementById('btn-archive-now');
+    const days     = parseInt(document.getElementById('cfg-archive-days')?.value || '90', 10);
+
+    btn.disabled = true;
+    if (resultEl) { resultEl.style.display = 'inline'; resultEl.textContent = 'Archiving...'; }
+
+    try {
+      const r = await fetch(`${url}/api/logs/archive`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ days }),
+      });
+      const d = await r.json();
+      if (resultEl) {
+        const { decisions = 0, alerts = 0 } = d.archived || {};
+        resultEl.textContent = (decisions + alerts === 0)
+          ? `Nothing to archive (all records within ${days} days).`
+          : `Archived ${decisions} decisions, ${alerts} alerts.`;
+        resultEl.style.color = 'var(--success)';
+        setTimeout(() => { if (resultEl) resultEl.style.display = 'none'; }, 5000);
+      }
+    } catch (e) {
+      if (resultEl) { resultEl.textContent = `Archive failed: ${e}`; resultEl.style.color = 'var(--error)'; }
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  // CSV Export helper
+  async function exportCsv(table) {
+    const url       = window.AppState?.hallUrl || 'http://localhost:8765';
+    const resultEl  = document.getElementById('export-result');
+    const today     = new Date().toISOString().slice(0, 10);
+    const filename  = `${table}-${today}.csv`;
+
+    if (resultEl) { resultEl.style.display = 'inline'; resultEl.style.color = 'var(--text-muted)'; resultEl.textContent = `Exporting ${table}...`; }
+
+    try {
+      const r = await fetch(`${url}/api/logs/export/${table}.csv`);
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const csvText = await r.text();
+      await window.__TAURI__.core.invoke('save_text_file', { filename, content: csvText });
+      if (resultEl) {
+        resultEl.textContent = `Saved ${filename} to Downloads.`;
+        resultEl.style.color = 'var(--success)';
+        setTimeout(() => { if (resultEl) resultEl.style.display = 'none'; }, 4000);
+      }
+    } catch (e) {
+      if (resultEl) { resultEl.textContent = `Export failed: ${e}`; resultEl.style.color = 'var(--error)'; }
+    }
+  }
+
+  document.getElementById('btn-export-decisions')?.addEventListener('click',   () => exportCsv('decisions'));
+  document.getElementById('btn-export-alerts')?.addEventListener('click',      () => exportCsv('alerts'));
+  document.getElementById('btn-export-enrollments')?.addEventListener('click', () => exportCsv('enrollments'));
 
   return { load, loadMcpServers };
 })();

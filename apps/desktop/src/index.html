@@ -1,20 +1,69 @@
+<!-- Copyright (c) 2026 pyhall.dev — https://pyhall.dev. All Rights Reserved. -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>pyhall — Hall Monitor</title>
+  <link rel="icon" type="image/svg+xml" href="assets/badge-icon-favicon.svg" />
   <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/worker.css" />
+  <script>
+    document.addEventListener('contextmenu', e => e.preventDefault());
+    document.addEventListener('keydown', e => {
+      if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C'))) e.preventDefault();
+    });
+  </script>
 </head>
 <body>
 
 <!-- ── Login Gate (shown until GitHub auth confirmed) ───────────────────── -->
 <div id="login-gate" style="position:fixed;inset:0;z-index:9999;background:var(--bg-primary);display:flex;align-items:center;justify-content:center;">
-  <div id="login-gate-box" style="width:360px;background:var(--bg-surface);border:1px solid var(--bg-border);border-radius:var(--radius);padding:40px 36px;text-align:center;">
-    <div style="font-size:18px;font-weight:700;color:var(--text-bright);letter-spacing:0.02em;margin-bottom:6px;">pyhall — Hall Monitor</div>
-    <div style="font-size:12px;color:var(--text-muted);margin-bottom:32px;">Sign in to monitor and govern your AI workers.</div>
-    <button id="btn-login-gate-github" style="width:100%;padding:10px 0;background:var(--accent-blue);color:#fff;border:none;border-radius:var(--radius);font-size:13px;font-weight:600;cursor:pointer;letter-spacing:0.01em;">Sign in with GitHub</button>
-    <div id="login-gate-hall-warn" style="display:none;margin-top:12px;font-size:11px;color:var(--text-dim);"></div>
+  <div id="login-gate-box" style="width:380px;background:var(--bg-surface);border:1px solid var(--bg-border);border-radius:var(--radius);padding:40px 36px;text-align:center;">
+
+    <!-- Worker mascot — animates on panel transitions -->
+    <div id="login-gate-worker">
+      <div id="login-worker" class="worker-widget worker-widget-lg anim-float"></div>
+    </div>
+
+    <!-- Panel: Welcome (default) -->
+    <div id="gate-panel-welcome">
+      <div style="font-size:20px;font-weight:700;color:var(--text-bright);letter-spacing:0.02em;margin-bottom:6px;">pyhall — Hall Monitor</div>
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:32px;">WCP-governed AI worker management</div>
+      <button id="btn-gate-has-account" style="width:100%;padding:10px 0;background:var(--accent-blue);color:#fff;border:none;border-radius:var(--radius);font-size:13px;font-weight:600;cursor:pointer;margin-bottom:10px;">I already have an account</button>
+      <button id="btn-gate-new-user" style="width:100%;padding:10px 0;background:transparent;color:var(--text-muted);border:1px solid var(--bg-border);border-radius:var(--radius);font-size:13px;cursor:pointer;">I'm new here</button>
+    </div>
+
+    <!-- Panel: New User -->
+    <div id="gate-panel-new-user" style="display:none;">
+      <div style="font-size:18px;font-weight:700;color:var(--text-bright);margin-bottom:10px;">Create your account first</div>
+      <div style="font-size:12px;color:var(--text-muted);line-height:1.7;margin-bottom:28px;">Hall Monitor requires a pyhall.dev account. You'll need to:<br><br>
+        <span style="color:var(--text-dim);">① Choose a plan</span><br>
+        <span style="color:var(--text-dim);">② Claim your namespace(s)</span><br>
+        <span style="color:var(--text-dim);">③ Verify your email</span><br><br>
+        Then return here to sign in.
+      </div>
+      <button id="btn-gate-create-account" style="width:100%;padding:10px 0;background:var(--accent-blue);color:#fff;border:none;border-radius:var(--radius);font-size:13px;font-weight:600;cursor:pointer;margin-bottom:10px;">Create Account Online</button>
+      <button id="btn-gate-new-user-back" style="width:100%;padding:10px 0;background:transparent;color:var(--text-muted);border:1px solid var(--bg-border);border-radius:var(--radius);font-size:13px;cursor:pointer;">← Back</button>
+    </div>
+
+    <!-- Panel: Sign In (GitHub OAuth) -->
+    <div id="gate-panel-login" style="display:none;">
+      <div style="font-size:18px;font-weight:700;color:var(--text-bright);margin-bottom:6px;">Sign in</div>
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:28px;">Sign in with the GitHub account linked to your pyhall account.</div>
+      <button id="btn-login-gate-github" style="width:100%;padding:10px 0;background:var(--accent-blue);color:#fff;border:none;border-radius:var(--radius);font-size:13px;font-weight:600;cursor:pointer;margin-bottom:10px;">Sign in with GitHub</button>
+      <button id="btn-gate-login-back" style="width:100%;padding:10px 0;background:transparent;color:var(--text-muted);border:1px solid var(--bg-border);border-radius:var(--radius);font-size:13px;cursor:pointer;">← Back</button>
+    </div>
+
+    <!-- Panel: Account Incomplete -->
+    <div id="gate-panel-incomplete" style="display:none;">
+      <div style="font-size:18px;font-weight:700;color:var(--text-bright);margin-bottom:10px;">Account setup incomplete</div>
+      <div style="font-size:12px;color:var(--text-muted);line-height:1.7;margin-bottom:8px;">Your pyhall account needs a bit more setup before you can use Hall Monitor:</div>
+      <div id="gate-incomplete-list" style="font-size:12px;color:var(--warning,#e5a50a);text-align:left;margin-bottom:24px;line-height:1.8;padding-left:4px;"></div>
+      <button id="btn-gate-complete-setup" style="width:100%;padding:10px 0;background:var(--accent-blue);color:#fff;border:none;border-radius:var(--radius);font-size:13px;font-weight:600;cursor:pointer;margin-bottom:10px;">Complete Setup Online</button>
+      <button id="btn-gate-incomplete-back" style="width:100%;padding:10px 0;background:transparent;color:var(--text-muted);border:1px solid var(--bg-border);border-radius:var(--radius);font-size:13px;cursor:pointer;">← Back</button>
+    </div>
+
   </div>
 </div>
 
@@ -34,8 +83,9 @@
 
     <!-- Unlock form (returning user) -->
     <div id="passphrase-unlock-form">
-      <div style="font-size:15px;font-weight:700;color:var(--text-bright);margin-bottom:6px;">Unlock your Hall</div>
-      <div style="font-size:12px;color:var(--text-muted);margin-bottom:24px;">Enter your passphrase to continue.</div>
+      <div style="font-size:15px;font-weight:700;color:var(--text-bright);margin-bottom:6px;">Unlock your database</div>
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:6px;">Enter your database passphrase to continue.</div>
+      <div style="font-size:11px;color:var(--text-dim);margin-bottom:18px;padding:8px 10px;background:var(--bg-raised);border-radius:var(--radius-sm);border-left:2px solid var(--accent-blue);">This passphrase protects your local dispatch database — it is separate from your GitHub login.</div>
       <div style="margin-bottom:12px;">
         <input type="password" id="passphrase-input" placeholder="Passphrase" autocomplete="current-password"
           style="width:100%;padding:9px 12px;background:var(--bg-raised);border:1px solid var(--bg-border);border-radius:var(--radius-sm);color:var(--text-primary);font-size:13px;outline:none;" />
@@ -48,15 +98,51 @@
       </div>
       <button id="btn-passphrase-unlock" style="width:100%;padding:10px 0;background:var(--accent-blue);color:#fff;border:none;border-radius:var(--radius);font-size:13px;font-weight:600;cursor:pointer;">Unlock</button>
       <div id="passphrase-unlock-error" style="display:none;margin-top:10px;font-size:12px;color:var(--error);text-align:center;"></div>
-      <div style="margin-top:16px;text-align:center;">
+      <div style="margin-top:16px;text-align:center;display:flex;justify-content:center;gap:18px;">
         <a href="#" id="link-set-passphrase" style="font-size:12px;color:var(--accent-hover);text-decoration:none;">Set passphrase</a>
+        <a href="#" id="link-forgot-passphrase" style="font-size:12px;color:var(--text-muted);text-decoration:none;">Forgot passphrase?</a>
+      </div>
+    </div>
+
+    <!-- Reset passphrase — step 1: send reset email -->
+    <div id="passphrase-reset-request-form" style="display:none;">
+      <div style="font-size:15px;font-weight:700;color:var(--text-bright);margin-bottom:6px;">Reset your passphrase</div>
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:18px;">A reset token will be emailed to your verified contact email.</div>
+      <button id="btn-passphrase-reset-send" style="width:100%;padding:10px 0;background:var(--accent-blue);color:#fff;border:none;border-radius:var(--radius);font-size:13px;font-weight:600;cursor:pointer;">Send Reset Email</button>
+      <div id="passphrase-reset-error" style="display:none;margin-top:10px;font-size:12px;color:var(--error);text-align:center;"></div>
+      <div style="margin-top:16px;text-align:center;">
+        <a href="#" id="link-reset-back-to-unlock" style="font-size:12px;color:var(--text-muted);text-decoration:none;">Back to unlock</a>
+      </div>
+    </div>
+
+    <!-- Reset passphrase — step 2: enter token + new passphrase -->
+    <div id="passphrase-reset-confirm-form" style="display:none;">
+      <div style="font-size:15px;font-weight:700;color:var(--text-bright);margin-bottom:6px;">Enter reset token</div>
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:18px;">Check your email for the reset token, then enter it below with your new passphrase.</div>
+      <div style="margin-bottom:12px;">
+        <input type="text" id="passphrase-reset-token" placeholder="Reset token from email" autocomplete="off"
+          style="width:100%;padding:9px 12px;background:var(--bg-raised);border:1px solid var(--bg-border);border-radius:var(--radius-sm);color:var(--text-primary);font-size:13px;outline:none;" />
+      </div>
+      <div style="margin-bottom:12px;">
+        <input type="password" id="passphrase-reset-new" placeholder="New passphrase" autocomplete="new-password"
+          style="width:100%;padding:9px 12px;background:var(--bg-raised);border:1px solid var(--bg-border);border-radius:var(--radius-sm);color:var(--text-primary);font-size:13px;outline:none;" />
+      </div>
+      <div style="margin-bottom:20px;">
+        <input type="password" id="passphrase-reset-confirm" placeholder="Confirm new passphrase" autocomplete="new-password"
+          style="width:100%;padding:9px 12px;background:var(--bg-raised);border:1px solid var(--bg-border);border-radius:var(--radius-sm);color:var(--text-primary);font-size:13px;outline:none;" />
+      </div>
+      <button id="btn-passphrase-reset-confirm" style="width:100%;padding:10px 0;background:var(--accent-blue);color:#fff;border:none;border-radius:var(--radius);font-size:13px;font-weight:600;cursor:pointer;">Reset Passphrase</button>
+      <div id="passphrase-reset-confirm-error" style="display:none;margin-top:10px;font-size:12px;color:var(--error);text-align:center;"></div>
+      <div style="margin-top:16px;text-align:center;">
+        <a href="#" id="link-reset-back-to-unlock2" style="font-size:12px;color:var(--text-muted);text-decoration:none;">Back to unlock</a>
       </div>
     </div>
 
     <!-- Set passphrase form (first-time setup) -->
     <div id="passphrase-set-form" style="display:none;">
-      <div style="font-size:15px;font-weight:700;color:var(--text-bright);margin-bottom:6px;">Secure your Hall</div>
-      <div style="font-size:12px;color:var(--text-muted);margin-bottom:24px;">Create a passphrase to protect your local dispatch log. You'll enter this each time you open Hall Monitor.</div>
+      <div style="font-size:15px;font-weight:700;color:var(--text-bright);margin-bottom:6px;">Secure your database</div>
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:6px;">Create a passphrase to encrypt your local dispatch database.</div>
+      <div style="font-size:11px;color:var(--text-dim);margin-bottom:18px;padding:8px 10px;background:var(--bg-raised);border-radius:var(--radius-sm);border-left:2px solid var(--accent-blue);">This is separate from your GitHub login. You will enter it each time you open Hall Monitor.</div>
       <div style="margin-bottom:12px;">
         <input type="password" id="passphrase-new" placeholder="New passphrase" autocomplete="new-password"
           style="width:100%;padding:9px 12px;background:var(--bg-raised);border:1px solid var(--bg-border);border-radius:var(--radius-sm);color:var(--text-primary);font-size:13px;outline:none;" />
@@ -128,12 +214,14 @@
   <!-- ── Header ──────────────────────────────────────────────────────────── -->
   <header id="header">
     <div id="header-brand">
+      <img id="header-brand-logo" src="assets/badge-icon-favicon.svg" alt="pyhall" />
       <div>
         <div id="header-title">pyhall — Hall Monitor</div>
         <div id="header-subtitle">The Hall — every worker, every job, every decision.</div>
       </div>
     </div>
     <div id="header-status">
+      <button id="theme-toggle" class="theme-btn" title="Toggle light/dark">&#9681;</button>
       <div class="hall-indicator offline" id="hall-indicator">
         <span class="dot"></span>
         <span class="label" id="hall-indicator-label">OFFLINE</span>
@@ -182,6 +270,14 @@
       <span class="nav-icon">⚙</span>
       <span class="nav-label">Config</span>
     </div>
+    <div class="nav-item" data-screen="doctor">
+      <span class="nav-icon">✚</span>
+      <span class="nav-label">Doctor</span>
+    </div>
+    <div class="nav-item" data-screen="about">
+      <span class="nav-icon">◎</span>
+      <span class="nav-label">About</span>
+    </div>
   </nav>
 
   <!-- ── Main Content ─────────────────────────────────────────────────────── -->
@@ -192,6 +288,11 @@
       <div class="screen-header">
         <span class="screen-title">Hall Status</span>
         <button class="btn btn-secondary btn-sm" id="btn-refresh-status">↺ Refresh</button>
+      </div>
+
+      <!-- Worker mascot — floated right, animation driven by server state -->
+      <div id="status-worker-container">
+        <div id="status-worker" class="worker-widget worker-widget-md anim-float"></div>
       </div>
 
       <!-- Grace / degraded mode warning banner — hidden when account_standing === 'ok' -->
@@ -264,6 +365,10 @@
           <span id="info-wcp-badge" style="color:var(--success)">● WCP enabled</span>
           <span style="color:var(--text-dim); font-size:10px; margin-left:8px;" id="info-wcp-mode">enforce mode</span>
         </span>
+        <span class="info-label">Attestation</span>
+        <span class="info-value" id="info-attestation">
+          <span id="info-attest-badge" style="color:var(--text-dim)">—</span>
+        </span>
         <span class="info-label">Signed in as</span>
         <span class="info-value" id="info-signed-in">
           <span id="info-signed-in-user" style="color:var(--text-dim)">not logged in —
@@ -275,6 +380,8 @@
       <div style="margin-top:16px; display:flex; gap:8px; flex-wrap:wrap;">
         <button class="btn btn-primary btn-sm" id="btn-start-server" style="display:none;">Start Hall Server</button>
         <button class="btn btn-ghost btn-sm" id="btn-stop-server" style="display:none;">Stop Hall Server</button>
+        <button class="btn btn-primary btn-sm" id="btn-go-online-status" style="display:none;">Go Online</button>
+        <button class="btn btn-ghost btn-sm" id="btn-go-offline-status" style="display:none;">Go Offline</button>
         <button class="btn btn-secondary btn-sm" id="btn-go-config-from-status">Open Hall Config</button>
         <button class="btn btn-ghost btn-sm" id="btn-go-feed-from-status">View Live Feed</button>
         <button class="btn btn-ghost btn-sm" id="btn-open-log-from-status" style="display:none;">Open Log File</button>
@@ -365,6 +472,11 @@
         <span class="chip" data-alert-filter="error">Errors</span>
         <span class="chip" data-alert-filter="warning">Warnings</span>
         <span class="chip" data-alert-filter="info">Info</span>
+      </div>
+
+      <!-- Worker shown in empty state — alerts.js hides it when there are active alerts -->
+      <div id="alerts-worker-container">
+        <div id="alerts-worker" class="worker-widget worker-widget-md anim-think"></div>
       </div>
 
       <div class="alert-list" id="alerts-list">
@@ -534,6 +646,18 @@
         <!-- Populated by coordination.js -->
       </div>
 
+      <div class="section-divider">Operations Logs</div>
+      <div class="coord-log-toolbar">
+        <select id="coord-log-file-select" class="new-task-input coord-log-select">
+          <option value="">Loading logs…</option>
+        </select>
+        <button class="btn-secondary btn-sm" id="coord-log-refresh">Refresh</button>
+        <button class="btn-secondary btn-sm" id="coord-log-export">Export</button>
+        <button class="btn btn-ghost btn-sm" id="coord-log-scroll-bottom">Bottom</button>
+      </div>
+      <div id="coord-log-path" class="coord-log-path">—</div>
+      <pre id="coord-log-view" class="coord-log-view">Loading...</pre>
+
     </section>
 
     <!-- Screen 6: Worker Enrollment -->
@@ -549,50 +673,161 @@
 
     <section class="screen" id="screen-enroll">
       <div class="screen-header">
-        <span class="screen-title">Register a Worker with the Hall</span>
-      </div>
-
-      <div id="enroll-dropzone-view">
-        <div class="drop-zone" id="drop-zone">
-          <div class="drop-zone-icon">📄</div>
-          <div class="drop-zone-text">Drop a registry_record.json here, or click to browse</div>
-          <div class="drop-zone-sub">registry_record.json · or <button class="btn btn-ghost btn-sm" id="btn-browse-file" style="display:inline-flex;">Browse</button></div>
-        </div>
-        <input type="file" id="file-input" accept=".json" style="display:none;" />
-
-        <p style="font-size:12px; color:var(--text-muted); text-align:center;">
-          Or generate one:
-          <a href="#" id="link-cli-wizard" style="color:var(--accent-blue); text-decoration:none;">Open the hall CLI scaffold wizard</a>
-        </p>
-      </div>
-
-      <!-- Preview state (hidden until file loaded) -->
-      <div id="enroll-preview-view" style="display:none;">
-        <div class="section-divider">Worker Preview</div>
-        <div class="preview-card" id="worker-preview">
-          <!-- Populated by enroll.js -->
-        </div>
-
-        <div class="section-divider">Validation</div>
-        <ul class="validation-list" id="validation-list">
-          <!-- Populated by enroll.js -->
-        </ul>
-
-        <div style="display:flex; gap:10px; margin-top:16px;">
-          <button class="btn btn-primary" id="btn-enroll-confirm">Register with the Hall</button>
-          <button class="btn btn-secondary" id="btn-enroll-cancel">Cancel</button>
+        <span class="screen-title">Enroll a Worker</span>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button class="btn btn-ghost btn-sm" id="btn-enroll-import-json" title="Already have a registry_record.json? Import it.">Import JSON</button>
+          <input type="file" id="enroll-import-file-input" accept=".json" style="display:none;" />
         </div>
       </div>
 
-      <!-- Success state (hidden until enrolled) -->
-      <div id="enroll-success-view" style="display:none;">
-        <div style="background:var(--success-muted); border:1px solid var(--success); border-radius:var(--radius); padding:20px; margin-top:16px;">
-          <div style="font-size:16px; color:var(--success); font-weight:600; margin-bottom:8px;">
-            ✓ Worker registered with the Hall.
+      <!-- Wizard progress bar -->
+      <div id="enroll-progress" style="display:flex;gap:0;margin-bottom:24px;border:1px solid var(--bg-border);border-radius:var(--radius);overflow:hidden;">
+        <div class="enroll-step-tab active" data-step="1" style="flex:1;padding:8px 0;text-align:center;font-size:11px;font-weight:600;cursor:default;background:var(--accent-blue);color:#fff;">1 · Identity</div>
+        <div class="enroll-step-tab" data-step="2" style="flex:1;padding:8px 0;text-align:center;font-size:11px;font-weight:600;cursor:default;color:var(--text-dim);">2 · Logic</div>
+        <div class="enroll-step-tab" data-step="3" style="flex:1;padding:8px 0;text-align:center;font-size:11px;font-weight:600;cursor:default;color:var(--text-dim);">3 · WCP Policy</div>
+        <div class="enroll-step-tab" data-step="4" style="flex:1;padding:8px 0;text-align:center;font-size:11px;font-weight:600;cursor:default;color:var(--text-dim);">4 · Review</div>
+      </div>
+
+      <!-- Step 1: Worker Identity -->
+      <div id="enroll-step-1" class="enroll-step">
+        <div style="display:grid;gap:14px;max-width:600px;">
+          <div>
+            <label class="field-label">Worker Name <span style="color:var(--error)">*</span></label>
+            <input class="field-input" id="enroll-name" placeholder="e.g. Document Processor" />
+            <div class="field-hint">Human-readable label shown in the crew list.</div>
           </div>
-          <div id="enroll-success-msg" style="font-size:13px; color:var(--text-primary); margin-bottom:12px;"></div>
-          <button class="btn btn-secondary btn-sm" id="btn-view-crew">View in Crew Registry</button>
-          <button class="btn btn-ghost btn-sm" id="btn-enroll-another">Enroll another</button>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div>
+              <label class="field-label">Worker ID <span style="color:var(--error)">*</span></label>
+              <input class="field-input monospace" id="enroll-worker-id" placeholder="org.fafolab.myworker" />
+              <div class="field-hint">Unique instance: <code>org.&lt;ns&gt;.&lt;name&gt;</code></div>
+            </div>
+            <div>
+              <label class="field-label">Species ID <span style="color:var(--error)">*</span></label>
+              <input class="field-input monospace" id="enroll-species-id" placeholder="wrk.document-processor" />
+              <div class="field-hint">Taxonomy: <code>wrk.&lt;type&gt;</code></div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:160px 1fr;gap:12px;">
+            <div>
+              <label class="field-label">Version</label>
+              <input class="field-input monospace" id="enroll-version" placeholder="0.1.0" value="0.1.0" />
+            </div>
+            <div>
+              <label class="field-label">Description</label>
+              <input class="field-input" id="enroll-description" placeholder="What this worker does (optional)" />
+            </div>
+          </div>
+          <div id="enroll-step1-error" style="color:var(--error);font-size:12px;display:none;"></div>
+          <div style="display:flex;gap:10px;">
+            <button class="btn btn-primary" id="btn-enroll-next-1">Next: Business Logic</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 2: Business Logic -->
+      <div id="enroll-step-2" class="enroll-step" style="display:none;">
+        <div style="margin-bottom:12px;">
+          <label class="field-label">Worker Logic (Python) <span style="color:var(--error)">*</span></label>
+          <div class="field-hint" style="margin-bottom:8px;">Paste your worker's business logic below — this becomes <strong>Section 7</strong> of the scaffolded WCP worker package. The Hall will wrap it in the full 8-section compliant template.</div>
+          <div style="display:flex;gap:8px;margin-bottom:8px;">
+            <button class="btn btn-ghost btn-sm" id="btn-enroll-load-py">Load .py file</button>
+            <input type="file" id="enroll-py-file-input" accept=".py" style="display:none;" />
+            <button class="btn btn-ghost btn-sm" id="btn-enroll-insert-stub">Insert starter stub</button>
+          </div>
+          <textarea id="enroll-logic-code" class="field-input monospace"
+            style="height:320px;resize:vertical;font-size:11px;line-height:1.5;tab-size:4;"
+            placeholder="# Paste your Section 7 business logic here.&#10;# Example:&#10;async def execute(context: WorkerContext) -> WorkerResult:&#10;    # Your actual task logic here&#10;    result = await do_the_work(context.payload)&#10;    return WorkerResult(output=result, status='success')"></textarea>
+        </div>
+        <div id="enroll-step2-error" style="color:var(--error);font-size:12px;display:none;"></div>
+        <div style="display:flex;gap:10px;">
+          <button class="btn btn-primary" id="btn-enroll-next-2">Next: WCP Policy</button>
+          <button class="btn btn-ghost" id="btn-enroll-back-2">Back</button>
+        </div>
+      </div>
+
+      <!-- Step 3: WCP Policy -->
+      <div id="enroll-step-3" class="enroll-step" style="display:none;">
+        <div style="display:grid;gap:14px;max-width:640px;">
+          <div>
+            <label class="field-label">Capabilities <span style="color:var(--error)">*</span></label>
+            <div class="field-hint" style="margin-bottom:6px;">Which <code>cap.*</code> actions this worker may take. Click to toggle.</div>
+            <div id="enroll-cap-grid" style="display:flex;flex-wrap:wrap;gap:6px;">
+              <!-- populated by JS -->
+            </div>
+            <input class="field-input monospace" id="enroll-cap-custom" placeholder="cap.custom-capability (press Enter to add)" style="margin-top:8px;" />
+          </div>
+          <div>
+            <label class="field-label">Controls</label>
+            <div class="field-hint" style="margin-bottom:6px;">Which <code>ctrl.*</code> safety controls apply.</div>
+            <div id="enroll-ctrl-grid" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div>
+              <label class="field-label">Governance Profile</label>
+              <select class="field-input" id="enroll-profile">
+                <option value="prof.dev.permissive">prof.dev.permissive — Development (permissive)</option>
+                <option value="prof.prod.moderate">prof.prod.moderate — Production (moderate)</option>
+                <option value="prof.prod.strict">prof.prod.strict — Production (strict)</option>
+                <option value="prof.prod.paranoid">prof.prod.paranoid — Production (paranoid)</option>
+              </select>
+            </div>
+            <div>
+              <label class="field-label">Blast Score (1–100)</label>
+              <div style="display:flex;align-items:center;gap:10px;">
+                <input type="range" id="enroll-blast-range" min="1" max="100" value="20" style="flex:1;opacity:0.6;pointer-events:none;" readonly />
+                <span id="enroll-blast-val" style="min-width:28px;text-align:right;font-family:monospace;font-size:13px;">20</span>
+              </div>
+              <div class="field-hint" id="enroll-blast-tier">Low risk</div>
+            </div>
+          </div>
+          <div>
+            <label class="field-label">Guarantee</label>
+            <input class="field-input" id="enroll-guarantee" placeholder="e.g. At-most-once execution with idempotency key" />
+          </div>
+          <div id="enroll-step3-error" style="color:var(--error);font-size:12px;display:none;"></div>
+          <div style="display:flex;gap:10px;">
+            <button class="btn btn-primary" id="btn-enroll-next-3">Next: Review</button>
+            <button class="btn btn-ghost" id="btn-enroll-back-3">Back</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 4: Review & Enroll -->
+      <div id="enroll-step-4" class="enroll-step" style="display:none;">
+        <div style="margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <span class="field-label" style="margin:0;">Generated Manifest (registry_record.json)</span>
+            <button class="btn btn-ghost btn-sm" id="btn-enroll-download-manifest">Download JSON</button>
+          </div>
+          <pre id="enroll-manifest-preview" style="background:var(--bg-editor,#1a1a1a);border:1px solid var(--bg-border);border-radius:var(--radius);padding:12px;font-size:11px;overflow:auto;max-height:220px;color:var(--text-primary);white-space:pre;"></pre>
+        </div>
+        <div style="margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <span class="field-label" style="margin:0;">Scaffolded Worker Package (worker_logic.py)</span>
+            <button class="btn btn-ghost btn-sm" id="btn-enroll-download-code">Download .py</button>
+          </div>
+          <pre id="enroll-code-preview" style="background:var(--bg-editor,#1a1a1a);border:1px solid var(--bg-border);border-radius:var(--radius);padding:12px;font-size:11px;overflow:auto;max-height:500px;color:var(--text-muted);white-space:pre;"></pre>
+        </div>
+        <div id="enroll-step4-error" style="color:var(--error);font-size:12px;display:none;margin-bottom:10px;"></div>
+        <div style="display:flex;gap:10px;">
+          <button class="btn btn-primary" id="btn-enroll-confirm">Register with the Hall</button>
+          <button class="btn btn-ghost" id="btn-enroll-back-4">Back</button>
+        </div>
+      </div>
+
+      <!-- Success state -->
+      <div id="enroll-success-view" style="display:none;">
+        <div style="background:var(--success-muted,rgba(74,222,128,0.08));border:1px solid var(--success);border-radius:var(--radius);padding:20px;margin-top:16px;display:flex;gap:16px;align-items:flex-start;">
+          <div id="enroll-success-worker" class="worker-widget worker-widget-md anim-celebrate" style="flex-shrink:0;margin-top:4px;"></div>
+          <div style="flex:1;">
+          <div style="font-size:16px;color:var(--success);font-weight:600;margin-bottom:8px;">Worker registered with the Hall.</div>
+          <div id="enroll-success-msg" style="font-size:13px;color:var(--text-primary);margin-bottom:12px;"></div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-secondary btn-sm" id="btn-view-crew">View in Crew Registry</button>
+            <button class="btn btn-ghost btn-sm" id="btn-enroll-another">Enroll another</button>
+          </div>
+          </div>
         </div>
       </div>
     </section>
@@ -603,7 +838,15 @@
         <span class="screen-title">Configuration</span>
       </div>
 
+      <!-- Settings tabs -->
+      <div class="filter-chips" id="config-tabs" style="margin-bottom:16px;">
+        <span class="chip active" data-config-tab="api" onclick="document.getElementById('config-tab-api').scrollIntoView({behavior:'smooth'})">API</span>
+        <span class="chip" data-config-tab="appearance" onclick="document.getElementById('config-tab-appearance').scrollIntoView({behavior:'smooth'})">Appearance</span>
+        <span class="chip" data-config-tab="advanced" onclick="document.getElementById('config-tab-advanced').scrollIntoView({behavior:'smooth'})">Advanced</span>
+      </div>
+
       <!-- Hall Connection — full width -->
+      <div id="config-tab-api">
       <div class="config-section config-section-full">
         <div class="config-section-title">Hall Connection</div>
 
@@ -652,6 +895,7 @@
       </div>
 
       <!-- Row 2: Notifications + Display -->
+      <div id="config-tab-appearance"></div>
       <div class="config-grid-2col">
 
         <!-- Notifications -->
@@ -689,6 +933,7 @@
       </div><!-- /row 2 -->
 
       <!-- Row 3: Diagnostics + Security -->
+      <div id="config-tab-advanced"></div>
       <div class="config-grid-2col">
 
         <!-- Diagnostics -->
@@ -709,7 +954,7 @@
 
         <!-- Change passphrase -->
         <div class="field">
-          <label>Hall passphrase</label>
+          <label>Database passphrase <span style="font-size:10px;color:var(--text-dim);font-weight:400;">(separate from GitHub login)</span></label>
           <div style="display:flex; gap:8px; align-items:center;">
             <button class="btn btn-secondary btn-sm" id="btn-show-change-passphrase">Change passphrase</button>
             <button class="btn btn-ghost btn-sm" id="btn-forget-keychain">Forget saved passphrase</button>
@@ -744,6 +989,36 @@
         </div><!-- /security -->
 
       </div><!-- /row 3 -->
+
+      <!-- Row 4: Data & Archive — full width -->
+      <div class="config-section config-section-full">
+        <div class="config-section-title">Data &amp; Archive</div>
+
+        <div class="field">
+          <label>Auto-archive after <input type="number" id="cfg-archive-days" value="90" min="7" max="3650" style="width:64px;margin:0 6px;padding:4px 8px;background:var(--bg-raised);border:1px solid var(--bg-border);border-radius:var(--radius-sm);color:var(--text-primary);font-size:13px;text-align:center;" /> days</label>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Dispatch and alert records older than this are compressed into monthly archive files at the same location as your database. Default: 90 days.</div>
+        </div>
+
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;">
+          <button class="btn btn-secondary btn-sm" id="btn-archive-now">Archive Now</button>
+          <span id="archive-result" style="font-size:11px;color:var(--text-muted);align-self:center;display:none;"></span>
+        </div>
+
+        <div style="margin-top:20px;">
+          <div style="font-size:12px;font-weight:600;color:var(--text-bright);margin-bottom:10px;">Export to CSV</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn btn-ghost btn-sm" id="btn-export-decisions">Export Decisions</button>
+            <button class="btn btn-ghost btn-sm" id="btn-export-alerts">Export Alerts</button>
+            <button class="btn btn-ghost btn-sm" id="btn-export-enrollments">Export Enrollments</button>
+          </div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:6px;">Exports are saved to your Downloads folder.</div>
+          <span id="export-result" style="font-size:11px;color:var(--text-muted);display:none;margin-top:4px;"></span>
+        </div>
+
+        <div style="margin-top:16px;">
+          <div style="font-size:11px;color:var(--text-dim);">Database location: <span id="cfg-db-path" style="font-family:monospace;">—</span></div>
+        </div>
+      </div><!-- /row 4 -->
 
       <!-- Connected MCPs — full width -->
       <div class="config-section config-section-full" id="config-mcp-section">
@@ -810,6 +1085,50 @@
       <span id="save-config-result" style="margin-left:10px; font-size:12px; display:none;"></span>
     </section>
 
+    <!-- Screen: About -->
+    <section class="screen" id="screen-about">
+      <div class="about-container">
+        <img src="assets/badge-logo-plain.svg" width="160" alt="pyhall" class="about-logo anim-float" />
+        <h1 class="about-title">Hall Monitor</h1>
+        <p class="about-version">Version 0.3.0</p>
+        <p class="about-desc">AI worker governance for humans who ship.</p>
+        <div class="about-meta">
+          <div>Platform: <span id="about-platform">—</span></div>
+          <div>Build: <span id="about-build">0.3.0</span></div>
+          <div>Hall Server: <span id="about-hall-version">—</span></div>
+        </div>
+        <hr />
+        <p class="about-copy">Copyright (c) pyhall.dev. All rights reserved.</p>
+        <p class="about-freeware">Free for personal and commercial use under the Hall Monitor License.</p>
+        <div class="about-links">
+          <a href="https://pyhall.dev" target="_blank">pyhall.dev</a>
+          <a href="https://workerclassprotocol.dev" target="_blank">WCP Spec</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Doctor Mode -->
+    <section class="screen" id="screen-doctor">
+      <div class="screen-header">
+        <span class="screen-title">Doctor Mode</span>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button class="btn btn-secondary btn-sm" id="btn-doctor-run">↺ Run Diagnostics</button>
+          <button class="btn btn-primary btn-sm" id="btn-doctor-export" disabled>↓ Export Bundle</button>
+          <span id="doctor-export-status" style="font-size:12px;color:var(--text-muted);"></span>
+        </div>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;padding:12px 16px;background:var(--bg-surface);border:1px solid var(--bg-border);border-radius:var(--radius);">
+        <div style="font-size:12px;color:var(--text-muted);flex:1;">6 health checks — connectivity · auth · binary integrity · hall server · database · config</div>
+        <div id="doctor-overall" style="font-size:13px;"></div>
+        <div id="doctor-checked-at" style="font-size:11px;color:var(--text-dim);"></div>
+      </div>
+
+      <div id="doctor-checks-list" style="background:var(--bg-surface);border:1px solid var(--bg-border);border-radius:var(--radius);padding:4px 16px;">
+        <div style="color:var(--text-muted);font-size:13px;padding:16px 0;">Click Run Diagnostics to check Hall Server health.</div>
+      </div>
+    </section>
+
   </main>
 
   <!-- ── Status Bar ─────────────────────────────────────────────────────── -->
@@ -827,6 +1146,7 @@
 
 <!-- Scripts -->
 <script src="js/api.js"></script>
+<script src="js/worker-widget.js"></script>
 <script src="js/screens/status.js"></script>
 <script src="js/screens/feed.js"></script>
 <script src="js/screens/crew.js"></script>
@@ -836,6 +1156,7 @@
 <script src="js/screens/coordination.js"></script>
 <script src="js/screens/profile.js"></script>
 <script src="js/screens/setup.js"></script>
+<script src="js/screens/doctor.js"></script>
 <script src="js/app.js"></script>
 
 <!-- Edit Task Modal -->
@@ -1013,5 +1334,17 @@
     </div>
   </div>
 </div>
+<!-- ── Worker widget initialization ────────────────────────────────────── -->
+<script>
+(function() {
+  // Inject SVG into pre-placed worker widget divs. The outer div already has
+  // the size/animation class set in HTML; we just need the SVG content inside.
+  const svg = WorkerWidget.getSVG();
+  ['login-worker', 'status-worker', 'alerts-worker', 'enroll-success-worker'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = svg;
+  });
+})();
+</script>
 </body>
 </html>

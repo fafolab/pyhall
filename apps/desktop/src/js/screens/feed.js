@@ -1,3 +1,6 @@
+/* Copyright (c) 2026 pyhall.dev — https://pyhall.dev
+ * All Rights Reserved.
+ */
 /**
  * feed.js — Live Dispatch Feed screen (Screen 2)
  * Real-time table of dispatch events, filterable, pauseable.

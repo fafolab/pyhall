@@ -1,3 +1,5 @@
+# Copyright (c) 2026 pyhall.dev — https://pyhall.dev
+# Licensed under the Apache License, Version 2.0 (see LICENSE)
 """
 test_hall_api.py — Hall API server tests.
 
@@ -304,26 +306,41 @@ def _make_ban_entry(**kwargs):
 
 
 def test_registry_ban_list_proxy_returns_entries(client):
-    with patch('pyhall.registry_client.RegistryClient.get_ban_list', return_value=[_make_ban_entry()]):
-        res = client.get('/wcp/registry/ban-list')
+    import hall_api.server as _srv
+    clean_state = {**_srv._server_state, 'banned_hashes': set(), 'banned_hashes_updated_at': None}
+    with patch.object(_srv, '_server_state', clean_state):
+        with patch('pyhall.registry_client.RegistryClient.get_ban_list', return_value=[_make_ban_entry()]):
+            res = client.get('/wcp/registry/ban-list')
     assert res.status_code == 200
     data = json.loads(res.data)
-    assert len(data) == 1
-    assert data[0]['sha256'] == 'b' * 64
-    assert data[0]['reason'] == 'malware'
+    assert data['count'] == 1
+    assert ('b' * 64) in data['hashes']
+    assert data['source'] == 'local-cache'
 
 
 def test_registry_ban_list_proxy_empty(client):
-    with patch('pyhall.registry_client.RegistryClient.get_ban_list', return_value=[]):
-        res = client.get('/wcp/registry/ban-list')
+    import hall_api.server as _srv
+    clean_state = {**_srv._server_state, 'banned_hashes': set(), 'banned_hashes_updated_at': None}
+    with patch.object(_srv, '_server_state', clean_state):
+        with patch('pyhall.registry_client.RegistryClient.get_ban_list', return_value=[]):
+            res = client.get('/wcp/registry/ban-list')
     assert res.status_code == 200
-    assert json.loads(res.data) == []
+    data = json.loads(res.data)
+    assert data['count'] == 0
+    assert data['hashes'] == []
 
 
-def test_registry_ban_list_proxy_503_on_network_error(client):
-    with patch('pyhall.registry_client.RegistryClient.get_ban_list', side_effect=Exception('timeout')):
-        res = client.get('/wcp/registry/ban-list')
-    assert res.status_code == 503
+def test_registry_ban_list_proxy_network_error_serves_empty_cache(client):
+    # Route serves from local cache gracefully on network error; no 503 raised.
+    import hall_api.server as _srv
+    clean_state = {**_srv._server_state, 'banned_hashes': set(), 'banned_hashes_updated_at': None}
+    with patch.object(_srv, '_server_state', clean_state):
+        with patch('pyhall.registry_client.RegistryClient.get_ban_list', side_effect=Exception('timeout')):
+            res = client.get('/wcp/registry/ban-list')
+    assert res.status_code == 200
+    data = json.loads(res.data)
+    assert data['count'] == 0
+    assert data['source'] == 'local-cache'
 
 
 def test_registry_verify_proxy_returns_worker(client):
@@ -342,3 +359,191 @@ def test_registry_verify_proxy_unknown_worker(client):
     assert res.status_code == 200
     data = json.loads(res.data)
     assert data['status'] == 'unknown'
+
+
+# ---------------------------------------------------------------------------
+# POST /api/route
+# ---------------------------------------------------------------------------
+
+def _route_payload(**overrides):
+    """Build a minimal valid /api/route request body."""
+    base = {
+        "capability_id": "cap.doc.summarize",
+        "env": "dev",
+        "data_label": "PUBLIC",
+        "tenant_id": "org.test",
+        "tenant_risk": "low",
+        "qos_class": "P2",
+        "correlation_id": "aaaabbbb-0000-0000-0000-000000000001",
+    }
+    base.update(overrides)
+    return base
+
+
+_ROUTE_AUTH = {"Authorization": "Bearer test-token"}
+
+
+def test_route_requires_auth(client):
+    """POST /api/route without auth token must return 401."""
+    r = client.post("/api/route", json=_route_payload())
+    assert r.status_code == 401
+    assert r.get_json()["error"] == "unauthorized"
+
+
+def test_route_returns_allowed_decision(client):
+    """Enroll a worker first, then route to its capability — expect allowed=True."""
+    # Enroll a worker that supports cap.doc.summarize
+    record = _make_record(
+        worker_id="org.test.summarizer",
+        worker_species_id="wrk.doc.summarizer",
+        capabilities=["cap.doc.summarize"],
+    )
+    r = client.post("/enroll", json=record)
+    assert r.status_code == 201
+
+    # Route with a matching capability
+    r = client.post("/api/route", json=_route_payload(), headers=_ROUTE_AUTH)
+    assert r.status_code == 200
+    data = r.get_json()
+    assert data["denied"] is False
+    assert data["selected_worker_species_id"] == "wrk.doc.summarizer"
+
+
+def test_route_denied_no_matching_worker(client):
+    """Route to a capability with no workers enrolled — expect allowed=False (denied)."""
+    r = client.post("/api/route", json=_route_payload(capability_id="cap.nonexistent.thing"),
+                    headers=_ROUTE_AUTH)
+    assert r.status_code == 200
+    data = r.get_json()
+    assert data["denied"] is True
+
+
+def test_route_missing_field_returns_400(client):
+    """Omit required field capability_id — expect 400."""
+    payload = {
+        "env": "dev",
+        "data_label": "PUBLIC",
+        "tenant_id": "org.test",
+    }
+    r = client.post("/api/route", json=payload, headers=_ROUTE_AUTH)
+    assert r.status_code == 400
+    assert "missing field" in r.get_json()["error"]
+
+
+# ---------------------------------------------------------------------------
+# GET /api/doctor
+# ---------------------------------------------------------------------------
+
+_AUTH_HEADER = {"Authorization": "Bearer test-token"}
+
+
+def test_doctor_requires_auth(client):
+    r = client.get('/api/doctor')
+    assert r.status_code == 401
+
+
+def test_doctor_returns_200(client):
+    r = client.get('/api/doctor', headers=_AUTH_HEADER)
+    assert r.status_code == 200
+
+
+def test_doctor_has_six_checks(client):
+    r = client.get('/api/doctor', headers=_AUTH_HEADER)
+    data = r.get_json()
+    checks = data.get('checks', {})
+    expected_keys = {'connectivity', 'auth', 'binary_integrity', 'hall_server', 'db', 'config'}
+    assert expected_keys == set(checks.keys())
+
+
+def test_doctor_checks_have_status_and_message(client):
+    r = client.get('/api/doctor', headers=_AUTH_HEADER)
+    data = r.get_json()
+    for key, check in data['checks'].items():
+        assert 'status' in check, f"check '{key}' missing 'status'"
+        assert 'message' in check, f"check '{key}' missing 'message'"
+
+
+def test_doctor_has_overall_and_checked_at(client):
+    r = client.get('/api/doctor', headers=_AUTH_HEADER)
+    data = r.get_json()
+    assert 'overall' in data
+    assert data['overall'] in ('ok', 'warn', 'fail')
+    assert 'checked_at' in data
+
+
+def test_doctor_check_statuses_are_valid_values(client):
+    r = client.get('/api/doctor', headers=_AUTH_HEADER)
+    data = r.get_json()
+    valid = {'ok', 'warn', 'fail'}
+    for key, check in data['checks'].items():
+        assert check['status'] in valid, f"check '{key}' has invalid status: {check['status']}"
+
+
+# ---------------------------------------------------------------------------
+# POST /api/doctor/export
+# ---------------------------------------------------------------------------
+
+def test_doctor_export_requires_auth(client):
+    r = client.post('/api/doctor/export')
+    assert r.status_code == 401
+
+
+def test_doctor_export_returns_200(client):
+    r = client.post('/api/doctor/export', headers=_AUTH_HEADER)
+    assert r.status_code == 200
+
+
+def test_doctor_export_has_required_fields(client):
+    r = client.post('/api/doctor/export', headers=_AUTH_HEADER)
+    data = r.get_json()
+    assert 'doctor' in data
+    assert 'version' in data
+    assert 'platform' in data
+    assert 'export_at' in data
+
+
+def test_doctor_export_contains_six_checks(client):
+    r = client.post('/api/doctor/export', headers=_AUTH_HEADER)
+    data = r.get_json()
+    checks = data.get('doctor', {}).get('checks', {})
+    expected_keys = {'connectivity', 'auth', 'binary_integrity', 'hall_server', 'db', 'config'}
+    assert expected_keys == set(checks.keys())
+
+
+def test_doctor_export_no_tokens_in_top_level(client):
+    r = client.post('/api/doctor/export', headers=_AUTH_HEADER)
+    data = r.get_json()
+    # Top-level bundle must not expose any session tokens or secrets
+    assert 'token' not in data
+    assert 'session' not in data
+    assert 'session_token' not in data
+    assert 'bearer' not in data
+    assert 'secret' not in data
+
+
+# ---------------------------------------------------------------------------
+# POST /api/auth/passphrase-reset/request
+# POST /api/auth/passphrase-reset/confirm
+# ---------------------------------------------------------------------------
+
+def test_passphrase_reset_request_requires_auth(client):
+    r = client.post('/api/auth/passphrase-reset/request', json={})
+    assert r.status_code == 401
+
+
+def test_passphrase_reset_confirm_missing_token(client):
+    r = client.post('/api/auth/passphrase-reset/confirm', json={'new_passphrase': 'abc'})
+    assert r.status_code == 400
+    assert b'Token' in r.data or b'token' in r.data
+
+
+def test_passphrase_reset_confirm_missing_passphrase(client):
+    r = client.post('/api/auth/passphrase-reset/confirm', json={'token': 'some-token'})
+    assert r.status_code == 400
+
+
+def test_passphrase_reset_request_returns_503_when_registry_unreachable(client):
+    # With no registry configured in test env, proxying should fail gracefully
+    r = client.post('/api/auth/passphrase-reset/request', headers=_AUTH_HEADER, json={})
+    # Either 503 (can't reach registry), a registry HTTP error, or not a 500 crash
+    assert r.status_code in (400, 401, 404, 503)

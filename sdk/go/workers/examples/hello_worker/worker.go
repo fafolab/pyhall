@@ -1,3 +1,5 @@
+// Copyright (c) 2026 pyhall.dev — https://pyhall.dev
+// Licensed under the Apache License, Version 2.0 (see LICENSE)
 // Package hello_worker is the canonical minimal WCP worker example.
 //
 // This worker demonstrates the three-step WCP worker contract:
