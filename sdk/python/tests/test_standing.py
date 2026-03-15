@@ -1,5 +1,3 @@
-# Copyright (c) 2026 pyhall.dev — https://pyhall.dev
-# Licensed under the Apache License, Version 2.0 (see LICENSE)
 """Tests for P1 standing contract — go-online state mapping and route behavior."""
 import pytest
 from unittest.mock import patch, MagicMock

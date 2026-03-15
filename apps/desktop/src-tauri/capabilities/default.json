@@ -9,6 +9,15 @@
     "opener:default",
     "opener:allow-open-url",
     {
+      "identifier": "opener:allow-open-path",
+      "allow": [
+        { "path": "$HOME/.config/pyhall/**" },
+        { "path": "$HOME/Library/Application Support/pyhall/**" },
+        { "path": "$APPDATA/pyhall/**" },
+        { "path": "$HOME/.local/share/pyhall/**" }
+      ]
+    },
+    {
       "identifier": "shell:allow-execute",
       "allow": [{ "name": "hall-server", "sidecar": true, "args": [] }]
     }

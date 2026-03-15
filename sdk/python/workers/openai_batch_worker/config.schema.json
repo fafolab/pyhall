@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "openai_batch_worker config",
+  "type": "object",
+  "properties": {
+    "api_key_env": {
+      "type": "string",
+      "description": "Env var name for OpenAI API key",
+      "default": "OPENAI_API_KEY"
+    },
+    "default_model": {
+      "type": "string",
+      "default": "gpt-4o"
+    },
+    "db_path": {
+      "type": "string"
+    },
+    "env": {
+      "type": "string",
+      "enum": ["dev", "stage", "prod"]
+    }
+  },
+  "additionalProperties": false
+}

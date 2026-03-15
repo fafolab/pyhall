@@ -35,20 +35,47 @@ window.EnrollScreen = (() => {
   let selectedSpeciesId = null;
 
   // ─── Catalog fetch helper ─────────────────────────────────────────────────
-  // Mirrors the same pattern as crew.js — fetches from Hall Server /api/catalog
+  // Fetches from Hall Server /api/catalog — Hall Server proxies from registry
   let _catalogCache = null;
   async function loadCatalog() {
-    if (_catalogCache) return _catalogCache;
+    if (_catalogCache && _catalogCache.length > 0) return _catalogCache;
+    const hallUrl = (window.AppState?.hallUrl || 'http://localhost:8765').replace(/\/$/, '');
+    const token = window.AppState?.sessionToken || '';
+    const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+
+    // Try Hall Server /api/catalog first
     try {
-      const url = (window.AppState?.hallUrl || 'http://localhost:8765').replace(/\/$/, '');
-      const resp = await fetch(`${url}/api/catalog`);
-      if (!resp.ok) return [];
-      const data = await resp.json();
-      _catalogCache = data.entities || [];
-      return _catalogCache;
-    } catch (_) {
-      return [];
-    }
+      const resp = await fetch(`${hallUrl}/api/catalog`, {
+        headers,
+        signal: AbortSignal.timeout(8000),
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        const entities = data.entities || data.catalog || (Array.isArray(data) ? data : []);
+        if (entities.length > 0) {
+          _catalogCache = entities;
+          return _catalogCache;
+        }
+      }
+    } catch (_) {}
+
+    // Fallback: try registry directly
+    try {
+      const resp = await fetch('https://api.pyhall.dev/api/v1/catalog', {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+        signal: AbortSignal.timeout(8000),
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        const entities = data.entities || data.catalog || (Array.isArray(data) ? data : []);
+        if (entities.length > 0) {
+          _catalogCache = entities;
+          return _catalogCache;
+        }
+      }
+    } catch (_) {}
+
+    return [];
   }
 
   // ─── Navigation helpers ───────────────────────────────────────────────────
@@ -107,7 +134,7 @@ window.EnrollScreen = (() => {
       background: rgba(251,191,36,0.12); border: 1px solid rgba(251,191,36,0.5);
       color: #fbbf24; font-size: 12px; line-height: 1.5;
     `;
-    banner.textContent = `This will RETIRE version ${version || '?'} — the previous registration will be marked inactive`;
+    banner.textContent = `This will RETIRE version ${version || '?'} — the previous registration will be marked inactive. If you have modified the worker package files, a new attestation is required — the prior attestation no longer covers the updated package.`;
     const workerIdRow = document.getElementById('enroll-worker-id-row') || document.getElementById('enroll-worker-id')?.parentElement;
     if (workerIdRow) {
       workerIdRow.insertAdjacentElement('afterend', banner);
@@ -130,45 +157,94 @@ window.EnrollScreen = (() => {
 
     if (nsSpinner) nsSpinner.style.display = 'inline';
     nsDropdown.disabled = true;
+    // Reset dropdown to loading state
+    nsDropdown.style.display = '';
+    if (workerIdFallback) workerIdFallback.style.display = 'none';
+
+    let namespaces = [];
 
     try {
-      const url = window.AppState?.hallUrl || 'http://localhost:8765';
+      const url = (window.AppState?.hallUrl || 'http://localhost:8765').replace(/\/$/, '');
       const token = window.AppState?.sessionToken || '';
-      const result = await window.__TAURI__.core.invoke('get_account_namespaces', {
-        url,
-        session_token: token,
-      });
-      const namespaces = result.namespaces || [];
 
-      if (namespaces.length === 0) {
-        _fallbackToFreeText(nsDropdown, workerIdFallback, 'No namespaces found — enter worker ID manually');
-        return;
-      }
-
-      nsDropdown.innerHTML = namespaces.map(ns => `<option value="${_escAttr(ns)}">${_escAttr(ns)}</option>`).join('');
-      nsDropdown.disabled = false;
-      selectedNamespace = namespaces[0];
-      namespacesLoaded = true;
-
-      // Update combined worker_id display on change
-      nsDropdown.addEventListener('change', () => {
-        selectedNamespace = nsDropdown.value;
-        _updateCombinedWorkerId();
-        checkExistingWorker(_getCombinedWorkerId());
-      });
-      if (workerNameInput) {
-        workerNameInput.addEventListener('input', () => {
-          _updateCombinedWorkerId();
-          // Debounce retirement check
-          clearTimeout(workerNameInput._retireTimer);
-          workerNameInput._retireTimer = setTimeout(() => checkExistingWorker(_getCombinedWorkerId()), 600);
+      // Try Hall Server proxy first (same as profile.js)
+      if (token) {
+        const resp = await fetch(`${url}/api/namespaces`, {
+          headers: { 'Authorization': `Bearer ${token}` },
+          signal: AbortSignal.timeout(6000),
         });
+        if (resp.ok) {
+          const data = await resp.json();
+          namespaces = data.namespaces || (Array.isArray(data) ? data : []);
+        }
       }
-    } catch (e) {
-      _fallbackToFreeText(nsDropdown, workerIdFallback, 'Could not load namespaces — enter worker ID manually');
-    } finally {
+
+      // Fallback: Tauri command (also tries Hall Server proxy)
+      if (namespaces.length === 0 && token) {
+        try {
+          const result = await window.__TAURI__.core.invoke('get_account_namespaces', {
+            url,
+            session_token: token,
+          });
+          namespaces = result.namespaces || [];
+        } catch (_) {}
+      }
+    } catch (_) {}
+
+    if (namespaces.length === 0) {
       if (nsSpinner) nsSpinner.style.display = 'none';
+      _fallbackToFreeText(nsDropdown, workerIdFallback,
+        window.AppState?.sessionToken
+          ? 'No namespaces found — enter worker ID manually'
+          : 'Not logged in — enter worker ID manually (org.<ns>.<name>)'
+      );
+      return;
     }
+
+    nsDropdown.innerHTML = namespaces.map(ns => `<option value="${_escAttr(ns)}">${_escAttr(ns)}</option>`).join('');
+    nsDropdown.disabled = false;
+    selectedNamespace = namespaces[0];
+    namespacesLoaded = true;
+
+    // Remove old listeners before adding new ones (prevent duplicates on reset)
+    const newNsDropdown = nsDropdown.cloneNode(true);
+    nsDropdown.parentNode.replaceChild(newNsDropdown, nsDropdown);
+    const newWorkerNameInput = workerNameInput
+      ? workerNameInput.cloneNode(true) : null;
+    if (newWorkerNameInput && workerNameInput) {
+      workerNameInput.parentNode.replaceChild(newWorkerNameInput, workerNameInput);
+    }
+
+    newNsDropdown.disabled = false;
+    newNsDropdown.innerHTML = namespaces.map(ns => `<option value="${_escAttr(ns)}">${_escAttr(ns)}</option>`).join('');
+
+    // Re-populate selectedNamespace
+    selectedNamespace = newNsDropdown.value || namespaces[0];
+
+    newNsDropdown.addEventListener('change', () => {
+      selectedNamespace = newNsDropdown.value;
+      _updateCombinedWorkerId();
+      checkExistingWorker(_getCombinedWorkerId());
+    });
+    if (newWorkerNameInput) {
+      newWorkerNameInput.addEventListener('input', () => {
+        _updateCombinedWorkerId();
+        clearTimeout(newWorkerNameInput._retireTimer);
+        newWorkerNameInput._retireTimer = setTimeout(() => checkExistingWorker(_getCombinedWorkerId()), 600);
+      });
+    }
+
+    // Instance suffix also contributes to the combined worker ID
+    const instanceSuffixInput = document.getElementById('enroll-instance-suffix');
+    if (instanceSuffixInput) {
+      instanceSuffixInput.addEventListener('input', () => {
+        _updateCombinedWorkerId();
+        clearTimeout(instanceSuffixInput._retireTimer);
+        instanceSuffixInput._retireTimer = setTimeout(() => checkExistingWorker(_getCombinedWorkerId()), 600);
+      });
+    }
+
+    if (nsSpinner) nsSpinner.style.display = 'none';
   }
 
   function _fallbackToFreeText(nsDropdown, fallbackInput, placeholder) {
@@ -187,8 +263,14 @@ window.EnrollScreen = (() => {
 
     if (namespacesLoaded && nsDropdown && workerNameInput) {
       const ns = nsDropdown.value || '';
-      const name = (workerNameInput.value || '').trim().toLowerCase();
-      return name ? `${ns}.${name}` : ns;
+      const workerName = (workerNameInput.value || '').trim().toLowerCase();
+      const instanceSuffix = (document.getElementById('enroll-instance-suffix')?.value || '').trim().toLowerCase();
+      if (workerName && instanceSuffix) {
+        return `${ns}.${workerName}.${instanceSuffix}`;
+      } else if (workerName) {
+        return `${ns}.${workerName}`;
+      }
+      return ns;
     }
     return (workerIdFallback?.value || '').trim();
   }
@@ -209,7 +291,7 @@ window.EnrollScreen = (() => {
     if (!name) { showError(1, 'Worker name is required.'); return false; }
     if (!workerId) { showError(1, 'Worker ID is required.'); return false; }
     if (!/^(org|x)\.[a-z0-9-]+(\.[a-z0-9-]+)+$/.test(workerId)) {
-      showError(1, 'Worker ID must be org.<ns>.<name> or x.<name> (lowercase, hyphens ok).');
+      showError(1, 'Worker ID format: org.<name>.<worker>.<instance> or x.<name>.<worker>.<instance> (lowercase, hyphens ok).');
       return false;
     }
     if (!speciesId) { showError(1, 'Species ID is required.'); return false; }
@@ -467,7 +549,38 @@ window.EnrollScreen = (() => {
   // ─── Task 2: Species browser modal ───────────────────────────────────────
 
   async function openSpeciesModal() {
+    const speciesDisplay = document.getElementById('enroll-species-display');
+    const prevText = speciesDisplay?.textContent;
+
+    // Show loading state
+    if (speciesDisplay) {
+      speciesDisplay.textContent = 'Loading species...';
+      speciesDisplay.style.color = 'var(--text-muted)';
+    }
+
     const catalog = await loadCatalog();
+
+    // Restore display if loading failed
+    if (!catalog || catalog.length === 0) {
+      if (speciesDisplay) {
+        speciesDisplay.textContent = 'Could not load species catalog. Check Hall Server connection.';
+        speciesDisplay.style.color = 'var(--error, #e05c5c)';
+        setTimeout(() => {
+          if (speciesDisplay) {
+            speciesDisplay.textContent = prevText || 'No species selected';
+            speciesDisplay.style.color = 'var(--text-dim)';
+          }
+        }, 4000);
+      }
+      return;
+    }
+
+    // Restore display now that we have the catalog
+    if (speciesDisplay) {
+      speciesDisplay.textContent = prevText || 'No species selected';
+      speciesDisplay.style.color = selectedSpeciesId ? 'var(--text-primary)' : 'var(--text-dim)';
+    }
+
     const speciesEntries = catalog.filter(e => e.id && e.id.startsWith('wrk.'));
 
     const modal = document.createElement('div');
@@ -597,7 +710,21 @@ window.EnrollScreen = (() => {
 
   // ─── Task 6: Manifest builder (guarantee hardcoded) ───────────────────────
 
-  function buildManifest() {
+  // Compute SHA-256 artifact hash of a manifest object (excluding artifact_hash field).
+  // Returns "sha256:<hex>" — matching the format expected by the Hall Server /enroll endpoint.
+  async function computeArtifactHash(manifestObj) {
+    const manifestForHash = { ...manifestObj };
+    delete manifestForHash.artifact_hash;
+    const jsonStr = JSON.stringify(manifestForHash, Object.keys(manifestForHash).sort());
+    const encoder = new TextEncoder();
+    const data = encoder.encode(jsonStr);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    return `sha256:${hex}`;
+  }
+
+  async function buildManifest() {
     const workerId  = _getCombinedWorkerId();
     const speciesId = selectedSpeciesId || document.getElementById('enroll-species-id')?.value.trim();
     const name      = document.getElementById('enroll-name')?.value.trim();
@@ -611,7 +738,7 @@ window.EnrollScreen = (() => {
 
     const trustNamespace = workerId.split('.').slice(0, 2).join('.');
 
-    return {
+    const manifest = {
       worker_id:       workerId,
       species_id:      speciesId,
       name:            name,
@@ -626,6 +753,11 @@ window.EnrollScreen = (() => {
       wcp_version:     '0.3',
       enrolled_at:     new Date().toISOString(),
     };
+
+    // Compute and attach artifact_hash — required by Hall Server /enroll endpoint
+    manifest.artifact_hash = await computeArtifactHash(manifest);
+
+    return manifest;
   }
 
   // ─── Code scaffolder ───────────────────────────────────────────────────────
@@ -774,8 +906,8 @@ if __name__ == "__main__":
 
   // ─── Task 7: Step 4 render (no truncation, scrollable, colored sections) ──
 
-  function renderReview() {
-    generatedManifest = buildManifest();
+  async function renderReview() {
+    generatedManifest = await buildManifest();
     generatedCode     = buildScaffoldedCode(generatedManifest);
 
     const manifestEl = document.getElementById('enroll-manifest-preview');
@@ -1023,7 +1155,7 @@ def dispatch(context: WorkerContext) -> WorkerResult:
 
       const caps = generatedManifest.capabilities.join(', ') || 'general';
       document.getElementById('enroll-success-msg').textContent =
-        `${generatedManifest.name} (${generatedManifest.species_id}) is now on the Hall books. The Hall will route ${caps} dispatches to this worker.`;
+        `${generatedManifest.name} (${generatedManifest.species_id}) is now on the Hall books. The Hall will route ${caps} dispatches to this worker. If you modify the worker package files after enrollment, a new attestation is required — the current attestation only covers the package as enrolled.`;
 
       // Task 8: show save path
       const saveMsgEl = document.getElementById('enroll-success-save-msg');
@@ -1103,9 +1235,9 @@ def dispatch(context: WorkerContext) -> WorkerResult:
 
   // Step 3 back/next
   document.getElementById('btn-enroll-back-3')?.addEventListener('click', () => showStep(2));
-  document.getElementById('btn-enroll-next-3')?.addEventListener('click', () => {
+  document.getElementById('btn-enroll-next-3')?.addEventListener('click', async () => {
     if (validateStep3()) {
-      renderReview();
+      await renderReview();
       showStep(4);
     }
   });
@@ -1181,8 +1313,10 @@ def dispatch(context: WorkerContext) -> WorkerResult:
     selectedCtrls.clear();
     selectedSpeciesId = null;
     selectedNamespace = null;
+    namespacesLoaded = false;
     generatedManifest = null;
     generatedCode = null;
+    _catalogCache = null; // force fresh catalog load
 
     ['enroll-name','enroll-worker-id','enroll-worker-name','enroll-species-id',
      'enroll-description','enroll-logic-code'].forEach(id => {
@@ -1190,6 +1324,8 @@ def dispatch(context: WorkerContext) -> WorkerResult:
       if (el) el.value = '';
     });
     document.getElementById('enroll-version').value = '0.1.0';
+    const instanceSuffixEl = document.getElementById('enroll-instance-suffix');
+    if (instanceSuffixEl) instanceSuffixEl.value = 'pyhall-001';
 
     const speciesDisplay = document.getElementById('enroll-species-display');
     if (speciesDisplay) speciesDisplay.textContent = 'None selected';
@@ -1209,6 +1345,8 @@ def dispatch(context: WorkerContext) -> WorkerResult:
     });
 
     showStep(1);
+    // Reload namespaces each time screen is activated (session token may now be set)
+    loadNamespaces();
   }
 
   // ─── Init ────────────────────────────────────────────────────────────────

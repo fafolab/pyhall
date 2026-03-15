@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "telegram_worker config",
+  "type": "object",
+  "properties": {
+    "bot_token_env": {
+      "type": "string",
+      "default": "TELEGRAM_BOT_TOKEN",
+      "description": "Name of the environment variable holding the Telegram Bot token from BotFather"
+    },
+    "default_chat_id": {
+      "type": "string",
+      "description": "Default chat ID (numeric string) or @username for notification send operations"
+    },
+    "env": {
+      "type": "string",
+      "enum": ["dev", "stage", "prod"]
+    }
+  },
+  "additionalProperties": false
+}

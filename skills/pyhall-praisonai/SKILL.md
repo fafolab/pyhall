@@ -42,7 +42,7 @@ pip install pyhall-wcp praisonai praisonai-tools
 PYHALL_API_KEY=your-api-key           # registry authentication
 HALL_SESSION_TOKEN=your-session-tok   # local Hall Server auth (if self-hosted)
 OPENAI_API_KEY=your-openai-key        # Praison AI default model backend
-MY_WORKER_ID=wrk_abc123               # your registered pyhall worker ID
+MY_WORKER_ID=org.acme.my-worker.i-1   # your registered pyhall worker ID
 TENANT_ID=org.default                 # your tenant/org scope
 PYHALL_REGISTRY=https://api.pyhall.dev    # default; override for self-hosted
 ```

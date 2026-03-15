@@ -78,7 +78,7 @@ where governance should fire.
 
 Replace `{{1.worker_id}}` and `{{1.data_label}}` with the field mappings from your trigger step.
 If your trigger does not carry a `worker_id`, use a fixed registered worker ID that represents the
-Zapier integration (e.g., `wrk_zapier_acme_prod`).
+Zapier integration (e.g., `org.acme.zapier-worker`).
 
 ### Field reference
 

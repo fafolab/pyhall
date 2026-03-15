@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "airtable_worker config",
+  "type": "object",
+  "properties": {
+    "pat_env": {
+      "type": "string",
+      "default": "AIRTABLE_PAT",
+      "description": "Name of the environment variable holding the Airtable Personal Access Token (starts with pat...). The worker reads os.environ[pat_env] at runtime — never store the token value here."
+    },
+    "default_base_id": {
+      "type": "string",
+      "description": "Default base ID (app...) used when --base-id is not specified on the CLI."
+    },
+    "default_table_id": {
+      "type": "string",
+      "description": "Default table ID (tbl...) or table name used when --table-id is not specified on the CLI."
+    },
+    "env": {
+      "type": "string",
+      "enum": ["dev", "stage", "prod"],
+      "description": "Runtime environment. Controls attestation strictness: dev skips HMAC verification, prod requires WCP_ATTEST_HMAC_KEY."
+    }
+  },
+  "additionalProperties": false
+}

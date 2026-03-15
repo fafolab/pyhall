@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "discord_worker config",
+  "type": "object",
+  "properties": {
+    "bot_token_env": {
+      "type": "string",
+      "description": "Env var name for Discord bot token",
+      "default": "DISCORD_BOT_TOKEN"
+    },
+    "default_channel_id": {
+      "type": "string",
+      "description": "Default channel ID for notifications"
+    },
+    "default_guild_id": {
+      "type": "string",
+      "description": "Primary guild/server ID"
+    },
+    "env": {
+      "type": "string",
+      "enum": ["dev", "stage", "prod"]
+    }
+  },
+  "additionalProperties": false
+}

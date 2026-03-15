@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "huggingface_worker config",
+  "type": "object",
+  "properties": {
+    "token_env": {
+      "type": "string",
+      "default": "HF_TOKEN",
+      "description": "HuggingFace API token"
+    },
+    "default_text_gen_model": {
+      "type": "string",
+      "default": "mistralai/Mistral-7B-Instruct-v0.3"
+    },
+    "default_embedding_model": {
+      "type": "string",
+      "default": "sentence-transformers/all-MiniLM-L6-v2"
+    },
+    "default_summarization_model": {
+      "type": "string",
+      "default": "facebook/bart-large-cnn"
+    },
+    "model_load_retries": {
+      "type": "integer",
+      "default": 3
+    },
+    "env": {
+      "type": "string",
+      "enum": ["dev", "stage", "prod"]
+    }
+  },
+  "additionalProperties": false
+}

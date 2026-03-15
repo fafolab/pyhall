@@ -74,7 +74,7 @@ To propose a spec change:
 1. Open an issue describing the problem and proposed solution
 2. Reference existing agent protocol specs where relevant
 3. Include a working implementation in PyHall
-4. Mark proposed additions as `x.*` (experimental namespace) until stabilized
+4. Mark proposed additions as `x.<name>.*` (individual namespace) until stabilized
 
 ## License
 

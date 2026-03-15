@@ -230,6 +230,8 @@ window.AppState = {
   alertCount: 0,
   pollInterval: null,
   pollMs: 3000,
+  isPro: false,         // set to true when account tier is pro or above (populated from /api/health or auth response)
+  accountTier: 'free',  // raw tier string: 'free' | 'pro' | 'org_starter' | 'org_professional' | 'org_business' | 'enterprise'
 };
 
 // ─── Utility helpers ───────────────────────────────────────────────────────

@@ -44,6 +44,13 @@ For CrewAI:
 pip install composio-crewai
 ```
 
+Two integration paths exist:
+
+- **Path A (full packaged worker):** The worker runs as a registered, attested pyhall package. Worker ID follows the `org.<name>.<worker>.<instance>` format. Re-attest after any code or dependency change.
+- **Path B (API-only):** The worker calls the Hall Server API directly without a local pyhall package. Suitable for integrations that do not own a deployable worker binary.
+
+The examples below use Path A (packaged worker with a canonical `org.*` worker ID).
+
 ## Option A — Custom HTTP action (recommended)
 
 Register pyhall's `/api/route` as a Composio custom action. This is the cleanest approach:
@@ -74,7 +81,7 @@ toolset.register_action(
                 },
                 "worker_id": {
                     "type": "string",
-                    "description": "Registered pyhall worker ID, e.g. wrk_abc123",
+                    "description": "Registered pyhall worker ID, e.g. org.acme.my-worker.i-1",
                 },
                 "tenant_id": {
                     "type": "string",
@@ -128,7 +135,7 @@ response = toolset.execute_action(
         },
         "body": {
             "capability_id": "cap.content.generate.v1",
-            "worker_id": "wrk_abc123",
+            "worker_id": "org.acme.my-worker.i-1",
             "env": "prod",
             "data_label": "INTERNAL",
             "tenant_id": "org.acme",
@@ -208,8 +215,9 @@ execution_agent = Agent(
 authorize_task = Task(
     description=(
         "Check WCP authorization for capability_id=cap.content.generate.v1 "
-        "worker_id=wrk_abc123 tenant_id=org.acme. "
+        "worker_id=org.acme.my-worker.i-1 tenant_id=org.acme. "
         "Return the decision_id and denied status."
+        # Note: if the worker package or binary changes, re-attest before using in prod.
     ),
     expected_output="JSON with decision_id and denied field",
     agent=governance_agent,

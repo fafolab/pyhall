@@ -75,7 +75,7 @@ class PyHallGovernanceCheck(CustomComponent):
             },
             "worker_id": {
                 "display_name": "Worker ID",
-                "info": "Registered pyhall worker ID, e.g. wrk_abc123",
+                "info": "Registered pyhall worker ID, e.g. org.acme.my-worker",
                 "required": True,
             },
             "tenant_id": {
@@ -162,7 +162,7 @@ class PyHallGovernanceCheck(CustomComponent):
       |
 [PyHall Governance Check]
   capability_id = "cap.content.generate.v1"
-  worker_id     = "wrk_abc123"
+  worker_id     = "org.acme.my-worker.i-1"
   tenant_id     = "org.acme"
       |
 [Conditional Router]
@@ -193,7 +193,8 @@ hall = Hall(
 )
 
 decision = hall.decisions.make(
-    worker_id="wrk_abc123",
+    worker_id="org.acme.my-worker.i-1",
+    # Note: if the worker package changes, re-attest before routing in prod.
     capability="cap.content.generate.v1",
     tenant_id="org.acme",
 )

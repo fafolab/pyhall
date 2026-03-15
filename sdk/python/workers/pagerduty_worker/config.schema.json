@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "pagerduty_worker config",
+  "type": "object",
+  "properties": {
+    "api_key_env": {
+      "type": "string",
+      "default": "PAGERDUTY_API_KEY",
+      "description": "Name of the environment variable holding the PagerDuty REST API v2 key"
+    },
+    "routing_key_env": {
+      "type": "string",
+      "default": "PAGERDUTY_ROUTING_KEY",
+      "description": "Name of the environment variable holding the service integration key for event triggers"
+    },
+    "from_email": {
+      "type": "string",
+      "description": "Email address sent in the From header for PagerDuty write operations (acknowledge, resolve, add_note, create_incident)"
+    },
+    "default_service_id": {
+      "type": "string",
+      "description": "Default PagerDuty service ID used when none is provided to create_incident"
+    },
+    "env": {
+      "type": "string",
+      "enum": ["dev", "stage", "prod"],
+      "description": "Deployment environment — controls attestation strictness"
+    }
+  },
+  "additionalProperties": false
+}

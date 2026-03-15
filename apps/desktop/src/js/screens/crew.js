@@ -61,6 +61,33 @@ window.CrewScreen = (() => {
     });
   }
 
+  // Column headers — always rendered
+  const CREW_TABLE_HEADER = `
+    <div class="crew-table-header" style="
+      display:grid;
+      grid-template-columns:2fr 1fr 1fr 1fr 1fr 1fr auto;
+      gap:8px;
+      padding:6px 12px;
+      background:var(--bg-raised);
+      border:1px solid var(--bg-border);
+      border-radius:var(--radius-sm);
+      margin-bottom:8px;
+      font-size:11px;
+      font-weight:600;
+      color:var(--text-muted);
+      text-transform:uppercase;
+      letter-spacing:0.05em;
+    ">
+      <span>Worker ID</span>
+      <span>Namespace</span>
+      <span>Species</span>
+      <span>Status</span>
+      <span>Enrolled At</span>
+      <span>Last Seen</span>
+      <span></span>
+    </div>
+  `;
+
   function renderCrew() {
     const container = document.getElementById('crew-list');
     const countEl = document.getElementById('crew-count');
@@ -71,17 +98,17 @@ window.CrewScreen = (() => {
     if (countEl) countEl.textContent = `${allWorkers.filter(w => w.status !== 'catalog').length} workers`;
 
     if (filtered.length === 0) {
-      container.innerHTML = `
+      container.innerHTML = CREW_TABLE_HEADER + `
         <div class="empty-state">
           <div class="empty-state-icon">👷</div>
           <div class="empty-state-text">No workers match the current filter.</div>
-          <div class="empty-state-sub">Try changing the search or filter.</div>
+          <div class="empty-state-sub">Enroll a worker to get started, or check back when the Hall Server is online.</div>
         </div>
       `;
       return;
     }
 
-    container.innerHTML = filtered.map(w => renderWorkerCard(w)).join('');
+    container.innerHTML = CREW_TABLE_HEADER + filtered.map(w => renderWorkerCard(w)).join('');
 
     // Wire Details buttons
     container.querySelectorAll('[data-details]').forEach(btn => {

@@ -110,7 +110,7 @@ import { Hall } from '@pyhall/core';
 const hall = new Hall({ apiKey: process.env.PYHALL_API_KEY });
 
 const decision = await hall.decisions.make({
-  workerId: 'wrk_abc123',
+  workerId: 'org.acme.my-worker.i-1',
   capability: 'cap.data.read.v1',
 });
 

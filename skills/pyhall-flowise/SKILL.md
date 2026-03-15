@@ -55,7 +55,7 @@ Paste this into the **Input Schema** field of the Custom Tool:
     },
     "worker_id": {
       "type": "string",
-      "description": "Registered pyhall worker ID, e.g. wrk_abc123"
+      "description": "Registered pyhall worker ID, e.g. org.acme.my-worker.i-1"
     },
     "tenant_id": {
       "type": "string",

@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "slack_worker config",
+  "type": "object",
+  "properties": {
+    "bot_token_env": {
+      "type": "string",
+      "default": "SLACK_BOT_TOKEN",
+      "description": "Bot token (xoxb-) env var name"
+    },
+    "webhook_url_env": {
+      "type": "string",
+      "default": "SLACK_WEBHOOK_URL",
+      "description": "Incoming webhook URL env var name for post_webhook"
+    },
+    "default_channel": {
+      "type": "string",
+      "description": "Default channel ID or name for notifications"
+    },
+    "env": {
+      "type": "string",
+      "enum": ["dev", "stage", "prod"]
+    }
+  },
+  "additionalProperties": false
+}

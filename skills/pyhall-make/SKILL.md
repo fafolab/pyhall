@@ -74,7 +74,7 @@ Insert an **HTTP → Make a Request** module at the governance checkpoint in you
 
 Replace `{{1.worker_id}}` and `{{1.data_label}}` with mappings from the trigger or earlier modules
 in your scenario. If your trigger does not carry a `worker_id`, use a fixed registered worker ID
-that represents your Make integration (e.g., `wrk_make_acme_prod`).
+that represents your Make integration (e.g., `org.acme.make-worker`).
 
 ### Field reference
 

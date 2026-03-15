@@ -299,32 +299,9 @@ window.StatusScreen = (() => {
     if (btn) btn.style.display = online ? '' : 'none';
   }
 
-  document.getElementById('btn-open-log-from-status')?.addEventListener('click', async () => {
-    const url = window.AppState?.hallUrl || 'http://localhost:8765';
-    const pathEl = document.getElementById('status-log-path-display');
-    try {
-      const res = await fetch(`${url}/api/health`);
-      const data = await res.json();
-      const logPath = data.log_path || '';
-      if (pathEl) {
-        pathEl.textContent = logPath || '—';
-        pathEl.style.display = logPath ? '' : 'none';
-      }
-      if (logPath) {
-        if (window.__TAURI__?.opener?.openPath) {
-          await window.__TAURI__.opener.openPath(logPath);
-        } else {
-          // Fallback: copy path to clipboard
-          navigator.clipboard?.writeText(logPath);
-          if (pathEl) pathEl.textContent = `copied: ${logPath}`;
-        }
-      }
-    } catch (e) {
-      if (pathEl) {
-        pathEl.textContent = `Error: ${e}`;
-        pathEl.style.display = '';
-      }
-    }
+  document.getElementById('btn-open-log-from-status')?.addEventListener('click', () => {
+    // Navigate to the in-app Logs screen instead of opening an external application
+    document.querySelector('[data-screen="logs"]')?.click();
   });
 
   // Schedule active jobs refresh (every 5s when visible)

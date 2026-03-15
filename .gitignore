@@ -14,5 +14,4 @@ build/
 *.egg-info/
 .venv/
 venv/
-sdk/go/pyhall
-sdk/python/hall-server.spec
+.pytest_cache/

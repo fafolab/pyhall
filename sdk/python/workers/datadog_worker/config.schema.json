@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "datadog_worker config",
+  "type": "object",
+  "properties": {
+    "api_key_env": {
+      "type": "string",
+      "default": "DATADOG_API_KEY",
+      "description": "Environment variable name holding the Datadog API key (DD-API-KEY header)"
+    },
+    "app_key_env": {
+      "type": "string",
+      "default": "DATADOG_APP_KEY",
+      "description": "Environment variable name holding the Datadog Application key (DD-APPLICATION-KEY header)"
+    },
+    "site_env": {
+      "type": "string",
+      "default": "DATADOG_SITE",
+      "description": "Environment variable name for Datadog site override (e.g. datadoghq.eu for EU region). Default site: datadoghq.com"
+    },
+    "default_tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Default tags applied to all submitted metrics (e.g. ['env:prod', 'service:pyhall'])"
+    },
+    "env": {
+      "type": "string",
+      "enum": ["dev", "stage", "prod"],
+      "description": "Worker execution environment. Mirrors PYHALL_ENV. prod enforces hard attestation."
+    }
+  },
+  "additionalProperties": false
+}

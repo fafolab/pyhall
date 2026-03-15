@@ -53,26 +53,6 @@
   --grotesk: 'Space Grotesk', sans-serif;
 }
 
-[data-theme="light"] {
-  --bg:      #f8fafc;
-  --surface: #ffffff;
-  --card:    #f1f5f9;
-  --panel:   #e2e8f0;
-  --border:  #cbd5e1;
-  --border2: #94a3b8;
-  --text:    #0f172a;
-  --muted:   #64748b;
-  --muted2:  #94a3b8;
-  --bg-primary:  #f8fafc;
-  --bg-surface:  #ffffff;
-  --bg-raised:   #f1f5f9;
-  --bg-border:   #cbd5e1;
-  --text-primary: #374151;
-  --text-bright:  #0f172a;
-  --text-muted:   #64748b;
-  --text-dim:     #94a3b8;
-}
-
 /* ─── pyhall Desktop — Hall Monitor ─────────────────────────────────────────
    Theme: dark background, pyhall blue accent (#0050D4)
    ───────────────────────────────────────────────────────────────────────── */
@@ -105,11 +85,41 @@
   --radius-sm:      4px;
 }
 
+[data-theme="light"] {
+  --bg:      #f8fafc;
+  --surface: #ffffff;
+  --card:    #f1f5f9;
+  --panel:   #e2e8f0;
+  --border:  #cbd5e1;
+  --border2: #94a3b8;
+  --text:    #0f172a;
+  --muted:   #64748b;
+  --muted2:  #94a3b8;
+  --bg-primary:  #f8fafc;
+  --bg-surface:  #ffffff;
+  --bg-raised:   #f1f5f9;
+  --bg-border:   #cbd5e1;
+  --text-primary: #374151;
+  --text-bright:  #0f172a;
+  --text-muted:   #64748b;
+  --text-dim:     #94a3b8;
+  --accent-muted: rgba(0, 80, 212, 0.12);
+}
+/* Light theme: chip active — accent bg needs white text */
+[data-theme="light"] .chip.active {
+  background: var(--accent-blue);
+  color: #fff !important;
+}
+[data-theme="light"] .chip:hover {
+  color: var(--accent-blue);
+}
+
 /* ─── Reset ─────────────────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 html, body {
-  height: 100%;
+  height: 100vh;
+  width: 100vw;
   font-family: var(--font-mono);
   font-size: 13px;
   background: var(--bg-primary);
@@ -642,10 +652,13 @@ html, body {
 
 .btn-primary {
   background: var(--accent-blue);
-  color: #fff;
+  color: #fff !important;
   border-color: var(--accent-blue);
+  font-weight: 700;
 }
-.btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+.btn-primary:hover,
+.btn-primary:active,
+.btn-primary:focus { background: var(--accent-hover); border-color: var(--accent-hover); color: #fff !important; }
 
 .btn-secondary {
   background: var(--bg-raised);
@@ -949,6 +962,7 @@ html, body {
 /* Single-column sections still get bottom margin */
 .config-section-full {
   margin-bottom: 12px;
+  max-width: 500px;
 }
 
 .config-section-title {
@@ -2288,3 +2302,54 @@ textarea.field-input {
   height: 28px;
   flex-shrink: 0;
 }
+
+/* ── Log Viewer ────────────────────────────────────────────────────────────── */
+.log-viewer-wrap {
+  flex: 1;
+  overflow: hidden;
+  padding: 0 24px 24px;
+}
+.log-viewer-content {
+  width: 100%;
+  height: 100%;
+  min-height: 400px;
+  max-height: calc(100vh - 220px);
+  overflow-y: auto;
+  background: var(--bg-secondary);
+  border: 1px solid var(--bg-border);
+  border-radius: 6px;
+  padding: 16px;
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+/* ── Passphrase overlay ────────────────────────────────────────────────────── */
+.passphrase-card {
+  background: var(--bg-card);
+  border: 1px solid var(--bg-border);
+  border-radius: 12px;
+  padding: 48px 40px;
+  width: 360px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.passphrase-logo { font-size: 48px; }
+.passphrase-title { font-size: 22px; font-weight: 700; margin: 0; }
+.passphrase-sub { color: var(--text-muted); font-size: 14px; margin: 0; }
+.passphrase-input {
+  width: 100%;
+  padding: 10px 14px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--bg-border);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-size: 14px;
+  box-sizing: border-box;
+}
+.passphrase-error { color: var(--color-error, #e05c5c); font-size: 13px; }

@@ -47,7 +47,7 @@ Insert an **HTTP Request** node in your Dify workflow before any sensitive step.
 ```json
 {
   "capability_id": "{{#sys.query#}}",
-  "worker_id": "wrk_abc123",
+  "worker_id": "org.acme.my-worker.i-1",
   "env": "prod",
   "data_label": "INTERNAL",
   "tenant_id": "org.acme"
@@ -140,7 +140,7 @@ def main(worker_id: str, capability_id: str, tenant_id: str) -> dict:
 
 | Name | Type | Source |
 |---|---|---|
-| `worker_id` | String | upstream variable or static `wrk_abc123` |
+| `worker_id` | String | upstream variable or static `org.acme.my-worker.i-1` |
 | `capability_id` | String | start node variable or classifier output |
 | `tenant_id` | String | user session context or static `org.acme` |
 

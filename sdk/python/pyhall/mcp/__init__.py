@@ -1,5 +1,3 @@
-# Copyright (c) 2026 pyhall.dev — https://pyhall.dev
-# Licensed under the Apache License, Version 2.0 (see LICENSE)
 """pyhall.mcp — WCP/MCP interop: expose a WCP worker as an MCP tool.
 
 Provides the MCP stdio server that wraps a WCP worker as an MCP tool.
@@ -19,5 +17,20 @@ Swap in your own worker:
 """
 
 from pyhall.mcp.server import run_stdio_loop, dispatch
+from pyhall.mcp.transport import (
+    McpTransport,
+    StdioTransport,
+    SseTransport,
+    HttpTransport,
+    run_transport_loop,
+)
 
-__all__ = ["run_stdio_loop", "dispatch"]
+__all__ = [
+    "run_stdio_loop",
+    "dispatch",
+    "McpTransport",
+    "StdioTransport",
+    "SseTransport",
+    "HttpTransport",
+    "run_transport_loop",
+]

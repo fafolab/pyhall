@@ -66,7 +66,7 @@ export default defineComponent({
 
     // Pull worker_id and data_label from trigger or an earlier step.
     // Adjust field paths to match your workflow's event shape.
-    const workerId  = steps.trigger.event?.worker_id  ?? 'wrk_pipedream_acme_prod';
+    const workerId  = steps.trigger.event?.worker_id  ?? 'org.acme.pipedream-worker';
     const dataLabel = steps.trigger.event?.data_label ?? 'INTERNAL';
 
     const payload = {

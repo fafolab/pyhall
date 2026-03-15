@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "stripe_worker config",
+  "type": "object",
+  "properties": {
+    "secret_key_env": {
+      "type": "string",
+      "default": "STRIPE_SECRET_KEY",
+      "description": "Name of the environment variable holding the Stripe secret key (sk_test_* or sk_live_*)"
+    },
+    "webhook_secret_env": {
+      "type": "string",
+      "default": "STRIPE_WEBHOOK_SECRET",
+      "description": "For webhook signature verification — set to the whsec_* value from the Stripe dashboard"
+    },
+    "default_currency": {
+      "type": "string",
+      "default": "usd",
+      "description": "ISO 4217 lowercase currency code used when currency is not specified"
+    },
+    "env": {
+      "type": "string",
+      "enum": ["dev", "stage", "prod"],
+      "description": "Runtime environment. Controls attestation strictness and log verbosity."
+    }
+  },
+  "additionalProperties": false
+}

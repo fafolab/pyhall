@@ -11,7 +11,7 @@
 
 // ─── Navigation ────────────────────────────────────────────────────────────
 
-const SCREENS = ['status', 'feed', 'crew', 'alerts', 'coordination', 'profile', 'enroll', 'config', 'doctor', 'about'];
+const SCREENS = ['status', 'feed', 'crew', 'alerts', 'coordination', 'logs', 'profile', 'enroll', 'config', 'doctor', 'about'];
 
 function navigateTo(screen) {
   if (!SCREENS.includes(screen)) return;
@@ -38,9 +38,11 @@ function navigateTo(screen) {
     crew:         () => window.CrewScreen && window.CrewScreen.refresh(),
     alerts:       () => window.AlertsScreen && window.AlertsScreen.refresh(),
     coordination: () => window.CoordinationScreen && window.CoordinationScreen.onShow(),
+    logs:         () => window.LogViewerScreen && window.LogViewerScreen.refresh(),
     profile:      () => window.ProfileScreen && window.ProfileScreen.init(),
     enroll:       () => window.EnrollScreen && window.EnrollScreen.reset(),
     config:       () => window.ConfigScreen && window.ConfigScreen.load(),
+    mcp:          () => window.McpScreen && window.McpScreen.reset(),
     doctor:       () => window.DoctorScreen && window.DoctorScreen.onActivate(),
     about:        () => _refreshAboutScreen(),
   };
@@ -52,13 +54,20 @@ document.querySelectorAll('.nav-item').forEach(el => {
   el.addEventListener('click', () => navigateTo(el.dataset.screen));
 });
 
-// Wire config tab chip active states
-document.querySelectorAll('[data-config-tab]').forEach(chip => {
-  chip.addEventListener('click', () => {
-    document.querySelectorAll('[data-config-tab]').forEach(c => c.classList.remove('active'));
-    chip.classList.add('active');
+// Wire config tab chip active states — show/hide sections
+function _showConfigTab(tab) {
+  document.querySelectorAll('[data-config-tab]').forEach(c => c.classList.remove('active'));
+  document.querySelector(`[data-config-tab="${tab}"]`)?.classList.add('active');
+  ['api', 'appearance', 'advanced'].forEach(t => {
+    const el = document.getElementById(`config-tab-${t}`);
+    if (el) el.style.display = t === tab ? '' : 'none';
   });
+}
+document.querySelectorAll('[data-config-tab]').forEach(chip => {
+  chip.addEventListener('click', () => _showConfigTab(chip.dataset.configTab));
 });
+// Initialize — show API tab, hide others
+_showConfigTab('api');
 
 // Cross-screen navigation buttons
 document.getElementById('btn-go-config-from-status')?.addEventListener('click', () => navigateTo('config'));
@@ -383,6 +392,18 @@ window.goOnline = async function() {
     alert('Not logged into registry. Use "Log In" to authenticate with pyhall.dev first.');
     return;
   }
+
+  // Block go-online if binary integrity check failed
+  if (window.__doctorHasBinaryIntegrityWarning && window.__doctorHasBinaryIntegrityWarning()) {
+    alert(
+      'Binary integrity warning active — cannot go online.\n\n' +
+      'The Hall Monitor binary hash has not been verified. ' +
+      'This may mean the binary was replaced or has not been checked yet.\n\n' +
+      'Go to Doctor screen and run diagnostics to clear this warning.'
+    );
+    return;
+  }
+
   const url = window.AppState?.hallUrl || 'http://localhost:8765';
   const body = {};
   if (window.AppState?.desktopBinaryHash) body.desktop_hash = window.AppState.desktopBinaryHash;
@@ -396,8 +417,22 @@ window.goOnline = async function() {
       body: JSON.stringify(body),
     });
     const d = await r.json();
-    if (!d.ok) { alert(`Cannot go online: ${d.message || 'unknown error'}`); return; }
-  } catch (_) {}
+    if (!d.ok) {
+      const msg = d.message || 'unknown error';
+      // Show user-friendly message for registry connectivity errors
+      if (msg.includes('Connection timeout') || msg.includes('urlopen error') || msg.includes('Errno 110')) {
+        alert('Cannot go online: Registry temporarily unreachable. Check your network connection and try again.');
+      } else {
+        alert(`Cannot go online: ${msg}`);
+      }
+      return;
+    }
+  } catch (e) {
+    const errStr = String(e);
+    if (errStr.includes('Connection timeout') || errStr.includes('Errno 110')) {
+      alert('Cannot go online: Registry temporarily unreachable. Check your network connection and try again.');
+    }
+  }
   window.pollHall && window.pollHall();
 };
 
@@ -609,6 +644,9 @@ async function _fetchAndShowIdentity() {
     if (r.ok) {
       const d = await r.json();
       login = (d.profile?.github_login) || d.github_login;
+      const tier = d.profile?.tier || d.tier || 'free';
+      window.AppState.accountTier = tier;
+      window.AppState.isPro = tier !== 'free';
     }
   } catch (_) {}
 
@@ -682,7 +720,7 @@ function _switchPassphraseForm(which) {
     if (el) el.style.display = (key === which) ? 'block' : 'none';
   });
   // Clear inputs and errors on switch
-  ['passphrase-input', 'passphrase-new', 'passphrase-new-confirm',
+  ['db-passphrase-input', 'passphrase-new', 'passphrase-new-confirm',
    'passphrase-reset-token', 'passphrase-reset-new', 'passphrase-reset-confirm'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
@@ -802,6 +840,12 @@ document.getElementById('btn-gate-incomplete-back')?.addEventListener('click', (
     btn.disabled = true;
     btn.textContent = 'Waiting for GitHub...';
 
+    // WRK-A-009 — Processing animation while waiting for OAuth
+    const loginWorkerEl = document.getElementById('login-worker');
+    if (loginWorkerEl && window.WorkerWidget) {
+      WorkerWidget.setAnimation(loginWorkerEl, 'anim-process');
+    }
+
     let attempts = 0;
     // Poll at 8s — registry rate-limits desktop-poll at 10 req/min (1 per 6s min).
     // 8s keeps us safely under the limit. 15 attempts × 8s = 120s total timeout.
@@ -854,7 +898,7 @@ document.getElementById('btn-gate-incomplete-back')?.addEventListener('click', (
   // Unlock submit
   document.getElementById('btn-passphrase-unlock')?.addEventListener('click', async () => {
     const hallUrl   = window.AppState?.hallUrl || 'http://localhost:8765';
-    const input     = document.getElementById('passphrase-input');
+    const input     = document.getElementById('db-passphrase-input');
     const keychainEl = document.getElementById('keychain-opt-in');
     const errEl     = document.getElementById('passphrase-unlock-error');
     const btn       = document.getElementById('btn-passphrase-unlock');
@@ -895,7 +939,7 @@ document.getElementById('btn-gate-incomplete-back')?.addEventListener('click', (
   });
 
   // Allow Enter key in passphrase field to submit
-  document.getElementById('passphrase-input')?.addEventListener('keydown', (e) => {
+  document.getElementById('db-passphrase-input')?.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') document.getElementById('btn-passphrase-unlock')?.click();
   });
 
@@ -1079,12 +1123,47 @@ async function checkPendingAuth() {
   return window.AppState?.sessionToken != null;
 }
 
+// ─── Startup passphrase overlay (app-level, Tauri-backed) ──────────────────
+// Separate from the server-database passphrase gate. This is a lightweight
+// screen-lock using a SHA-256 hash stored in ~/.config/pyhall/settings.json.
+
+async function _checkStartupPassphrase() {
+  if (typeof window.__TAURI__ === 'undefined') return; // dev browser, skip
+  try {
+    const hasPass = await window.__TAURI__.core.invoke('has_passphrase');
+    if (!hasPass) return;
+    const overlay = document.getElementById('passphrase-overlay');
+    if (overlay) overlay.style.display = 'flex';
+    await new Promise(resolve => {
+      const btn = document.getElementById('passphrase-unlock-btn');
+      const input = document.getElementById('passphrase-input');
+      const errEl = document.getElementById('passphrase-error');
+      async function attempt() {
+        const ok = await window.__TAURI__.core.invoke('check_passphrase', { passphrase: input.value });
+        if (ok) {
+          if (overlay) overlay.style.display = 'none';
+          resolve();
+        } else {
+          if (errEl) errEl.style.display = 'block';
+          input.value = '';
+          input.focus();
+        }
+      }
+      btn?.addEventListener('click', attempt);
+      input?.addEventListener('keydown', e => { if (e.key === 'Enter') attempt(); });
+    });
+  } catch (_) { /* passphrase system not available, skip */ }
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
   // Gates start: login-gate shown, passphrase-gate hidden.
   // The login gate is shown by default via inline style in index.html.
 
   // Initialize theme before rendering
   initTheme();
+
+  // Check startup passphrase before anything else
+  await _checkStartupPassphrase();
 
   // Load config so hallUrl is set before first poll
   try {

@@ -1,5 +1,3 @@
-// Copyright (c) 2026 pyhall.dev — https://pyhall.dev
-// Licensed under the Apache License, Version 2.0 (see LICENSE)
 // Package wcp implements the Worker Class Protocol (WCP) in Go.
 //
 // This is a v0.1 scaffolding — stubs and interfaces only.

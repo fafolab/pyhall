@@ -22,6 +22,7 @@ import os
 import sys
 import unittest
 import urllib.error
+from datetime import datetime, UTC
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -526,6 +527,368 @@ class TestPostHallRoute(unittest.TestCase):
         # No Authorization header should have been sent
         auth = captured["headers"].get("Authorization") or captured["headers"].get("authorization")
         self.assertIsNone(auth)
+
+
+# ---------------------------------------------------------------------------
+# Task 1: roots/list
+# ---------------------------------------------------------------------------
+
+class TestRootsList(unittest.TestCase):
+
+    def test_roots_list_returns_default_roots(self):
+        """roots/list returns at least the default pyhall config and data roots."""
+        msg = {"jsonrpc": "2.0", "method": "roots/list", "params": {}, "id": 10}
+        response = _srv.dispatch(json.dumps(msg))
+        self.assertIsNotNone(response)
+        self.assertIn("result", response)
+        roots = response["result"]["roots"]
+        self.assertIsInstance(roots, list)
+        self.assertGreaterEqual(len(roots), 2)
+        uris = [r["uri"] for r in roots]
+        self.assertTrue(any("pyhall" in u for u in uris))
+
+    def test_roots_list_includes_env_extra_roots(self):
+        """roots/list includes extra roots from PYHALL_MCP_ROOTS env var."""
+        with patch.dict(os.environ, {"PYHALL_MCP_ROOTS": "/tmp/custom-root"}):
+            roots = _srv._get_server_roots()
+        uris = [r["uri"] for r in roots]
+        self.assertTrue(any("/tmp/custom-root" in u for u in uris))
+
+    def test_roots_list_multiple_extra_roots(self):
+        """roots/list handles colon-separated PYHALL_MCP_ROOTS."""
+        with patch.dict(os.environ, {"PYHALL_MCP_ROOTS": "/tmp/a:/tmp/b"}):
+            roots = _srv._get_server_roots()
+        uris = [r["uri"] for r in roots]
+        self.assertTrue(any("/tmp/a" in u for u in uris))
+        self.assertTrue(any("/tmp/b" in u for u in uris))
+
+    def test_roots_list_via_dispatch(self):
+        """dispatch('roots/list') returns JSON-RPC 2.0 result."""
+        msg = {"jsonrpc": "2.0", "method": "roots/list", "params": {}, "id": 11}
+        resp = _srv.dispatch(json.dumps(msg))
+        self.assertEqual(resp["jsonrpc"], "2.0")
+        self.assertEqual(resp["id"], 11)
+        self.assertIn("roots", resp["result"])
+
+
+# ---------------------------------------------------------------------------
+# Task 2: Bidirectional sampling — module-level state
+# ---------------------------------------------------------------------------
+
+class TestSamplingState(unittest.TestCase):
+
+    def setUp(self):
+        _srv._PENDING_SAMPLES.clear()
+        _srv._SAMPLE_RESPONSES.clear()
+
+    def tearDown(self):
+        _srv._PENDING_SAMPLES.clear()
+        _srv._SAMPLE_RESPONSES.clear()
+
+    def test_sampling_response_consumed_from_pending(self):
+        """dispatch() moves a sampling response from _PENDING_SAMPLES to _SAMPLE_RESPONSES."""
+        # Simulate a pending sample
+        fake_id = "fake-sample-id-123"
+        _srv._PENDING_SAMPLES[fake_id] = {"id": fake_id, "method": "sampling/createMessage"}
+
+        # Simulate the client responding
+        response_msg = json.dumps({
+            "jsonrpc": "2.0",
+            "id": fake_id,
+            "result": {"content": [{"type": "text", "text": "LLM response"}]},
+        })
+        result = _srv.dispatch(response_msg)
+
+        # dispatch should return None (not route as a new request)
+        self.assertIsNone(result)
+        # Should be removed from pending
+        self.assertNotIn(fake_id, _srv._PENDING_SAMPLES)
+        # Should appear in responses
+        self.assertIn(fake_id, _srv._SAMPLE_RESPONSES)
+        self.assertEqual(
+            _srv._SAMPLE_RESPONSES[fake_id]["content"][0]["text"],
+            "LLM response"
+        )
+
+    def test_non_pending_result_not_captured(self):
+        """dispatch() does not capture result messages for unknown IDs."""
+        # No pending sample with this ID
+        _srv._PENDING_SAMPLES.clear()
+        response_msg = json.dumps({
+            "jsonrpc": "2.0",
+            "id": "unknown-id",
+            "result": {"content": []},
+        })
+        # Should not crash, should not add to _SAMPLE_RESPONSES (id not pending)
+        _srv.dispatch(response_msg)
+        self.assertNotIn("unknown-id", _srv._SAMPLE_RESPONSES)
+
+    def test_pending_samples_dict_exists(self):
+        """_PENDING_SAMPLES and _SAMPLE_RESPONSES are module-level dicts."""
+        self.assertIsInstance(_srv._PENDING_SAMPLES, dict)
+        self.assertIsInstance(_srv._SAMPLE_RESPONSES, dict)
+
+
+# ---------------------------------------------------------------------------
+# Task 3: Elicitation / suspended state
+# ---------------------------------------------------------------------------
+
+class TestElicitation(unittest.TestCase):
+
+    def setUp(self):
+        _srv._SUSPENDED_CALLS.clear()
+
+    def tearDown(self):
+        _srv._SUSPENDED_CALLS.clear()
+
+    def _dispatch(self, method, params, req_id=1):
+        msg = {"jsonrpc": "2.0", "method": method, "params": params, "id": req_id}
+        return _srv.dispatch(json.dumps(msg))
+
+    def test_elicitation_create_returns_call_id_and_pending(self):
+        """elicitation/create returns a call_id and status=pending."""
+        resp = self._dispatch("elicitation/create", {
+            "title": "Need input",
+            "message": "Please provide the tenant ID",
+            "fields": [{"name": "tenant_id", "type": "string", "required": True}],
+        })
+        self.assertIn("result", resp)
+        result = resp["result"]
+        self.assertIn("call_id", result)
+        self.assertEqual(result["status"], "pending")
+
+    def test_elicitation_create_stores_in_suspended_calls(self):
+        """elicitation/create stores the call in _SUSPENDED_CALLS."""
+        resp = self._dispatch("elicitation/create", {"title": "Test"})
+        call_id = resp["result"]["call_id"]
+        self.assertIn(call_id, _srv._SUSPENDED_CALLS)
+        self.assertEqual(_srv._SUSPENDED_CALLS[call_id]["status"], "pending")
+
+    def test_elicitation_create_with_explicit_call_id(self):
+        """elicitation/create uses the provided call_id if given."""
+        resp = self._dispatch("elicitation/create", {"call_id": "my-call-123", "title": "X"})
+        self.assertEqual(resp["result"]["call_id"], "my-call-123")
+        self.assertIn("my-call-123", _srv._SUSPENDED_CALLS)
+
+    def test_elicitation_respond_updates_status(self):
+        """elicitation/respond sets status=responded and stores values."""
+        # First create
+        create_resp = self._dispatch("elicitation/create", {"title": "Input needed"})
+        call_id = create_resp["result"]["call_id"]
+
+        # Then respond
+        resp = self._dispatch("elicitation/respond", {
+            "call_id": call_id,
+            "values": {"tenant_id": "org.example"},
+        }, req_id=2)
+        self.assertIn("result", resp)
+        self.assertTrue(resp["result"]["ok"])
+        self.assertEqual(resp["result"]["call_id"], call_id)
+        self.assertEqual(_srv._SUSPENDED_CALLS[call_id]["status"], "responded")
+        self.assertEqual(
+            _srv._SUSPENDED_CALLS[call_id]["response"]["tenant_id"], "org.example"
+        )
+
+    def test_elicitation_respond_unknown_call_id_returns_error(self):
+        """elicitation/respond with unknown call_id returns error in result."""
+        resp = self._dispatch("elicitation/respond", {"call_id": "nonexistent", "values": {}})
+        self.assertIn("result", resp)
+        self.assertIn("error", resp["result"])
+
+    def test_elicitation_status_returns_current_state(self):
+        """elicitation/status returns the current state of a suspended call."""
+        create_resp = self._dispatch("elicitation/create", {"title": "Need data", "message": "Provide X"})
+        call_id = create_resp["result"]["call_id"]
+
+        status_resp = self._dispatch("elicitation/status", {"call_id": call_id}, req_id=3)
+        self.assertIn("result", status_resp)
+        result = status_resp["result"]
+        self.assertEqual(result["call_id"], call_id)
+        self.assertEqual(result["status"], "pending")
+        self.assertEqual(result["title"], "Need data")
+
+    def test_elicitation_status_unknown_call_id_returns_error(self):
+        """elicitation/status with unknown call_id returns error in result."""
+        resp = self._dispatch("elicitation/status", {"call_id": "nope"})
+        self.assertIn("result", resp)
+        self.assertIn("error", resp["result"])
+
+    def test_suspended_calls_dict_exists(self):
+        """_SUSPENDED_CALLS is a module-level dict."""
+        self.assertIsInstance(_srv._SUSPENDED_CALLS, dict)
+
+
+# ---------------------------------------------------------------------------
+# Task 5: Dynamic resource templates — resources/subscribe + hal://logs
+# ---------------------------------------------------------------------------
+
+class TestResourceSubscribe(unittest.TestCase):
+
+    def setUp(self):
+        _srv._SUBSCRIBED_RESOURCES.clear()
+
+    def tearDown(self):
+        _srv._SUBSCRIBED_RESOURCES.clear()
+
+    def test_subscribe_adds_to_subscribed_set(self):
+        """resources/subscribe adds URI to _SUBSCRIBED_RESOURCES."""
+        msg = {"jsonrpc": "2.0", "method": "resources/subscribe",
+               "params": {"uri": "wrk://workers"}, "id": 20}
+        _srv.dispatch(json.dumps(msg))
+        self.assertIn("wrk://workers", _srv._SUBSCRIBED_RESOURCES)
+
+    def test_unsubscribe_removes_from_subscribed_set(self):
+        """resources/unsubscribe removes URI from _SUBSCRIBED_RESOURCES."""
+        _srv._SUBSCRIBED_RESOURCES.add("wrk://workers")
+        msg = {"jsonrpc": "2.0", "method": "resources/unsubscribe",
+               "params": {"uri": "wrk://workers"}, "id": 21}
+        _srv.dispatch(json.dumps(msg))
+        self.assertNotIn("wrk://workers", _srv._SUBSCRIBED_RESOURCES)
+
+    def test_unsubscribe_nonexistent_uri_does_not_crash(self):
+        """resources/unsubscribe for an unsubscribed URI returns ok (no crash)."""
+        msg = {"jsonrpc": "2.0", "method": "resources/unsubscribe",
+               "params": {"uri": "wrk://nonexistent"}, "id": 22}
+        resp = _srv.dispatch(json.dumps(msg))
+        self.assertIn("result", resp)
+
+    def test_subscribed_resources_set_exists(self):
+        """_SUBSCRIBED_RESOURCES is a module-level set."""
+        self.assertIsInstance(_srv._SUBSCRIBED_RESOURCES, set)
+
+    def test_resources_list_includes_hal_log_for_enrolled_worker(self):
+        """resources/list includes hal://logs/{worker_id}/recent for enrolled workers."""
+        workers_resp = {"workers": [{"worker_id": "org.example.text-classifier"}], "count": 1}
+        with patch.object(_srv, "_fetch_hall_server", return_value=workers_resp):
+            resp = _srv.handle_resources_list({}, req_id=23)
+        uris = [r["uri"] for r in resp["result"]["resources"]]
+        self.assertIn("hal://logs/org.example.text-classifier/recent", uris)
+
+    def test_resources_list_graceful_when_hall_server_down(self):
+        """resources/list returns at least the static resources when Hall Server is down."""
+        with patch.object(_srv, "_fetch_hall_server", return_value={"error": "down"}):
+            resp = _srv.handle_resources_list({}, req_id=24)
+        resources = resp["result"]["resources"]
+        static_uris = {r["uri"] for r in resources}
+        self.assertIn("wrk://workers", static_uris)
+
+    def test_resources_read_hal_log_uri(self):
+        """resources/read handles hal://logs/{worker_id}/recent URI."""
+        decisions_resp = [
+            {"decided_at": "2026-03-13T10:00:00Z", "denied": 0,
+             "capability_id": "cap.nlp.classify", "deny_reason": None},
+        ]
+        with patch.object(_srv, "_get_from_hall_server", return_value=decisions_resp):
+            resp = _srv.handle_resources_read(
+                {"uri": "hal://logs/org.example.classifier/recent"}, req_id=25
+            )
+        self.assertIn("result", resp)
+        text = resp["result"]["contents"][0]["text"]
+        self.assertIn("ALLOW", text)
+        self.assertIn("cap.nlp.classify", text)
+
+    def test_resources_read_invalid_hal_log_uri_returns_error(self):
+        """resources/read hal://logs/ with no worker_id returns error."""
+        resp = _srv.handle_resources_read({"uri": "hal://logs/"}, req_id=26)
+        self.assertIn("error", resp)
+
+
+# ---------------------------------------------------------------------------
+# Task 6: Time-gated policy execution windows
+# ---------------------------------------------------------------------------
+
+class TestTimeWindowCheck(unittest.TestCase):
+
+    def test_no_time_window_is_always_allowed(self):
+        """_check_time_window(None) returns True."""
+        self.assertTrue(_srv._check_time_window(None))
+
+    def test_empty_time_window_is_always_allowed(self):
+        """_check_time_window({}) returns True."""
+        self.assertTrue(_srv._check_time_window({}))
+
+    def test_allowed_day_and_hour_passes(self):
+        """_check_time_window passes when current day+hour is within the window."""
+        from datetime import timezone
+        import unittest.mock as _mock
+        # Pin time to Monday 10:00 UTC
+        fixed = datetime(2026, 3, 9, 10, 0, 0, tzinfo=UTC)  # Monday
+        with _mock.patch("pyhall.mcp.server.datetime") as mock_dt:
+            mock_dt.now.return_value = fixed
+            result = _srv._check_time_window({"days": ["mon", "tue"], "hours": [9, 17]})
+        self.assertTrue(result)
+
+    def test_blocked_outside_hours(self):
+        """_check_time_window returns False when hour is outside the window."""
+        import unittest.mock as _mock
+        fixed = datetime(2026, 3, 9, 20, 0, 0, tzinfo=UTC)  # Monday 20:00 — outside 9-17
+        with _mock.patch("pyhall.mcp.server.datetime") as mock_dt:
+            mock_dt.now.return_value = fixed
+            result = _srv._check_time_window({"days": ["mon"], "hours": [9, 17]})
+        self.assertFalse(result)
+
+    def test_blocked_on_wrong_day(self):
+        """_check_time_window returns False when current day is not in allowed days."""
+        import unittest.mock as _mock
+        fixed = datetime(2026, 3, 14, 10, 0, 0, tzinfo=UTC)  # Saturday
+        with _mock.patch("pyhall.mcp.server.datetime") as mock_dt:
+            mock_dt.now.return_value = fixed
+            result = _srv._check_time_window({"days": ["mon", "tue", "wed", "thu", "fri"]})
+        self.assertFalse(result)
+
+    def test_time_window_blocks_dynamic_tool_call(self):
+        """tools/call returns isError=True when tool's _time_window blocks execution."""
+        import unittest.mock as _mock
+        worker = _make_worker()
+        tool_def = _srv.build_tool_from_worker(worker)
+        # Inject a time window that will always be blocked (hour range 0-0)
+        tool_def['_time_window'] = {"days": ["mon", "tue", "wed", "thu", "fri"], "hours": [0, 0]}
+        orig = _srv._DYNAMIC_TOOLS[:]
+        _srv._DYNAMIC_TOOLS[:] = [tool_def]
+        try:
+            params = {"name": tool_def["name"], "arguments": {"payload": {}}}
+            resp = _srv.handle_tools_call(params, req_id=30)
+            self.assertIn("result", resp)
+            self.assertTrue(resp["result"]["isError"])
+            self.assertIn("time window", resp["result"]["content"][0]["text"])
+        finally:
+            _srv._DYNAMIC_TOOLS[:] = orig
+
+
+# ---------------------------------------------------------------------------
+# Task 1 + initialize: capabilities include roots
+# ---------------------------------------------------------------------------
+
+class TestInitializeCapabilities(unittest.TestCase):
+
+    def test_initialize_returns_roots_capability(self):
+        """handle_initialize() returns roots capability with listChanged."""
+        with patch.object(_srv, "refresh_tools", return_value=[]):
+            resp = _srv.handle_initialize({}, req_id=99)
+        caps = resp["result"]["capabilities"]
+        self.assertIn("roots", caps)
+        self.assertTrue(caps["roots"].get("listChanged"))
+
+    def test_initialize_returns_sampling_capability(self):
+        """handle_initialize() returns sampling capability."""
+        with patch.object(_srv, "refresh_tools", return_value=[]):
+            resp = _srv.handle_initialize({}, req_id=100)
+        caps = resp["result"]["capabilities"]
+        self.assertIn("sampling", caps)
+
+    def test_initialize_returns_elicitation_capability(self):
+        """handle_initialize() returns elicitation capability."""
+        with patch.object(_srv, "refresh_tools", return_value=[]):
+            resp = _srv.handle_initialize({}, req_id=101)
+        caps = resp["result"]["capabilities"]
+        self.assertIn("elicitation", caps)
+
+    def test_initialize_resources_subscribe_is_true(self):
+        """handle_initialize() advertises resources.subscribe=True."""
+        with patch.object(_srv, "refresh_tools", return_value=[]):
+            resp = _srv.handle_initialize({}, req_id=102)
+        caps = resp["result"]["capabilities"]
+        self.assertTrue(caps["resources"].get("subscribe"))
 
 
 if __name__ == "__main__":

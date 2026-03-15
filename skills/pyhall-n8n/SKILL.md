@@ -83,7 +83,7 @@ Insert an **HTTP Request** node at the governance checkpoint.
 
 Replace `$json.worker_id` and `$json.data_label` with field references from the upstream node.
 If the upstream payload does not carry a `worker_id`, use a fixed registered worker ID (e.g.,
-`wrk_n8n_acme_prod`).
+`org.acme.n8n-worker`).
 
 ### Response fields available downstream
 
@@ -109,7 +109,7 @@ const token   = $env.HALL_SESSION_TOKEN;
 
 const payload = {
   capability_id: 'cap.data.write.v1',
-  worker_id:     $input.first().json.worker_id ?? 'wrk_n8n_acme_prod',
+  worker_id:     $input.first().json.worker_id ?? 'org.acme.n8n-worker',
   env:           'prod',
   data_label:    $input.first().json.data_label ?? 'INTERNAL',
   tenant_id:     'org.acme',

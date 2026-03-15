@@ -144,3 +144,164 @@ def test_coord_locks_empty(client):
     assert r.status_code == 200
     data = r.get_json()
     assert data["locks"] == []
+
+
+# ---------------------------------------------------------------------------
+# POST /api/coord/tasks — create task (SEP-1686)
+# ---------------------------------------------------------------------------
+
+def test_coord_task_create(client):
+    r = client.post("/api/coord/tasks", headers=_AUTH, json={"capability_id": "cap.test.x", "priority": 5})
+    assert r.status_code == 201
+    data = r.get_json()
+    assert data["ok"] is True
+    assert "task_id" in data
+    assert "receipt_id" in data
+
+
+def test_coord_task_create_appears_in_list(client):
+    r = client.post("/api/coord/tasks", headers=_AUTH, json={"capability_id": "cap.test.y"})
+    assert r.status_code == 201
+    task_id = r.get_json()["task_id"]
+    r2 = client.get("/api/coord/tasks", headers=_AUTH)
+    tasks = r2.get_json()["tasks"]
+    ids = [t["id"] for t in tasks]
+    assert task_id in ids
+
+
+def test_coord_task_create_requires_auth(client):
+    r = client.post("/api/coord/tasks", json={"capability_id": "cap.test.z"})
+    assert r.status_code == 401
+
+
+# ---------------------------------------------------------------------------
+# POST /api/coord/tasks/<task_id>/start
+# ---------------------------------------------------------------------------
+
+def test_coord_task_start(client):
+    r = client.post("/api/coord/tasks", headers=_AUTH, json={"capability_id": "cap.test.start"})
+    task_id = r.get_json()["task_id"]
+    r2 = client.post(f"/api/coord/tasks/{task_id}/start", headers=_AUTH, json={})
+    assert r2.status_code == 200
+    data = r2.get_json()
+    assert data["ok"] is True
+    assert data["task"]["status"] == "running"
+    assert data["task"]["started_at"] is not None
+
+
+def test_coord_task_start_not_found(client):
+    r = client.post("/api/coord/tasks/nonexistent-id/start", headers=_AUTH, json={})
+    assert r.status_code == 404
+
+
+def test_coord_task_start_requires_auth(client):
+    r = client.post("/api/coord/tasks/any/start", json={})
+    assert r.status_code == 401
+
+
+# ---------------------------------------------------------------------------
+# POST /api/coord/tasks/<task_id>/fail
+# ---------------------------------------------------------------------------
+
+def test_coord_task_fail(client):
+    r = client.post("/api/coord/tasks", headers=_AUTH, json={"capability_id": "cap.test.fail"})
+    task_id = r.get_json()["task_id"]
+    r2 = client.post(f"/api/coord/tasks/{task_id}/fail", headers=_AUTH, json={"reason": "test error"})
+    assert r2.status_code == 200
+    data = r2.get_json()
+    assert data["ok"] is True
+    assert data["task"]["status"] == "failure"
+    assert data["task"]["fail_reason"] == "test error"
+    assert data["task"]["completed_at"] is not None
+
+
+def test_coord_task_fail_requires_auth(client):
+    r = client.post("/api/coord/tasks/any/fail", json={"reason": "x"})
+    assert r.status_code == 401
+
+
+# ---------------------------------------------------------------------------
+# POST /api/coord/tasks/<task_id>/timeout
+# ---------------------------------------------------------------------------
+
+def test_coord_task_timeout(client):
+    r = client.post("/api/coord/tasks", headers=_AUTH, json={"capability_id": "cap.test.timeout"})
+    task_id = r.get_json()["task_id"]
+    r2 = client.post(f"/api/coord/tasks/{task_id}/timeout", headers=_AUTH, json={})
+    assert r2.status_code == 200
+    data = r2.get_json()
+    assert data["ok"] is True
+    assert data["task"]["status"] == "timeout"
+
+
+def test_coord_task_timeout_requires_auth(client):
+    r = client.post("/api/coord/tasks/any/timeout", json={})
+    assert r.status_code == 401
+
+
+# ---------------------------------------------------------------------------
+# POST /api/coord/tasks/<task_id>/complete — updated to status='success'
+# ---------------------------------------------------------------------------
+
+def test_coord_task_complete_sets_success_status(client):
+    r = client.post("/api/coord/tasks", headers=_AUTH, json={"capability_id": "cap.test.complete"})
+    task_id = r.get_json()["task_id"]
+    r2 = client.post(f"/api/coord/tasks/{task_id}/complete", headers=_AUTH, json={"result": {"x": 1}})
+    assert r2.status_code == 200
+    r3 = client.get("/api/coord/tasks", headers=_AUTH)
+    tasks = r3.get_json()["tasks"]
+    task = next((t for t in tasks if t["id"] == task_id), None)
+    assert task is not None
+    assert task["status"] == "success"
+    assert task["completed_at"] is not None
+
+
+# ---------------------------------------------------------------------------
+# POST /api/coord/fanout + GET /api/coord/fanout/<fanout_id>
+# ---------------------------------------------------------------------------
+
+def test_coord_fanout_create(client):
+    r = client.post("/api/coord/fanout", headers=_AUTH, json={
+        "tasks": [{"capability_id": "cap.a.x"}, {"capability_id": "cap.b.y"}],
+        "timeout_seconds": 60,
+    })
+    assert r.status_code == 200
+    data = r.get_json()
+    assert data["ok"] is True
+    assert "fanout_id" in data
+    assert len(data["task_ids"]) == 2
+    assert data["status"] == "dispatched"
+
+
+def test_coord_fanout_create_no_tasks_returns_400(client):
+    r = client.post("/api/coord/fanout", headers=_AUTH, json={"tasks": []})
+    assert r.status_code == 400
+    assert r.get_json()["code"] == "NO_TASKS"
+
+
+def test_coord_fanout_requires_auth(client):
+    r = client.post("/api/coord/fanout", json={"tasks": [{"capability_id": "cap.x"}]})
+    assert r.status_code == 401
+
+
+def test_coord_fanout_get(client):
+    r = client.post("/api/coord/fanout", headers=_AUTH, json={
+        "tasks": [{"capability_id": "cap.z.test"}],
+    })
+    fanout_id = r.get_json()["fanout_id"]
+    r2 = client.get(f"/api/coord/fanout/{fanout_id}", headers=_AUTH)
+    assert r2.status_code == 200
+    data = r2.get_json()
+    assert data["ok"] is True
+    assert data["fanout_id"] == fanout_id
+    assert len(data["tasks"]) == 1
+
+
+def test_coord_fanout_get_not_found(client):
+    r = client.get("/api/coord/fanout/nonexistent-id", headers=_AUTH)
+    assert r.status_code == 404
+
+
+def test_coord_fanout_get_requires_auth(client):
+    r = client.get("/api/coord/fanout/some-id")
+    assert r.status_code == 401

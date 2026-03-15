@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "google_drive_worker config",
+  "type": "object",
+  "properties": {
+    "credentials_json_env": {
+      "type": "string",
+      "default": "GOOGLE_CREDENTIALS_JSON",
+      "description": "Name of the env var holding the path to Google OAuth2 credentials JSON"
+    },
+    "token_path": {
+      "type": "string",
+      "description": "Override default token path (~/.local/share/pyhall/google_drive_token.json)"
+    },
+    "default_download_dir": {
+      "type": "string",
+      "description": "Default directory for downloaded files"
+    },
+    "env": {
+      "type": "string",
+      "enum": ["dev", "stage", "prod"]
+    }
+  },
+  "additionalProperties": false
+}

@@ -14,6 +14,33 @@ window.AlertsScreen = (() => {
 
   // ── Render ────────────────────────────────────────────────────────────────
 
+  // Column headers — always rendered above alerts
+  const ALERTS_TABLE_HEADER = `
+    <div class="alerts-table-header" style="
+      display:grid;
+      grid-template-columns:80px 80px 80px 120px 1fr 140px 80px;
+      gap:8px;
+      padding:6px 12px;
+      background:var(--bg-raised);
+      border:1px solid var(--bg-border);
+      border-radius:var(--radius-sm);
+      margin-bottom:8px;
+      font-size:11px;
+      font-weight:600;
+      color:var(--text-muted);
+      text-transform:uppercase;
+      letter-spacing:0.05em;
+    ">
+      <span>Alert ID</span>
+      <span>Type</span>
+      <span>Severity</span>
+      <span>Worker ID</span>
+      <span>Message</span>
+      <span>Timestamp</span>
+      <span>Status</span>
+    </div>
+  `;
+
   function getFiltered(alerts) {
     if (severityFilter === 'all') return alerts;
     return alerts.filter(a => a.severity === severityFilter);
@@ -30,16 +57,16 @@ window.AlertsScreen = (() => {
     if (unresolvedEl) unresolvedEl.textContent = `${count} unresolved`;
     window.updateAlertBadge && window.updateAlertBadge(count);
 
-    // Show/hide worker mascot — think when all clear, alert+hide when active alerts
+    // Worker mascot — On Patrol (WRK-A-003) when clear, Gov Alert (WRK-A-015) when active alerts
     const alertsWorkerEl = document.getElementById('alerts-worker-container');
     const alertsWorker   = document.getElementById('alerts-worker');
-    if (alertsWorkerEl) alertsWorkerEl.style.display = filtered.length === 0 ? '' : 'none';
+    if (alertsWorkerEl) alertsWorkerEl.style.display = '';
     if (alertsWorker && window.WorkerWidget) {
-      WorkerWidget.setAnimation(alertsWorker, filtered.length > 0 ? 'anim-alert' : 'anim-think');
+      WorkerWidget.setAnimation(alertsWorker, filtered.length > 0 ? 'anim-alert' : 'anim-patrol');
     }
 
     if (filtered.length === 0) {
-      container.innerHTML = `
+      container.innerHTML = ALERTS_TABLE_HEADER + `
         <div class="empty-state">
           <div class="empty-state-icon">✓</div>
           <div class="empty-state-text">No alerts. The Hall is running clean.</div>
@@ -49,7 +76,7 @@ window.AlertsScreen = (() => {
       return;
     }
 
-    container.innerHTML = filtered.map(a => renderAlertCard(a)).join('');
+    container.innerHTML = ALERTS_TABLE_HEADER + filtered.map(a => renderAlertCard(a)).join('');
 
     // Wire acknowledge buttons
     container.querySelectorAll('[data-ack]').forEach(btn => {

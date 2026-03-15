@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "notion_worker config",
+  "type": "object",
+  "properties": {
+    "token_env": {
+      "type": "string",
+      "default": "NOTION_TOKEN",
+      "description": "Name of the environment variable holding the Notion Internal Integration Token (starts with ntn_ or secret_). The worker reads os.environ[token_env] at runtime — never store the token value here."
+    },
+    "default_parent_page_id": {
+      "type": "string",
+      "description": "Default parent page UUID for create_page when --parent-id is not specified. Must be a page shared with the integration."
+    },
+    "env": {
+      "type": "string",
+      "enum": ["dev", "stage", "prod"],
+      "description": "Runtime environment. Controls attestation strictness: dev skips HMAC verification, prod requires WCP_ATTEST_HMAC_KEY."
+    }
+  },
+  "additionalProperties": false
+}

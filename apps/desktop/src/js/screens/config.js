@@ -30,9 +30,6 @@ window.ConfigScreen = (() => {
     const regUrlEl = document.getElementById('cfg-registry-url');
     if (regUrlEl) regUrlEl.value = cfg.registry_url || 'https://api.pyhall.dev';
 
-    const profileEl = document.getElementById('cfg-profile');
-    if (profileEl) profileEl.value = cfg.default_profile || 'prof.dev.permissive';
-
     // Poll interval radio
     const pollVal = String(cfg.poll_interval ?? 3);
     document.querySelectorAll('#poll-interval-group .radio-option').forEach(opt => {
@@ -54,9 +51,6 @@ window.ConfigScreen = (() => {
     const maxEl = document.getElementById('cfg-feed-max');
     if (maxEl) maxEl.value = cfg.display?.feed_max_rows ?? 500;
 
-    const startCmdEl = document.getElementById('cfg-server-start-cmd');
-    if (startCmdEl) startCmdEl.value = cfg.server_start_cmd || 'pyhall start';
-
     const archiveDaysEl = document.getElementById('cfg-archive-days');
     if (archiveDaysEl) archiveDaysEl.value = cfg.archive_days ?? 90;
   }
@@ -76,7 +70,6 @@ window.ConfigScreen = (() => {
       hall_url: document.getElementById('cfg-hall-url')?.value || 'http://localhost:8765',
       registry_url: document.getElementById('cfg-registry-url')?.value || 'https://api.pyhall.dev',
       poll_interval: pollVal,
-      default_profile: document.getElementById('cfg-profile')?.value || 'prof.dev.permissive',
       notifications: {
         hall_offline:   document.getElementById('notif-hall-offline')?.checked  ?? true,
         worker_failure: document.getElementById('notif-worker-failure')?.checked ?? true,
@@ -88,7 +81,6 @@ window.ConfigScreen = (() => {
         launch_at_login:  document.getElementById('display-login')?.checked ?? false,
         feed_max_rows: parseInt(document.getElementById('cfg-feed-max')?.value || '500', 10),
       },
-      server_start_cmd: document.getElementById('cfg-server-start-cmd')?.value || 'pyhall start',
       archive_days: parseInt(document.getElementById('cfg-archive-days')?.value || '90', 10),
     };
   }
@@ -126,43 +118,6 @@ window.ConfigScreen = (() => {
         resultEl.style.display = 'inline';
         resultEl.style.color = 'var(--error)';
         resultEl.textContent = `✗ Save failed: ${e}`;
-      }
-    }
-  });
-
-  // ── Test connection ───────────────────────────────────────────────────────
-
-  document.getElementById('btn-test-connection')?.addEventListener('click', async () => {
-    const urlEl = document.getElementById('cfg-hall-url');
-    const url = urlEl?.value || 'http://localhost:8765';
-    const resultEl = document.getElementById('test-result-display');
-
-    if (resultEl) {
-      resultEl.className = 'test-result';
-      resultEl.textContent = '◌ Connecting...';
-      resultEl.style.display = 'inline-flex';
-    }
-
-    try {
-      const status = await HallAPI.getHallStatus(url);
-      if (status.online) {
-        const workers = status.workers ?? '?';
-        const version = status.version ? `pyhall ${status.version}` : 'pyhall 0.1.0';
-        if (resultEl) {
-          resultEl.className = 'test-result success';
-          resultEl.textContent = `● Connected — ${workers} workers, ${version}`;
-        }
-        window.updateConnectionUI && window.updateConnectionUI(true, status);
-      } else {
-        if (resultEl) {
-          resultEl.className = 'test-result failure';
-          resultEl.textContent = '✗ Cannot reach Hall server at ' + url;
-        }
-      }
-    } catch (e) {
-      if (resultEl) {
-        resultEl.className = 'test-result failure';
-        resultEl.textContent = `✗ Error: ${e}`;
       }
     }
   });
@@ -273,28 +228,20 @@ window.ConfigScreen = (() => {
     btn.textContent = 'Updating...';
 
     try {
-      const r = await fetch(`${hallUrl}/api/auth/change-passphrase`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(window.AppState?.sessionToken ? { 'Authorization': `Bearer ${window.AppState.sessionToken}` } : {}),
-        },
-        body: JSON.stringify({ current_passphrase, new_passphrase }),
+      await window.__TAURI__.core.invoke('set_passphrase', {
+        newPassphrase: new_passphrase,
+        oldPassphrase: current_passphrase || null,
       });
-      const d = await r.json();
-      if (d.ok) {
-        document.getElementById('change-passphrase-form').style.display = 'none';
-        if (resultEl) {
-          resultEl.style.display = 'inline';
-          resultEl.style.color = 'var(--success)';
-          resultEl.textContent = 'Passphrase updated.';
-          setTimeout(() => { if (resultEl) resultEl.style.display = 'none'; }, 3000);
-        }
-      } else {
-        if (errEl) { errEl.textContent = d.reason || 'Could not update passphrase.'; errEl.style.display = 'block'; }
+      document.getElementById('change-passphrase-form').style.display = 'none';
+      if (resultEl) {
+        resultEl.style.display = 'inline';
+        resultEl.style.color = 'var(--success)';
+        resultEl.textContent = 'Passphrase updated.';
+        setTimeout(() => { if (resultEl) resultEl.style.display = 'none'; }, 3000);
       }
     } catch (e) {
-      if (errEl) { errEl.textContent = 'Could not reach Hall Server.'; errEl.style.display = 'block'; }
+      const msg = (typeof e === 'string') ? e : (e?.message || 'Could not update passphrase.');
+      if (errEl) { errEl.textContent = msg; errEl.style.display = 'block'; }
     } finally {
       btn.disabled = false;
       btn.textContent = 'Update Passphrase';
@@ -311,25 +258,46 @@ window.ConfigScreen = (() => {
     btn.disabled = true;
     if (resultEl) { resultEl.style.display = 'inline'; resultEl.style.color = 'var(--text-muted)'; resultEl.textContent = 'Clearing...'; }
 
+    let cleared = false;
+
+    // First try the Hall Server endpoint (clears server-side cached passphrase)
     try {
       const r = await fetch(`${hallUrl}/api/auth/forget-keychain`, {
         method: 'POST',
         headers: window.AppState?.sessionToken
           ? { 'Authorization': `Bearer ${window.AppState.sessionToken}` }
           : {},
+        signal: AbortSignal.timeout(4000),
       });
-      const d = await r.json();
-      if (resultEl) {
-        resultEl.style.display = 'inline';
-        resultEl.style.color = d.ok ? 'var(--success)' : 'var(--error)';
-        resultEl.textContent = d.ok ? 'Keychain entry cleared.' : (d.reason || 'Failed to clear keychain.');
-        setTimeout(() => { if (resultEl) resultEl.style.display = 'none'; }, 3000);
+      if (r.ok) {
+        const d = await r.json();
+        cleared = d.ok === true;
       }
-    } catch (e) {
-      if (resultEl) { resultEl.style.display = 'inline'; resultEl.style.color = 'var(--error)'; resultEl.textContent = 'Could not reach Hall Server.'; }
-    } finally {
-      btn.disabled = false;
+    } catch (_) {
+      // Hall Server unreachable — fall through to local Tauri clear
     }
+
+    // Always also clear the locally stored passphrase hash via Tauri
+    try {
+      await window.__TAURI__.core.invoke('set_passphrase', {
+        newPassphrase: '',
+        oldPassphrase: null,
+      });
+      cleared = true;
+    } catch (_) {
+      // set_passphrase with empty string may not be supported — that's ok
+    }
+
+    if (resultEl) {
+      resultEl.style.display = 'inline';
+      resultEl.style.color = cleared ? 'var(--success)' : 'var(--text-muted)';
+      resultEl.textContent = cleared
+        ? 'Saved passphrase cleared. You will be prompted on next unlock.'
+        : 'Could not reach Hall Server. Restart the server and try again.';
+      setTimeout(() => { if (resultEl) resultEl.style.display = 'none'; }, 4000);
+    }
+
+    btn.disabled = false;
   });
 
   // ── Connected MCPs ────────────────────────────────────────────────────────
@@ -342,16 +310,23 @@ window.ConfigScreen = (() => {
 
     if (errorEl) errorEl.style.display = 'none';
 
+    // Built-in MCP server is always present when Hall Server is running
+    const builtIn = [{
+      id: '__builtin__',
+      name: 'Hall Monitor MCP Server',
+      transport: 'stdio',
+      status: window.AppState?.hallOnline ? 'online' : 'offline',
+      tool_count: null,
+      builtin: true,
+    }];
+
     try {
       const data = await HallAPI.listMcpServers();
-      const servers = data.servers || data || [];
-      renderMcpList(servers);
-    } catch (e) {
-      if (emptyEl) emptyEl.style.display = 'block';
-      if (errorEl) {
-        errorEl.textContent = `Could not load MCP servers: ${e.message || e}`;
-        errorEl.style.display = 'block';
-      }
+      const external = data.servers || data || [];
+      renderMcpList([...builtIn, ...external]);
+    } catch (_) {
+      // External MCP list unavailable — still show built-in
+      renderMcpList(builtIn);
     }
   }
 

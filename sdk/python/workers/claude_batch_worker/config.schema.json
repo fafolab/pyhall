@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "claude_batch_worker config",
+  "description": "Configuration schema for the Batch for Claude Worker (WCP v0.3.0)",
+  "type": "object",
+  "properties": {
+    "api_key_env": {
+      "type": "string",
+      "description": "Name of the environment variable holding the Anthropic API key",
+      "default": "ANTHROPIC_API_KEY"
+    },
+    "default_model": {
+      "type": "string",
+      "description": "Default model ID to use when not specified per-request",
+      "default": "claude-sonnet-4-6"
+    },
+    "db_path": {
+      "type": "string",
+      "description": "Path to the SQLite batch history DB. Defaults to ~/.local/share/pyhall/claude_batch_worker.db"
+    },
+    "env": {
+      "type": "string",
+      "enum": ["dev", "stage", "prod"],
+      "description": "Execution environment. Controls attestation strictness."
+    }
+  },
+  "additionalProperties": false
+}

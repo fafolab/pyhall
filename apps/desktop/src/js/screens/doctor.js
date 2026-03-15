@@ -34,12 +34,15 @@ window.DoctorScreen = (() => {
 
     if (!container) return;
 
+    const mascot = document.getElementById('doctor-mascot');
     if (loading) {
       container.innerHTML = '<div style="color:var(--text-muted);font-size:13px;padding:16px 0;">Running diagnostics...</div>';
       if (overallEl) overallEl.textContent = '';
       if (checkedAtEl) checkedAtEl.textContent = '';
+      if (mascot) { mascot.classList.remove('anim-float'); mascot.classList.add('anim-think'); }
       return;
     }
+    if (mascot) { mascot.classList.remove('anim-think'); mascot.classList.add('anim-float'); }
 
     if (!result) {
       container.innerHTML = '<div style="color:var(--text-muted);font-size:13px;padding:16px 0;">No results yet. Click Run Diagnostics.</div>';
@@ -156,14 +159,29 @@ window.DoctorScreen = (() => {
       document.body.removeChild(a);
       URL.revokeObjectURL(blobUrl);
 
-      if (exportStatus) exportStatus.textContent = 'Bundle downloaded.';
-      setTimeout(() => { if (exportStatus) exportStatus.textContent = ''; }, 3000);
+      if (exportStatus) exportStatus.textContent = `Saved: ${a.download} (Downloads folder)`;
+      setTimeout(() => { if (exportStatus) exportStatus.textContent = ''; }, 5000);
     } catch (e) {
       if (exportStatus) exportStatus.textContent = `Export failed: ${esc(String(e))}`;
     } finally {
       if (exportBtn) exportBtn.disabled = false;
     }
   }
+
+  // ── Binary integrity check ─────────────────────────────────────────────────
+
+  /**
+   * Returns true if the last doctor result shows a binary integrity warning.
+   * Used to block go-online when integrity cannot be verified.
+   */
+  function hasBinaryIntegrityWarning() {
+    if (!lastResult) return false;
+    const biCheck = lastResult.checks && lastResult.checks.binary_integrity;
+    if (!biCheck) return false;
+    return biCheck.status === 'warn' || biCheck.status === 'fail';
+  }
+
+  window.__doctorHasBinaryIntegrityWarning = hasBinaryIntegrityWarning;
 
   // ── Wire up buttons ────────────────────────────────────────────────────────
 
@@ -185,5 +203,5 @@ window.DoctorScreen = (() => {
   init();
   render(null, false);
 
-  return { onActivate, runDiagnostics };
+  return { onActivate, runDiagnostics, hasBinaryIntegrityWarning };
 })();

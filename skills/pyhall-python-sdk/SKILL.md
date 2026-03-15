@@ -49,7 +49,7 @@ worker = hall.workers.register(
     capabilities=["cap.data.read.v1", "cap.report.generate.v1"],
     policy_tier=2,
 )
-print(worker.id)          # wrk_abc123
+print(worker.id)          # org.acme.my-worker.i-1
 print(worker.namespace)   # x.myagent
 
 # Make a routing decision before executing a capability
@@ -97,7 +97,7 @@ def governed(capability: str, worker_id: str):
     return decorator
 
 
-@governed("cap.data.read.v1", worker_id="wrk_abc123")
+@governed("cap.data.read.v1", worker_id="org.acme.my-worker.i-1")
 def fetch_sensitive_data(query: str) -> dict:
     # Only runs when pyhall says ALLOW
     return {"rows": [...]}
@@ -133,7 +133,7 @@ async def pyhall_governance(request: Request, call_next):
 ## Checking worker attestation
 
 ```python
-attest = hall.workers.attest(worker_id="wrk_abc123")
+attest = hall.workers.attest(worker_id="org.acme.my-worker.i-1")
 
 print(attest.status)          # "attested" | "pending" | "denied"
 print(attest.artifact_hash)   # SHA-256 of the attested worker package
@@ -146,7 +146,7 @@ if attest.status != "attested":
 ## Querying decision history
 
 ```python
-history = hall.decisions.query(worker_id="wrk_abc123", limit=20)
+history = hall.decisions.query(worker_id="org.acme.my-worker.i-1", limit=20)
 
 for d in history.decisions:
     status = "ALLOW" if not d.denied else f"DENY ({d.deny_reason})"
@@ -168,7 +168,7 @@ resp = requests.post(
     headers={"Authorization": f"Bearer {token}"},
     json={
         "capability_id": "cap.data.read.v1",
-        "worker_id": "wrk_abc123",
+        "worker_id": "org.acme.my-worker.i-1",
         "env": "dev",
         "data_label": "PUBLIC",
         "tenant_id": "org.acme",

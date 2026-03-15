@@ -1,4 +1,3 @@
-<!-- Copyright (c) 2026 pyhall.dev — https://pyhall.dev. All Rights Reserved. -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -67,6 +66,18 @@
   </div>
 </div>
 
+<!-- ── Startup Passphrase Overlay (shown before app if app passphrase set) ── -->
+<div id="passphrase-overlay" style="display:none; position:fixed; inset:0; background:var(--bg-primary); z-index:10000; align-items:center; justify-content:center;">
+  <div class="passphrase-card">
+    <div class="passphrase-logo">&#x1F512;</div>
+    <h2 class="passphrase-title">Hall Monitor</h2>
+    <p class="passphrase-sub">Enter your passphrase to continue</p>
+    <input type="password" id="passphrase-input" class="passphrase-input" placeholder="Passphrase" autocomplete="current-password" />
+    <div id="passphrase-error" class="passphrase-error" style="display:none;">Incorrect passphrase. Try again.</div>
+    <button class="btn btn-primary" id="passphrase-unlock-btn">Unlock</button>
+  </div>
+</div>
+
 <!-- ── Passphrase Gate (shown after login, before full app) ─────────────── -->
 <div id="passphrase-gate" style="position:fixed;inset:0;z-index:9998;background:var(--bg-primary);display:none;align-items:center;justify-content:center;">
   <div style="width:360px;background:var(--bg-surface);border:1px solid var(--bg-border);border-radius:var(--radius);padding:36px 36px 32px;">
@@ -87,7 +98,7 @@
       <div style="font-size:12px;color:var(--text-muted);margin-bottom:6px;">Enter your database passphrase to continue.</div>
       <div style="font-size:11px;color:var(--text-dim);margin-bottom:18px;padding:8px 10px;background:var(--bg-raised);border-radius:var(--radius-sm);border-left:2px solid var(--accent-blue);">This passphrase protects your local dispatch database — it is separate from your GitHub login.</div>
       <div style="margin-bottom:12px;">
-        <input type="password" id="passphrase-input" placeholder="Passphrase" autocomplete="current-password"
+        <input type="password" id="db-passphrase-input" placeholder="Passphrase" autocomplete="current-password"
           style="width:100%;padding:9px 12px;background:var(--bg-raised);border:1px solid var(--bg-border);border-radius:var(--radius-sm);color:var(--text-primary);font-size:13px;outline:none;" />
       </div>
       <div style="margin-bottom:20px;">
@@ -214,7 +225,7 @@
   <!-- ── Header ──────────────────────────────────────────────────────────── -->
   <header id="header">
     <div id="header-brand">
-      <img id="header-brand-logo" src="assets/badge-icon-favicon.svg" alt="pyhall" />
+      <img id="header-brand-logo" src="assets/badge-logo-plain.svg" alt="pyhall" />
       <div>
         <div id="header-title">pyhall — Hall Monitor</div>
         <div id="header-subtitle">The Hall — every worker, every job, every decision.</div>
@@ -254,6 +265,11 @@
       <span class="nav-label">Coordination</span>
     </div>
 
+    <div class="nav-item" data-screen="logs">
+      <span class="nav-icon">≡</span>
+      <span class="nav-label">Logs</span>
+    </div>
+
     <div class="nav-item" data-screen="enroll">
       <span class="nav-icon">+</span>
       <span class="nav-label">Enroll Worker</span>
@@ -269,6 +285,10 @@
     <div class="nav-item" data-screen="config">
       <span class="nav-icon">⚙</span>
       <span class="nav-label">Config</span>
+    </div>
+    <div class="nav-item" data-screen="mcp">
+      <span class="nav-icon">⬡</span>
+      <span class="nav-label">MCP</span>
     </div>
     <div class="nav-item" data-screen="doctor">
       <span class="nav-icon">✚</span>
@@ -382,9 +402,7 @@
         <button class="btn btn-ghost btn-sm" id="btn-stop-server" style="display:none;">Stop Hall Server</button>
         <button class="btn btn-primary btn-sm" id="btn-go-online-status" style="display:none;">Go Online</button>
         <button class="btn btn-ghost btn-sm" id="btn-go-offline-status" style="display:none;">Go Offline</button>
-        <button class="btn btn-secondary btn-sm" id="btn-go-config-from-status">Open Hall Config</button>
-        <button class="btn btn-ghost btn-sm" id="btn-go-feed-from-status">View Live Feed</button>
-        <button class="btn btn-ghost btn-sm" id="btn-open-log-from-status" style="display:none;">Open Log File</button>
+<button class="btn btn-ghost btn-sm" id="btn-open-log-from-status" style="display:none;">Open Log File</button>
       </div>
       <div id="status-server-start-msg" style="margin-top:6px; font-size:11px; color:var(--text-dim); font-family:monospace; display:none;"></div>
       <div id="status-log-path-display" style="margin-top:6px; font-size:11px; color:var(--text-dim); font-family:monospace; display:none;"></div>
@@ -646,6 +664,12 @@
         <!-- Populated by coordination.js -->
       </div>
 
+      <!-- Session Export -->
+      <div class="section-divider">Session Export</div>
+      <div id="coord-session-export" class="coord-session-export">
+        <!-- Populated by coordination.js -->
+      </div>
+
       <div class="section-divider">Operations Logs</div>
       <div class="coord-log-toolbar">
         <select id="coord-log-file-select" class="new-task-input coord-log-select">
@@ -674,10 +698,7 @@
     <section class="screen" id="screen-enroll">
       <div class="screen-header">
         <span class="screen-title">Enroll a Worker</span>
-        <div style="display:flex;gap:8px;align-items:center;">
-          <button class="btn btn-ghost btn-sm" id="btn-enroll-import-json" title="Already have a registry_record.json? Import it.">Import JSON</button>
-          <input type="file" id="enroll-import-file-input" accept=".json" style="display:none;" />
-        </div>
+        <div style="display:flex;gap:8px;align-items:center;"></div>
       </div>
 
       <!-- Wizard progress bar -->
@@ -696,22 +717,47 @@
             <input class="field-input" id="enroll-name" placeholder="e.g. Document Processor" />
             <div class="field-hint">Human-readable label shown in the crew list.</div>
           </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-            <div>
-              <label class="field-label">Worker ID <span style="color:var(--error)">*</span></label>
-              <input class="field-input monospace" id="enroll-worker-id" placeholder="org.fafolab.myworker" />
-              <div class="field-hint">Unique instance: <code>org.&lt;ns&gt;.&lt;name&gt;</code></div>
+          <!-- Row: Worker ID (namespace . worker-name) — full width -->
+          <div>
+            <label class="field-label">Worker ID <span style="color:var(--error)">*</span></label>
+            <div id="enroll-worker-id-row" style="display:flex;gap:8px;align-items:center;">
+              <select class="field-input" id="enroll-ns-dropdown" style="flex:0 0 auto;width:auto;min-width:160px;" disabled>
+                <option>Loading namespaces...</option>
+              </select>
+              <span style="color:var(--text-dim);font-size:13px;flex-shrink:0;">.</span>
+              <input class="field-input monospace" id="enroll-worker-name" placeholder="worker-name" style="flex:1;" />
+              <span id="enroll-ns-spinner" style="display:none;font-size:11px;color:var(--text-muted);">loading...</span>
             </div>
-            <div>
-              <label class="field-label">Species ID <span style="color:var(--error)">*</span></label>
-              <input class="field-input monospace" id="enroll-species-id" placeholder="wrk.document-processor" />
-              <div class="field-hint">Taxonomy: <code>wrk.&lt;type&gt;</code></div>
-            </div>
+            <!-- fallback for when namespace API is unavailable -->
+            <input class="field-input monospace" id="enroll-worker-id" placeholder="org.fafolab.myworker" style="display:none;width:100%;margin-top:4px;" />
+            <input type="hidden" id="enroll-worker-id-combined" />
+            <div class="field-hint">Namespace is the <code>org.*</code> or <code>x.*</code> prefix. Worker ID = namespace + "." + worker-name + "." + instance.</div>
           </div>
+
+          <!-- Row: Instance suffix -->
+          <div class="form-group">
+            <label class="field-label">Instance suffix <span style="color:var(--error)">*</span></label>
+            <input class="field-input monospace" type="text" id="enroll-instance-suffix" placeholder="e.g. pyhall-001, dev-01, prod-01" value="pyhall-001" />
+            <div class="field-hint">Uniquely identifies this enrolled instance. Use a short descriptive name. Format: lowercase letters, numbers, hyphens.</div>
+          </div>
+
+          <!-- Row: Species + Browse button -->
+          <div>
+            <label class="field-label">Species ID <span style="color:var(--error)">*</span></label>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <span id="enroll-species-display" class="field-input monospace" style="flex:1;display:inline-flex;align-items:center;color:var(--text-dim);">No species selected</span>
+              <button class="btn btn-ghost btn-sm" id="btn-enroll-browse-species" type="button">Browse Species</button>
+            </div>
+            <input type="hidden" id="enroll-species-id" />
+            <div class="field-hint">Worker type from taxonomy: <code>wrk.&lt;type&gt;</code></div>
+          </div>
+
+          <!-- Row: Version + Description -->
           <div style="display:grid;grid-template-columns:160px 1fr;gap:12px;">
             <div>
               <label class="field-label">Version</label>
               <input class="field-input monospace" id="enroll-version" placeholder="0.1.0" value="0.1.0" />
+              <div class="field-hint">Semantic version (e.g. 0.1.0, 1.0.0). Changing the worker package requires a new version and new attestation.</div>
             </div>
             <div>
               <label class="field-label">Description</label>
@@ -734,6 +780,7 @@
             <button class="btn btn-ghost btn-sm" id="btn-enroll-load-py">Load .py file</button>
             <input type="file" id="enroll-py-file-input" accept=".py" style="display:none;" />
             <button class="btn btn-ghost btn-sm" id="btn-enroll-insert-stub">Insert starter stub</button>
+            <button class="btn btn-ghost btn-sm" id="btn-enroll-show-sample" type="button">Show Sample</button>
           </div>
           <textarea id="enroll-logic-code" class="field-input monospace"
             style="height:320px;resize:vertical;font-size:11px;line-height:1.5;tab-size:4;"
@@ -751,11 +798,13 @@
         <div style="display:grid;gap:14px;max-width:640px;">
           <div>
             <label class="field-label">Capabilities <span style="color:var(--error)">*</span></label>
-            <div class="field-hint" style="margin-bottom:6px;">Which <code>cap.*</code> actions this worker may take. Click to toggle.</div>
-            <div id="enroll-cap-grid" style="display:flex;flex-wrap:wrap;gap:6px;">
-              <!-- populated by JS -->
+            <div class="field-hint" style="margin-bottom:6px;">Which <code>cap.*</code> actions this worker may take.</div>
+            <div style="margin-bottom:12px;">
+              <button class="btn btn-ghost btn-sm" id="btn-enroll-select-caps" type="button">Select Capabilities &amp; Controls</button>
+              <div id="enroll-caps-display" style="margin-top:8px;display:flex;flex-wrap:wrap;gap:6px;min-height:24px;font-size:11px;color:var(--text-muted);">
+                No capabilities selected
+              </div>
             </div>
-            <input class="field-input monospace" id="enroll-cap-custom" placeholder="cap.custom-capability (press Enter to add)" style="margin-top:8px;" />
           </div>
           <div>
             <label class="field-label">Controls</label>
@@ -781,10 +830,6 @@
               <div class="field-hint" id="enroll-blast-tier">Low risk</div>
             </div>
           </div>
-          <div>
-            <label class="field-label">Guarantee</label>
-            <input class="field-input" id="enroll-guarantee" placeholder="e.g. At-most-once execution with idempotency key" />
-          </div>
           <div id="enroll-step3-error" style="color:var(--error);font-size:12px;display:none;"></div>
           <div style="display:flex;gap:10px;">
             <button class="btn btn-primary" id="btn-enroll-next-3">Next: Review</button>
@@ -798,16 +843,14 @@
         <div style="margin-bottom:14px;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
             <span class="field-label" style="margin:0;">Generated Manifest (registry_record.json)</span>
-            <button class="btn btn-ghost btn-sm" id="btn-enroll-download-manifest">Download JSON</button>
           </div>
           <pre id="enroll-manifest-preview" style="background:var(--bg-editor,#1a1a1a);border:1px solid var(--bg-border);border-radius:var(--radius);padding:12px;font-size:11px;overflow:auto;max-height:220px;color:var(--text-primary);white-space:pre;"></pre>
         </div>
         <div style="margin-bottom:14px;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
             <span class="field-label" style="margin:0;">Scaffolded Worker Package (worker_logic.py)</span>
-            <button class="btn btn-ghost btn-sm" id="btn-enroll-download-code">Download .py</button>
           </div>
-          <pre id="enroll-code-preview" style="background:var(--bg-editor,#1a1a1a);border:1px solid var(--bg-border);border-radius:var(--radius);padding:12px;font-size:11px;overflow:auto;max-height:500px;color:var(--text-muted);white-space:pre;"></pre>
+          <div id="enroll-code-preview-container"></div>
         </div>
         <div id="enroll-step4-error" style="color:var(--error);font-size:12px;display:none;margin-bottom:10px;"></div>
         <div style="display:flex;gap:10px;">
@@ -823,12 +866,34 @@
           <div style="flex:1;">
           <div style="font-size:16px;color:var(--success);font-weight:600;margin-bottom:8px;">Worker registered with the Hall.</div>
           <div id="enroll-success-msg" style="font-size:13px;color:var(--text-primary);margin-bottom:12px;"></div>
-          <div style="display:flex;gap:8px;">
+          <div id="enroll-success-save-msg" style="font-size:12px;color:var(--text-muted);margin-bottom:8px;"></div>
+          <div id="enroll-success-enrolled-path" style="font-size:11px;font-family:monospace;color:var(--text-dim);"></div>
+          <div style="display:flex;gap:8px;margin-top:8px;">
             <button class="btn btn-secondary btn-sm" id="btn-view-crew">View in Crew Registry</button>
             <button class="btn btn-ghost btn-sm" id="btn-enroll-another">Enroll another</button>
           </div>
           </div>
         </div>
+      </div>
+    </section>
+
+    <!-- Screen: Activity Log Viewer -->
+    <section class="screen" id="screen-logs" style="display:none;">
+      <div class="screen-header">
+        <span class="screen-title">Activity Log</span>
+        <span class="screen-subtitle">pyhall_activity.log</span>
+      </div>
+
+      <div id="logs-worker-container">
+        <div id="logs-worker" class="worker-widget worker-widget-md anim-patrol"></div>
+      </div>
+
+      <div style="padding: 0 24px 8px; display:flex; gap:8px; align-items:center;">
+        <button class="btn btn-ghost btn-sm" id="logs-refresh-btn">Refresh</button>
+      </div>
+
+      <div class="log-viewer-wrap">
+        <pre class="log-viewer-content" id="log-content">Loading...</pre>
       </div>
     </section>
 
@@ -840,9 +905,9 @@
 
       <!-- Settings tabs -->
       <div class="filter-chips" id="config-tabs" style="margin-bottom:16px;">
-        <span class="chip active" data-config-tab="api" onclick="document.getElementById('config-tab-api').scrollIntoView({behavior:'smooth'})">API</span>
-        <span class="chip" data-config-tab="appearance" onclick="document.getElementById('config-tab-appearance').scrollIntoView({behavior:'smooth'})">Appearance</span>
-        <span class="chip" data-config-tab="advanced" onclick="document.getElementById('config-tab-advanced').scrollIntoView({behavior:'smooth'})">Advanced</span>
+        <span class="chip active" data-config-tab="api">API</span>
+        <span class="chip" data-config-tab="appearance">Appearance</span>
+        <span class="chip" data-config-tab="advanced">Advanced</span>
       </div>
 
       <!-- Hall Connection — full width -->
@@ -873,29 +938,11 @@
           </div>
         </div>
 
-        <div class="field">
-          <label>Default Profile</label>
-          <select id="cfg-profile">
-            <option value="prof.dev.permissive">prof.dev.permissive</option>
-            <option value="prof.prod.strict">prof.prod.strict</option>
-            <option value="prof.edge.isolated">prof.edge.isolated</option>
-          </select>
-        </div>
-
-        <div class="field">
-          <label>Server Start Command</label>
-          <input type="text" id="cfg-server-start-cmd" value="pyhall start" style="font-family:monospace;" placeholder="pyhall start" />
-          <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Command to launch the Hall Server. Used by the Start Server button.</div>
-        </div>
-
-        <div style="display:flex; gap:8px; align-items:center;">
-          <button class="btn btn-secondary btn-sm" id="btn-test-connection">Test Connection</button>
-          <span id="test-result-display"></span>
-        </div>
       </div>
+      </div><!-- /config-tab-api -->
 
       <!-- Row 2: Notifications + Display -->
-      <div id="config-tab-appearance"></div>
+      <div id="config-tab-appearance">
       <div class="config-grid-2col">
 
         <!-- Notifications -->
@@ -931,9 +978,10 @@
         </div>
 
       </div><!-- /row 2 -->
+      </div><!-- /config-tab-appearance -->
 
       <!-- Row 3: Diagnostics + Security -->
-      <div id="config-tab-advanced"></div>
+      <div id="config-tab-advanced">
       <div class="config-grid-2col">
 
         <!-- Diagnostics -->
@@ -957,7 +1005,7 @@
           <label>Database passphrase <span style="font-size:10px;color:var(--text-dim);font-weight:400;">(separate from GitHub login)</span></label>
           <div style="display:flex; gap:8px; align-items:center;">
             <button class="btn btn-secondary btn-sm" id="btn-show-change-passphrase">Change passphrase</button>
-            <button class="btn btn-ghost btn-sm" id="btn-forget-keychain">Forget saved passphrase</button>
+            <button class="btn btn-ghost btn-sm" id="btn-forget-keychain">Forgot saved passphrase</button>
             <span id="security-action-result" style="font-size:11px; display:none;"></span>
           </div>
         </div>
@@ -1080,9 +1128,202 @@
 
         <div id="mcp-list-error" style="display:none; margin-top:8px; font-size:11px; color:var(--error);"></div>
       </div>
+      </div><!-- /config-tab-advanced -->
 
       <button class="btn btn-primary" id="btn-save-config">Save Configuration</button>
       <span id="save-config-result" style="margin-left:10px; font-size:12px; display:none;"></span>
+    </section>
+
+    <!-- Screen: MCP Configuration -->
+    <section class="screen" id="screen-mcp">
+      <div class="screen-header">
+        <h2>MCP Configuration</h2>
+        <p class="screen-subtitle">Connect and manage Model Context Protocol servers. Configure transports, permissions, and discovery.</p>
+      </div>
+
+      <!-- Transport Status -->
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-header">
+          <span class="card-title">Active Transports</span>
+          <button class="btn btn-ghost btn-sm" id="btn-mcp-refresh">Refresh</button>
+        </div>
+        <div class="card-body">
+          <table class="data-table" id="mcp-transport-table">
+            <thead>
+              <tr>
+                <th>Transport</th>
+                <th>Status</th>
+                <th>Endpoint / Command</th>
+                <th>Sessions</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="mcp-transport-body">
+              <tr>
+                <td>STDIO</td>
+                <td><span class="badge badge-success">Active</span></td>
+                <td><code>pyhall mcp stdio</code></td>
+                <td id="mcp-stdio-sessions">—</td>
+                <td>—</td>
+              </tr>
+              <tr>
+                <td>SSE</td>
+                <td id="mcp-sse-status"><span class="badge badge-muted">—</span></td>
+                <td><code>http://localhost:8765/api/mcp/sessions</code></td>
+                <td id="mcp-sse-sessions">—</td>
+                <td><button class="btn btn-ghost btn-sm" id="btn-mcp-sse-new">New Session</button></td>
+              </tr>
+              <tr>
+                <td>HTTP (Stateless)</td>
+                <td><span class="badge badge-info">Available</span></td>
+                <td><code>http://localhost:8765/api/mcp/messages/stateless</code></td>
+                <td>—</td>
+                <td>—</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Connect External MCP Server -->
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-header">
+          <span class="card-title">Connect External MCP Server</span>
+        </div>
+        <div class="card-body">
+          <p style="font-size:12px; color:var(--text-muted); margin-bottom:12px;">
+            Connect an external MCP server via STDIO or SSE. Hall Monitor will proxy its tools and resources into the orchestration pipeline.
+          </p>
+          <div class="form-row">
+            <div class="form-group" style="flex:1;">
+              <label>Transport</label>
+              <select id="mcp-new-transport" class="form-control">
+                <option value="stdio">STDIO (local process)</option>
+                <option value="sse">SSE (remote server)</option>
+                <option value="http">HTTP (stateless)</option>
+              </select>
+            </div>
+            <div class="form-group" style="flex:2;">
+              <label id="mcp-new-endpoint-label">Command or URL</label>
+              <input type="text" id="mcp-new-endpoint" class="form-control" placeholder="e.g. npx @modelcontextprotocol/server-filesystem /path" />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group" style="flex:1;">
+              <label>Label (optional)</label>
+              <input type="text" id="mcp-new-label" class="form-control" placeholder="My MCP Server" />
+            </div>
+          </div>
+          <button class="btn btn-primary btn-sm" id="btn-mcp-connect">Connect</button>
+          <span id="mcp-connect-result" style="margin-left:10px; font-size:12px; display:none;"></span>
+        </div>
+      </div>
+
+      <!-- Filesystem Roots -->
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-header">
+          <span class="card-title">Filesystem Roots</span>
+          <button class="btn btn-ghost btn-sm" id="btn-roots-reload">Reload</button>
+        </div>
+        <div class="card-body">
+          <p style="font-size:12px; color:var(--text-muted); margin-bottom:12px;">
+            Authorized directory boundaries passed to the LLM. Only these paths are accessible via MCP resource operations.
+          </p>
+          <div id="mcp-roots-list" style="margin-bottom:12px;"></div>
+          <div class="form-row" style="align-items:flex-end;">
+            <div class="form-group" style="flex:1;">
+              <label>Add Root Path</label>
+              <input type="text" id="mcp-new-root" class="form-control" placeholder="file:///path/to/directory" />
+            </div>
+            <div class="form-group" style="flex:0; min-width:120px;">
+              <label>Label</label>
+              <input type="text" id="mcp-new-root-label" class="form-control" placeholder="Label" />
+            </div>
+            <button class="btn btn-secondary btn-sm" id="btn-root-add" style="margin-bottom:4px;">Add</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Execution Policy -->
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-header">
+          <span class="card-title">Execution Policy</span>
+        </div>
+        <div class="card-body">
+          <div class="form-row">
+            <div class="form-group" style="flex:1;">
+              <label>Default Permission</label>
+              <select id="mcp-policy-permission" class="form-control">
+                <option value="read_only">Read Only</option>
+                <option value="read_write">Read / Write</option>
+              </select>
+            </div>
+            <div class="form-group" style="flex:1;">
+              <label>Max Concurrent Workers</label>
+              <input type="number" id="mcp-policy-max-workers" class="form-control" value="5" min="1" max="50" />
+            </div>
+            <div class="form-group" style="flex:1;">
+              <label>Sandbox Mode</label>
+              <select id="mcp-policy-sandbox" class="form-control">
+                <option value="subprocess">Subprocess</option>
+                <option value="container">Container</option>
+                <option value="none">None (dev only)</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Time Window (optional — blank for always-on)</label>
+            <div class="form-row">
+              <input type="text" id="mcp-policy-days" class="form-control" placeholder="mon,tue,wed,thu,fri" style="flex:2;" />
+              <input type="text" id="mcp-policy-hours" class="form-control" placeholder="9-17" style="flex:1;" />
+            </div>
+            <span style="font-size:11px; color:var(--text-muted);">Days: 3-letter codes (mon-sun). Hours: start-end in 24h UTC (e.g. 9-17).</span>
+          </div>
+          <button class="btn btn-primary btn-sm" id="btn-policy-save">Save Policy</button>
+          <span id="policy-save-result" style="margin-left:10px; font-size:12px; display:none;"></span>
+        </div>
+      </div>
+
+      <!-- Pending Sampling Requests -->
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-header">
+          <span class="card-title">Pending Sampling Requests</span>
+          <span id="mcp-sampling-badge" class="badge badge-warning" style="display:none;">0</span>
+          <button class="btn btn-ghost btn-sm" id="btn-sampling-refresh">Refresh</button>
+        </div>
+        <div class="card-body">
+          <p style="font-size:12px; color:var(--text-muted); margin-bottom:8px;">
+            Workers can request LLM decisions via MCP sampling/createMessage. Respond here to provide the LLM output.
+          </p>
+          <div id="mcp-sampling-list">
+            <div class="empty-state" style="padding:20px 0;">
+              <div class="empty-state-text">No pending sampling requests.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Auto-Discovery -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Auto-Discovery</span>
+        </div>
+        <div class="card-body">
+          <p style="font-size:12px; color:var(--text-muted); margin-bottom:12px;">
+            The Hall Server publishes a <code>.well-known/mcp.json</code> endpoint so local IDEs and agents can discover this orchestrator automatically.
+          </p>
+          <div class="info-row">
+            <span class="info-label">Local Discovery URL</span>
+            <code id="mcp-discovery-url">http://localhost:8765/.well-known/mcp.json</code>
+          </div>
+          <div class="info-row" style="margin-top:8px;">
+            <span class="info-label">Registry Discovery URL</span>
+            <code>https://api.pyhall.dev/.well-known/mcp</code>
+          </div>
+          <button class="btn btn-secondary btn-sm" id="btn-mcp-discover" style="margin-top:12px;">Test Discovery Endpoint</button>
+          <pre id="mcp-discovery-result" style="display:none; margin-top:8px; font-size:11px; background:var(--bg-panel); padding:8px; border-radius:4px; overflow:auto; max-height:200px;"></pre>
+        </div>
+      </div>
     </section>
 
     <!-- Screen: About -->
@@ -1118,10 +1359,13 @@
         </div>
       </div>
 
-      <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;padding:12px 16px;background:var(--bg-surface);border:1px solid var(--bg-border);border-radius:var(--radius);">
-        <div style="font-size:12px;color:var(--text-muted);flex:1;">6 health checks — connectivity · auth · binary integrity · hall server · database · config</div>
-        <div id="doctor-overall" style="font-size:13px;"></div>
-        <div id="doctor-checked-at" style="font-size:11px;color:var(--text-dim);"></div>
+      <div style="display:flex;align-items:center;gap:20px;margin-bottom:20px;padding:12px 16px;background:var(--bg-surface);border:1px solid var(--bg-border);border-radius:var(--radius);">
+        <img id="doctor-mascot" src="assets/worker-doctor.svg" alt="" width="72" height="64" class="anim-float" style="flex-shrink:0;" />
+        <div style="flex:1;">
+          <div style="font-size:12px;color:var(--text-muted);">6 health checks — connectivity · auth · binary integrity · hall server · database · config</div>
+          <div id="doctor-overall" style="font-size:13px;margin-top:4px;"></div>
+          <div id="doctor-checked-at" style="font-size:11px;color:var(--text-dim);margin-top:2px;"></div>
+        </div>
       </div>
 
       <div id="doctor-checks-list" style="background:var(--bg-surface);border:1px solid var(--bg-border);border-radius:var(--radius);padding:4px 16px;">
@@ -1153,10 +1397,12 @@
 <script src="js/screens/alerts.js"></script>
 <script src="js/screens/enroll.js"></script>
 <script src="js/screens/config.js"></script>
+<script src="js/screens/mcp.js"></script>
 <script src="js/screens/coordination.js"></script>
 <script src="js/screens/profile.js"></script>
 <script src="js/screens/setup.js"></script>
 <script src="js/screens/doctor.js"></script>
+<script src="js/screens/log-viewer.js"></script>
 <script src="js/app.js"></script>
 
 <!-- Edit Task Modal -->
@@ -1340,7 +1586,7 @@
   // Inject SVG into pre-placed worker widget divs. The outer div already has
   // the size/animation class set in HTML; we just need the SVG content inside.
   const svg = WorkerWidget.getSVG();
-  ['login-worker', 'status-worker', 'alerts-worker', 'enroll-success-worker'].forEach(id => {
+  ['login-worker', 'status-worker', 'alerts-worker', 'enroll-success-worker', 'logs-worker'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.innerHTML = svg;
   });

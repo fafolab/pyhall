@@ -1,0 +1,19 @@
+#!/bin/bash
+# postinst — Hall Monitor post-install script
+# Copyright (c) 2026 pyhall.dev — All Rights Reserved.
+#
+# Runs after the .deb package is installed.
+# Stops any running hall-server process so the new binary can be used.
+# The hall-server is bundled IP — users should never need to run pkill manually.
+
+set -e
+
+# Kill any running hall-server process (required — binary is bundled in app)
+# This ensures the old process is stopped before the new binary replaces it on disk.
+pkill -x hall-server 2>/dev/null || true
+sleep 0.5
+
+# Also kill by common sidecar name pattern used by Tauri
+pkill -f "hall-server" 2>/dev/null || true
+
+exit 0

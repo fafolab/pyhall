@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "jira_worker config",
+  "type": "object",
+  "properties": {
+    "url_env": {
+      "type": "string",
+      "default": "JIRA_URL",
+      "description": "Jira Cloud base URL env var"
+    },
+    "email_env": {
+      "type": "string",
+      "default": "JIRA_EMAIL",
+      "description": "Atlassian account email env var"
+    },
+    "token_env": {
+      "type": "string",
+      "default": "JIRA_API_TOKEN",
+      "description": "Atlassian API token env var"
+    },
+    "default_project_key": {
+      "type": "string"
+    },
+    "env": {
+      "type": "string",
+      "enum": ["dev", "stage", "prod"]
+    }
+  },
+  "additionalProperties": false
+}

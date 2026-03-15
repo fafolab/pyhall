@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "hackernews_worker config",
+  "type": "object",
+  "properties": {
+    "db_path": {
+      "type": "string",
+      "description": "Path to SQLite tracking DB (overrides default ~/.local/share/pyhall/hackernews_worker.db)"
+    },
+    "default_limit": {
+      "type": "integer",
+      "default": 30,
+      "description": "Default number of stories to return for list operations"
+    },
+    "default_min_score": {
+      "type": "integer",
+      "default": 10,
+      "description": "Default minimum HN score/points threshold for score-filtered operations"
+    },
+    "env": {
+      "type": "string",
+      "enum": ["dev", "stage", "prod"],
+      "description": "Worker environment — controls attestation strictness"
+    }
+  },
+  "additionalProperties": false
+}

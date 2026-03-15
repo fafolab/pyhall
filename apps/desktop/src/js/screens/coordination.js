@@ -32,6 +32,10 @@ window.CoordinationScreen = (() => {
   let isVisible   = false;
   let currentView = localStorage.getItem('coord-view') || 'kanban';
 
+  // ── Session Export state ──────────────────────────────────────────────────
+  let currentSession = null;
+  let lastExportPath = null;
+
   // ── Owner → color mapping ─────────────────────────────────────────────────
 
   function ownerColor(owner) {
@@ -107,7 +111,11 @@ window.CoordinationScreen = (() => {
     if (!container) return;
 
     if (agents.length === 0) {
-      container.innerHTML = '<div class="coord-offline-msg">No agent data — Hall Server offline.</div>';
+      const hallOnline = window.AppState && window.AppState.hallOnline;
+      const msg = hallOnline
+        ? 'No enrolled agents — enroll a worker to see it here.'
+        : 'No agent data — Hall Server offline.';
+      container.innerHTML = `<div class="coord-offline-msg">${msg}</div>`;
       return;
     }
 
@@ -657,12 +665,43 @@ window.CoordinationScreen = (() => {
 
   async function fetchAgents() {
     const url = (window.AppState && window.AppState.hallUrl) || 'http://localhost:8765';
+    const headers = window.AppState?.sessionToken
+      ? { 'Authorization': `Bearer ${window.AppState.sessionToken}` }
+      : {};
+
+    // Try the coord/agents endpoint first
     try {
-      const res = await fetch(`${url}/api/coord/agents`);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      agents = data.agents || data || [];
-      setOfflineState(false);
+      const res = await fetch(`${url}/api/coord/agents`, { headers });
+      if (res.ok) {
+        const data = await res.json();
+        agents = data.agents || data || [];
+        if (Array.isArray(agents) && agents.length >= 0) {
+          setOfflineState(false);
+          renderAgents();
+          return;
+        }
+      }
+    } catch (_) {}
+
+    // Fallback: /api/workers — map enrolled workers to agent roster format
+    try {
+      const res = await fetch(`${url}/api/workers`, { headers });
+      if (res.ok) {
+        const data = await res.json();
+        const workers = data.workers || [];
+        agents = workers.map(w => ({
+          id:           w.worker_id || w.id || w.species_id,
+          name:         w.name || w.worker_id || w.species_id,
+          type:         w.species_id || 'worker',
+          status:       w.status || 'idle',
+          last_seen:    w.last_seen || w.last_dispatch || null,
+          active_tasks: w.dispatches_active || 0,
+        }));
+        setOfflineState(false);
+      } else {
+        agents = [];
+        setOfflineState(!window.AppState || !window.AppState.hallOnline);
+      }
     } catch (_) {
       agents = [];
       setOfflineState(!window.AppState || !window.AppState.hallOnline);
@@ -724,8 +763,11 @@ window.CoordinationScreen = (() => {
 
   async function fetchCoordLogFiles() {
     const url = (window.AppState && window.AppState.hallUrl) || 'http://localhost:8765';
+    const headers = window.AppState?.sessionToken
+      ? { 'Authorization': `Bearer ${window.AppState.sessionToken}` }
+      : {};
     try {
-      const res = await fetch(`${url}/api/coord/logs/files`);
+      const res = await fetch(`${url}/api/coord/logs/files`, { headers });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       coordLogFiles = data.files || [];
@@ -739,7 +781,10 @@ window.CoordinationScreen = (() => {
       `<option value="${esc(f.log_key)}">${esc(f.file_name)}</option>`
     ).join('');
     if (coordLogFiles.length === 0) {
-      select.innerHTML = '<option value="">No logs available</option>';
+      const hallOnline = window.AppState && window.AppState.hallOnline;
+      select.innerHTML = hallOnline
+        ? '<option value="">No logs available yet</option>'
+        : '<option value="">Hall Server offline</option>';
     }
     if (current && [...select.options].some(o => o.value === current)) {
       select.value = current;
@@ -767,6 +812,170 @@ window.CoordinationScreen = (() => {
 
   async function poll() {
     await Promise.all([fetchAgents(), fetchTasks(), fetchLocks()]);
+  }
+
+  // ── Session Export ────────────────────────────────────────────────────────
+
+  async function fetchCurrentSession() {
+    const hallOnline = window.AppState && window.AppState.hallOnline;
+    if (!hallOnline) {
+      currentSession = null;
+      renderSessionExport();
+      return;
+    }
+
+    const hallUrl   = (window.AppState && window.AppState.hallUrl) || 'http://localhost:8765';
+    const token     = (window.AppState && window.AppState.sessionToken) || '';
+
+    try {
+      const data = await window.__TAURI__.core.invoke('get_current_session', {
+        hall_url: hallUrl,
+        session_token: token,
+      });
+      currentSession = data && !data.error ? data : null;
+    } catch (_) {
+      currentSession = null;
+    }
+
+    renderSessionExport();
+  }
+
+  function renderSessionExport() {
+    const container = document.getElementById('coord-session-export');
+    if (!container) return;
+
+    const hallOnline = window.AppState && window.AppState.hallOnline;
+    if (!hallOnline) {
+      container.innerHTML = `
+        <div class="coord-section-header">Session Export</div>
+        <div class="coord-offline-msg">Hall Server must be running to export sessions.</div>
+      `;
+      return;
+    }
+
+    const sessionIdFull = (currentSession && (currentSession.id || currentSession.session_id)) || null;
+    const sessionId     = sessionIdFull ? sessionIdFull.slice(0, 8) : '—';
+    const startedAt     = (currentSession && (currentSession.started_at || currentSession.created_at))
+                          ? formatTimeCT(currentSession.started_at || currentSession.created_at)
+                          : '—';
+    const status        = (currentSession && currentSession.status) || '—';
+
+    // "Push to Cloud" is gated — no accountTier field exists yet, gate on future Pro flag
+    const isPro = !!(window.AppState && window.AppState.isPro);
+    const pushBtn = isPro
+      ? `<button class="btn btn-secondary" id="coord-export-push-btn" style="margin-left:8px">Push to Cloud</button>`
+      : `<button class="btn btn-secondary" id="coord-export-push-btn" disabled title="Upgrade to Pro to push sessions to the cloud" style="margin-left:8px">Push to Cloud</button>`;
+
+    const exportedNote = lastExportPath
+      ? `<div class="coord-export-path">Exported to: ${esc(lastExportPath)}</div>`
+      : '';
+
+    container.innerHTML = `
+      <div class="coord-section-header">Session Export</div>
+      <div class="coord-session-info">
+        <span class="coord-session-field"><span class="coord-session-label">Session</span> <span class="coord-session-value">${esc(sessionId)}</span></span>
+        <span class="coord-session-field"><span class="coord-session-label">Started</span> <span class="coord-session-value">${esc(startedAt)}</span></span>
+        <span class="coord-session-field"><span class="coord-session-label">Status</span> <span class="coord-session-value">${esc(status)}</span></span>
+      </div>
+      <div class="coord-export-actions">
+        <button class="btn btn-secondary" id="coord-export-btn">Export Session</button>
+        ${pushBtn}
+        <span id="coord-export-status" class="coord-export-status-msg"></span>
+      </div>
+      ${exportedNote}
+    `;
+
+    // Wire Export button
+    document.getElementById('coord-export-btn')?.addEventListener('click', async () => {
+      const btn    = document.getElementById('coord-export-btn');
+      const statusEl = document.getElementById('coord-export-status');
+      const hallUrl = (window.AppState && window.AppState.hallUrl) || 'http://localhost:8765';
+      const token   = (window.AppState && window.AppState.sessionToken) || '';
+
+      btn.disabled = true;
+      btn.textContent = 'Exporting…';
+      if (statusEl) { statusEl.textContent = ''; statusEl.style.color = ''; }
+
+      // If session not loaded yet, fetch it now
+      let sid = sessionIdFull;
+      if (!sid) {
+        try {
+          const data = await window.__TAURI__.core.invoke('get_current_session', {
+            hall_url: hallUrl,
+            session_token: token,
+          });
+          sid = data && !data.error ? (data.id || data.session_id) : null;
+        } catch (_) {}
+      }
+
+      if (!sid) {
+        if (statusEl) {
+          statusEl.textContent = 'No active session found. Start the Hall Server and go online first.';
+          statusEl.style.color = 'var(--color-error, #e74c3c)';
+        }
+        btn.disabled = false;
+        btn.textContent = 'Export Session';
+        return;
+      }
+
+      try {
+        const filePath = await window.__TAURI__.core.invoke('export_session', {
+          hall_url: hallUrl,
+          session_id: sid,
+          session_token: token,
+        });
+        lastExportPath = filePath;
+        renderSessionExport();
+        if (statusEl) {
+          statusEl.textContent = `Exported to: ${filePath}`;
+          statusEl.style.color = 'var(--color-success, #4caf50)';
+        }
+      } catch (e) {
+        if (statusEl) {
+          statusEl.textContent = `Export error: ${e}`;
+          statusEl.style.color = 'var(--color-error, #e74c3c)';
+        }
+        btn.disabled = false;
+        btn.textContent = 'Export Session';
+      }
+    });
+
+    // Wire Push to Cloud button (only if Pro)
+    if (isPro) {
+      document.getElementById('coord-export-push-btn')?.addEventListener('click', async () => {
+        if (!lastExportPath) {
+          const status = document.getElementById('coord-export-status');
+          if (status) status.textContent = 'Export a session first.';
+          return;
+        }
+        const btn    = document.getElementById('coord-export-push-btn');
+        const status = document.getElementById('coord-export-status');
+        const token  = (window.AppState && window.AppState.sessionToken) || '';
+        const registryUrl = 'https://api.pyhall.dev';
+
+        btn.disabled = true;
+        btn.textContent = 'Pushing…';
+        if (status) { status.textContent = ''; status.style.color = ''; }
+
+        try {
+          const result = await window.__TAURI__.core.invoke('push_session_cloud', {
+            zip_path: lastExportPath,
+            session_token: token,
+            registry_url: registryUrl,
+          });
+          if (result && result.ok === false) {
+            if (status) { status.textContent = `Push failed: ${result.error || 'unknown error'}`; status.style.color = 'var(--color-error, #e74c3c)'; }
+          } else {
+            if (status) { status.textContent = 'Pushed to cloud.'; status.style.color = ''; }
+          }
+        } catch (e) {
+          if (status) { status.textContent = `Error: ${e}`; status.style.color = 'var(--color-error, #e74c3c)'; }
+        } finally {
+          btn.disabled = false;
+          btn.textContent = 'Push to Cloud';
+        }
+      });
+    }
   }
 
   // ── SSE subscription ──────────────────────────────────────────────────────
@@ -847,11 +1056,13 @@ window.CoordinationScreen = (() => {
     renderTasks();
     renderLocks();
     renderEventLog();
+    renderSessionExport();
     setOfflineState(!window.AppState || !window.AppState.hallOnline);
 
     // Fetch fresh data
     poll();
     fetchCoordLogFiles();
+    fetchCurrentSession();
 
     // Start poll loop (5s)
     if (!pollTimer) {
@@ -1188,30 +1399,45 @@ window.CoordinationScreen = (() => {
       const text = msgInput?.value.trim();
       if (!text) return;
       const url = (window.AppState && window.AppState.hallUrl) || 'http://localhost:8765';
+      const toAgent = msgTo?.value || 'all';
+      const ts = new Date().toISOString();
+
+      // Immediately add to local event log so it appears in the feed
+      const localEvt = {
+        type: 'agent_ping',
+        from: 'rob',
+        to: toAgent,
+        message: text,
+        ts,
+      };
+      eventLog = [localEvt, ...eventLog].slice(0, MAX_EVENTS);
+      if (isVisible) renderEventLog();
+
+      if (msgInput) msgInput.value = '';
+
+      // Post to server (best-effort — local echo already done)
       try {
-        // Persist human/operator comms to the canonical agent_comms log.
-        await fetch(`${url}/api/coord/logs/agent_comms/append`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            source: 'rob',
-            entry: `@${msgTo?.value || 'all'} ${text}`,
-          }),
-        });
-        // Best-effort legacy broadcast path (if implemented by server build).
         await fetch(`${url}/api/coord/messages`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             from_agent: 'rob',
-            to_agent: msgTo?.value || 'all',
+            to_agent: toAgent,
             message: text,
             msg_type: 'message',
           }),
         }).catch(() => {});
-        if (msgInput) msgInput.value = '';
-        await loadCoordLog('agent_comms');
-      } catch (e) {}
+
+        // Also persist to agent_comms log if endpoint exists
+        fetch(`${url}/api/coord/logs/agent_comms/append`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            source: 'rob',
+            entry: `@${toAgent} ${text}`,
+          }),
+        }).catch(() => {});
+      } catch (_) {}
     }
 
     sendBtn?.addEventListener('click', sendMessage);
@@ -1229,6 +1455,8 @@ window.CoordinationScreen = (() => {
     });
 
     refreshBtn?.addEventListener('click', async () => {
+      // Re-fetch the file list first, then load the selected log
+      await fetchCoordLogFiles();
       if (select?.value) await loadCoordLog(select.value);
     });
 

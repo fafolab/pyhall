@@ -55,7 +55,7 @@ import { useState, useCallback } from 'react';
 
 export interface HallDecisionRequest {
   capability_id: string;   // e.g. "cap.content.generate.v1"
-  worker_id: string;       // e.g. "wrk_abc123"
+  worker_id: string;       // e.g. "org.acme.my-worker.i-1"
   env?: 'dev' | 'prod';
   data_label?: string;     // "PUBLIC" | "INTERNAL" | "CONFIDENTIAL"
   tenant_id?: string;
@@ -158,7 +158,7 @@ const hall = new Hall({
 });
 
 const decision = await hall.decisions.make({
-  workerId: 'wrk_abc123',
+  workerId: 'org.acme.my-worker.i-1',
   capability: 'cap.content.generate.v1',
   tenantId: 'org.acme',
 });

@@ -2995,6 +2995,7 @@ dependencies = [
  "tauri-plugin-single-instance",
  "tokio",
  "urlencoding",
+ "uuid",
 ]
 
 [[package]]

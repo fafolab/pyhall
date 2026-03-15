@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "linear_worker config",
+  "type": "object",
+  "properties": {
+    "api_key_env": {
+      "type": "string",
+      "default": "LINEAR_API_KEY",
+      "description": "Name of the environment variable holding the Linear personal API key"
+    },
+    "default_team_id": {
+      "type": "string",
+      "description": "Default team ID for issue operations when --team-id is not provided"
+    },
+    "env": {
+      "type": "string",
+      "enum": ["dev", "stage", "prod"],
+      "description": "Deployment environment — controls attestation strictness"
+    }
+  },
+  "additionalProperties": false
+}

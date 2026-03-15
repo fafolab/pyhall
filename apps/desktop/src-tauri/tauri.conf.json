@@ -10,9 +10,9 @@
     "withGlobalTauri": true,
     "windows": [
       {
-        "title": "pyhall — Hall Monitor",
-        "width": 1200,
-        "height": 800,
+        "title": "pyhall \u2014 Hall Monitor",
+        "width": 1024,
+        "height": 768,
         "minWidth": 900,
         "minHeight": 600,
         "center": true,
@@ -27,7 +27,7 @@
       "id": "main-tray",
       "iconPath": "icons/icon.png",
       "iconAsTemplate": false,
-      "tooltip": "pyhall — Hall Monitor"
+      "tooltip": "pyhall \u2014 Hall Monitor"
     }
   },
   "bundle": {
@@ -40,6 +40,19 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
-    "externalBin": ["binaries/hall-server"]
+    "externalBin": [
+      "binaries/hall-server"
+    ],
+    "linux": {
+      "deb": {
+        "files": {
+          "usr/bin/pyhall-uninstall": "scripts/pyhall-uninstall"
+        },
+        "postInstallScript": "scripts/postinst"
+      }
+    },
+    "shortDescription": "Hall Monitor \u2014 WCP-governed AI worker orchestration",
+    "longDescription": "Hall Monitor is the desktop companion to pyhall. It governs AI workers using the Worker Class Protocol (WCP): cryptographically attested, policy-gated, fully auditable. Run local or connect to a team Hall Server.",
+    "category": "Utility"
   }
 }

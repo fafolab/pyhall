@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "github_worker config",
+  "type": "object",
+  "properties": {
+    "token_env": {
+      "type": "string",
+      "default": "GITHUB_TOKEN",
+      "description": "Name of the environment variable holding the GitHub PAT with repo scope"
+    },
+    "default_owner": {
+      "type": "string",
+      "description": "Default GitHub owner or org (used when --owner is omitted)"
+    },
+    "default_repo": {
+      "type": "string",
+      "description": "Default repository name (used when --repo is omitted)"
+    },
+    "env": {
+      "type": "string",
+      "enum": ["dev", "stage", "prod"],
+      "description": "Runtime environment. Controls attestation strictness."
+    }
+  },
+  "additionalProperties": false
+}

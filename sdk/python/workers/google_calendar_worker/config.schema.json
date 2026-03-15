@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "google_calendar_worker config",
+  "type": "object",
+  "properties": {
+    "credentials_json_env": {
+      "type": "string",
+      "default": "GOOGLE_CREDENTIALS_JSON",
+      "description": "Name of the env var that holds the path to the OAuth2 credentials JSON file downloaded from Google Cloud Console."
+    },
+    "token_path": {
+      "type": "string",
+      "description": "Absolute path to the OAuth token cache file. Default: ~/.local/share/pyhall/google_calendar_token.json"
+    },
+    "default_calendar_id": {
+      "type": "string",
+      "default": "primary",
+      "description": "Calendar ID used when no --calendar-id flag is passed. 'primary' resolves to the authenticated user's primary calendar."
+    },
+    "env": {
+      "type": "string",
+      "enum": ["dev", "stage", "prod"],
+      "description": "Runtime environment. Controls attestation strictness: dev=soft, prod=hard-fail."
+    }
+  },
+  "additionalProperties": false
+}

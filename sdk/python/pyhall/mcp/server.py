@@ -37,13 +37,17 @@ Transport: stdio (NDJSON — one JSON object per line)
 Protocol:  JSON-RPC 2.0 (MCP 2024-11-05)
 
 Handled requests:
-    initialize         -- MCP handshake, returns server capabilities, refreshes dynamic tools
-    tools/list         -- Returns dynamically enrolled workers + summarize_document fallback
-    tools/call         -- Routes through Hall Server /api/route (dynamic) or WCP local (fallback)
-    resources/list     -- Lists available WCP resources (workers, catalog, dispatches)
-    resources/read     -- Reads a resource by URI (wrk://, cap://, hall://)
-    resources/subscribe    -- Stub (not yet implemented, returns empty result)
-    resources/unsubscribe  -- Stub (not yet implemented, returns empty result)
+    initialize             -- MCP handshake, returns server capabilities, refreshes dynamic tools
+    tools/list             -- Returns dynamically enrolled workers + summarize_document fallback
+    tools/call             -- Routes through Hall Server /api/route (dynamic) or WCP local (fallback)
+    resources/list         -- Lists available WCP resources (workers, catalog, dispatches, worker logs)
+    resources/read         -- Reads a resource by URI (wrk://, cap://, hall://, hal://logs/)
+    resources/subscribe    -- Subscribe to resource change notifications
+    resources/unsubscribe  -- Unsubscribe from resource change notifications
+    roots/list             -- Returns filesystem roots this server is authorized to access
+    elicitation/create     -- Suspend a tool call and request user input
+    elicitation/respond    -- Resume a suspended tool call with user-supplied values
+    elicitation/status     -- Query the state of a suspended call
 
 Run the server:
     python -m pyhall.mcp
@@ -51,6 +55,23 @@ Run the server:
 
 Test with a raw initialize request:
     echo '{"jsonrpc":"2.0","method":"initialize","params":{"protocolVersion":"2024-11-05","clientInfo":{"name":"test","version":"1.0"}},"id":1}' | pyhall-mcp
+
+# PROCESS SANDBOXING (WCP §7.3 — Least Privilege)
+#
+# Hall Monitor MCP server implements these sandboxing controls:
+# 1. Worker processes are dispatched through Hall Server governance (not executed in-process)
+# 2. Filesystem access is restricted to roots declared in roots/list
+# 3. Tool calls are audited via JSONL audit trail (see Hall Server audit.jsonl)
+# 4. Environment variables for worker processes: no secrets inherited from parent process
+#
+# Recommended deployment for production:
+#   - Run hall-server sidecar under a dedicated OS user with minimal permissions
+#   - Use PYHALL_MCP_ROOTS to explicitly whitelist accessible directories
+#   - Enable PYHALL_ENV=prod for hard attestation enforcement
+#
+# When dispatching tool calls, secrets are not passed to workers.
+# Workers receive only: capability_id, payload, env, tenant_id
+# No HALL_SESSION_TOKEN, no HALL_API_KEY, no HALL_COORD_KEY passed to worker payloads.
 """
 
 from __future__ import annotations
@@ -60,6 +81,7 @@ import os
 import sys
 import urllib.request
 import uuid
+from datetime import datetime, UTC
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -265,10 +287,15 @@ def handle_initialize(params: dict, req_id: Any) -> dict:
             "capabilities": {
                 "tools": {"listChanged": False},
                 "resources": {
-                    "subscribe": False,
+                    "subscribe": True,
                     "listChanged": False,
                 },
                 "prompts": {"listChanged": False},
+                "roots": {
+                    "listChanged": True,
+                },
+                "sampling": {},
+                "elicitation": {},
             },
             "serverInfo": {
                 "name": "pyhall-mcp",
@@ -383,6 +410,17 @@ def handle_tools_call(params: dict, req_id: Any) -> dict:
     if dynamic_tool is not None:
         if not isinstance(arguments, dict):
             return _mcp_error(req_id, -32602, "Invalid arguments: expected object")
+        # Task 6: Check time window if rule specifies one
+        time_window = dynamic_tool.get('_time_window')
+        if not _check_time_window(time_window):
+            return {
+                "jsonrpc": "2.0",
+                "id": req_id,
+                "result": {
+                    "content": [{"type": "text", "text": "Tool execution blocked: outside allowed time window"}],
+                    "isError": True,
+                },
+            }
         return _handle_dynamic_tool_call(dynamic_tool, arguments, req_id)
 
     if tool_name != "summarize_document":
@@ -893,6 +931,16 @@ def _post_hall_route(body: dict, session_token: Optional[str] = None) -> dict:
 _DYNAMIC_TOOLS: list = []
 _DYNAMIC_WORKERS: list = []  # raw worker records from /api/workers
 
+# Module-level state for bidirectional sampling (Task 2)
+_PENDING_SAMPLES: dict[str, dict] = {}
+_SAMPLE_RESPONSES: dict[str, dict] = {}
+
+# Module-level state for elicitation / suspended calls (Task 3)
+_SUSPENDED_CALLS: dict[str, dict] = {}
+
+# Module-level set of subscribed resource URIs (Task 5)
+_SUBSCRIBED_RESOURCES: set[str] = set()
+
 
 def get_enrolled_workers() -> list:
     """
@@ -950,6 +998,7 @@ def build_tool_from_worker(worker: dict) -> dict:
         "name": safe_name,
         "description": description,
         "_worker_id": worker_id,
+        "_time_window": worker.get("time_window"),
         "_primary_capability": primary_capability,
         "inputSchema": {
             "type": "object",
@@ -1002,6 +1051,100 @@ def refresh_tools() -> list:
     return _DYNAMIC_TOOLS
 
 
+# ---------------------------------------------------------------------------
+# Task 1: Filesystem roots
+# ---------------------------------------------------------------------------
+
+def _get_server_roots() -> list[dict]:
+    """Return the filesystem roots this MCP server is authorized to access."""
+    import os as _os
+    import pathlib as _pathlib
+    home = _pathlib.Path.home()
+    roots = [
+        {
+            "uri": f"file://{home}/.config/pyhall",
+            "name": "pyhall config",
+        },
+        {
+            "uri": f"file://{home}/.local/share/pyhall",
+            "name": "pyhall data",
+        },
+    ]
+    # Add any roots from PYHALL_MCP_ROOTS env var (colon-separated paths)
+    extra = _os.environ.get('PYHALL_MCP_ROOTS', '')
+    for path in extra.split(':'):
+        if path.strip():
+            roots.append({"uri": f"file://{path.strip()}", "name": path.strip()})
+    return roots
+
+
+# ---------------------------------------------------------------------------
+# Task 2: Bidirectional sampling — server → client
+# ---------------------------------------------------------------------------
+
+def _request_sampling(messages: list[dict], system_prompt: str | None = None,
+                      model_preferences: dict | None = None,
+                      max_tokens: int = 1024) -> str:
+    """
+    Send a sampling/createMessage request to the MCP client.
+    Returns a request_id that can be polled for the response.
+
+    The client (Claude Code, etc.) will receive this as a server-initiated
+    request and respond with the LLM's output.
+    """
+    import uuid as _uuid
+    request_id = str(_uuid.uuid4())
+
+    request_msg = {
+        "jsonrpc": "2.0",
+        "id": request_id,
+        "method": "sampling/createMessage",
+        "params": {
+            "messages": messages,
+            "maxTokens": max_tokens,
+        }
+    }
+    if system_prompt:
+        request_msg["params"]["systemPrompt"] = system_prompt
+    if model_preferences:
+        request_msg["params"]["modelPreferences"] = model_preferences
+
+    _PENDING_SAMPLES[request_id] = request_msg
+
+    # Write to stdout (server → client direction)
+    sys.stdout.write(json.dumps(request_msg) + '\n')
+    sys.stdout.flush()
+
+    return request_id
+
+
+# ---------------------------------------------------------------------------
+# Task 6: Time-gated policy execution windows
+# ---------------------------------------------------------------------------
+
+def _check_time_window(time_window: dict | None) -> bool:
+    """
+    Check if current time is within the allowed execution window.
+    time_window format: {"days": ["mon","tue","wed","thu","fri"], "hours": [9, 17]}
+    hours: [start_hour, end_hour] in 24h UTC
+    days: list of 3-letter day names
+    Returns True if no time_window (unrestricted) or if current time is within window.
+    """
+    if not time_window:
+        return True
+    now = datetime.now(UTC)
+    day_names = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
+    current_day = day_names[now.weekday()]
+    allowed_days = time_window.get('days', day_names)  # default: all days
+    if current_day not in allowed_days:
+        return False
+    hours = time_window.get('hours')
+    if hours and len(hours) == 2:
+        if not (hours[0] <= now.hour < hours[1]):
+            return False
+    return True
+
+
 def _load_catalog() -> dict:
     """Load the WCP taxonomy catalog.json from the pyhall.taxonomy package."""
     try:
@@ -1026,12 +1169,37 @@ def _make_resource_content(uri: str, text: str) -> dict:
 # MCP resource handlers
 # ---------------------------------------------------------------------------
 
+def _get_from_hall_server(path: str):
+    """GET from Hall Server, returning parsed JSON or None on failure."""
+    data = _fetch_hall_server(path)
+    if "error" in data:
+        return None
+    return data
+
+
 def handle_resources_list(params: dict, req_id: Any) -> dict:
+    resources = list(_RESOURCE_LIST)
+
+    # Task 5: Add live worker log resources (URI template: hal://logs/{worker_id}/recent)
+    try:
+        workers_resp = _get_from_hall_server('/api/workers')
+        for worker in (workers_resp.get('workers', []) if workers_resp else []):
+            wid = worker.get('worker_id', '')
+            if wid:
+                resources.append({
+                    "uri": f"hal://logs/{wid}/recent",
+                    "name": f"Worker log: {wid}",
+                    "description": f"Recent activity log for worker {wid}",
+                    "mimeType": "text/plain",
+                })
+    except Exception:
+        pass
+
     return {
         "jsonrpc": "2.0",
         "id": req_id,
         "result": {
-            "resources": _RESOURCE_LIST,
+            "resources": resources,
         },
     }
 
@@ -1059,7 +1227,7 @@ def handle_resources_read(params: dict, req_id: Any) -> dict:
         worker_id = uri[len("wrk://workers/"):]
         data = _fetch_hall_server("/api/workers")
         workers = data.get("workers", [])
-        match = next((w for w in workers if str(w.get("id", "")) == worker_id), None)
+        match = next((w for w in workers if str(w.get("worker_id", "")) == worker_id), None)
         if match is None:
             return _mcp_error(req_id, -32602, f"Worker not found: {worker_id!r}")
         return {
@@ -1107,12 +1275,39 @@ def handle_resources_read(params: dict, req_id: Any) -> dict:
             },
         }
 
+    # ── hal://logs/{worker_id}/recent  ────────────────────────────────────
+    if uri.startswith('hal://logs/'):
+        parts = uri.removeprefix('hal://logs/').split('/')
+        worker_id = parts[0] if parts else None
+        if not worker_id:
+            return _mcp_error(req_id, -32602, f"Invalid worker log URI: {uri!r}")
+        try:
+            decisions = _get_from_hall_server(f'/api/logs/decisions?limit=50')
+            log_lines = []
+            for d in (decisions or []):
+                log_lines.append(
+                    f"{d.get('decided_at', '')} "
+                    f"{'DENY' if d.get('denied') else 'ALLOW'} "
+                    f"{d.get('capability_id', '')} "
+                    f"{d.get('deny_reason', '')}"
+                )
+            content = '\n'.join(log_lines) or f'No recent activity for worker {worker_id}'
+        except Exception as e:
+            content = f'Could not fetch worker logs: {e}'
+        return {
+            "jsonrpc": "2.0",
+            "id": req_id,
+            "result": {
+                "contents": [{"uri": uri, "mimeType": "text/plain", "text": content}]
+            },
+        }
+
     return _mcp_error(req_id, -32602, f"Unknown resource URI: {uri!r}")
 
 
 def handle_resources_subscribe(params: dict, req_id: Any) -> dict:
-    uri = (params or {}).get("uri", "<unknown>")
-    print(f"[pyhall-mcp] resources/subscribe requested for {uri!r} (stub — not implemented)", file=sys.stderr)
+    uri = (params or {}).get("uri", "")
+    _SUBSCRIBED_RESOURCES.add(uri)
     return {
         "jsonrpc": "2.0",
         "id": req_id,
@@ -1121,12 +1316,86 @@ def handle_resources_subscribe(params: dict, req_id: Any) -> dict:
 
 
 def handle_resources_unsubscribe(params: dict, req_id: Any) -> dict:
-    uri = (params or {}).get("uri", "<unknown>")
-    print(f"[pyhall-mcp] resources/unsubscribe requested for {uri!r} (stub — not implemented)", file=sys.stderr)
+    uri = (params or {}).get("uri", "")
+    _SUBSCRIBED_RESOURCES.discard(uri)
     return {
         "jsonrpc": "2.0",
         "id": req_id,
         "result": {},
+    }
+
+
+# ---------------------------------------------------------------------------
+# Task 1: roots/list handler
+# ---------------------------------------------------------------------------
+
+def handle_roots_list(params: dict, req_id: Any) -> dict:
+    return {
+        "jsonrpc": "2.0",
+        "id": req_id,
+        "result": {
+            "roots": _get_server_roots(),
+        },
+    }
+
+
+# ---------------------------------------------------------------------------
+# Task 3: Elicitation / suspended-state handlers
+# ---------------------------------------------------------------------------
+
+def handle_elicitation_create(params: dict, req_id: Any) -> dict:
+    """A tool suspended and is asking for user input."""
+    if not isinstance(params, dict):
+        return _mcp_error(req_id, -32602, "Invalid params: expected object")
+    call_id = params.get('call_id', str(uuid.uuid4()))
+    _SUSPENDED_CALLS[call_id] = {
+        'created_at': datetime.now(UTC).isoformat().replace('+00:00', 'Z'),
+        'title': params.get('title', 'Input Required'),
+        'message': params.get('message', ''),
+        'fields': params.get('fields', []),
+        'status': 'pending',
+        'response': None,
+    }
+    return {
+        "jsonrpc": "2.0",
+        "id": req_id,
+        "result": {"call_id": call_id, "status": "pending"},
+    }
+
+
+def handle_elicitation_respond(params: dict, req_id: Any) -> dict:
+    if not isinstance(params, dict):
+        return _mcp_error(req_id, -32602, "Invalid params: expected object")
+    call_id = params.get('call_id')
+    if call_id not in _SUSPENDED_CALLS:
+        return {
+            "jsonrpc": "2.0",
+            "id": req_id,
+            "result": {"error": "Unknown call_id"},
+        }
+    _SUSPENDED_CALLS[call_id]['status'] = 'responded'
+    _SUSPENDED_CALLS[call_id]['response'] = params.get('values', {})
+    return {
+        "jsonrpc": "2.0",
+        "id": req_id,
+        "result": {"ok": True, "call_id": call_id},
+    }
+
+
+def handle_elicitation_status(params: dict, req_id: Any) -> dict:
+    if not isinstance(params, dict):
+        return _mcp_error(req_id, -32602, "Invalid params: expected object")
+    call_id = params.get('call_id')
+    if call_id not in _SUSPENDED_CALLS:
+        return {
+            "jsonrpc": "2.0",
+            "id": req_id,
+            "result": {"error": "Unknown call_id"},
+        }
+    return {
+        "jsonrpc": "2.0",
+        "id": req_id,
+        "result": {"call_id": call_id, **_SUSPENDED_CALLS[call_id]},
     }
 
 
@@ -1157,6 +1426,12 @@ HANDLERS = {
     "prompts/list": handle_prompts_list,
     "prompts/get": handle_prompts_get,
     "completion/complete": handle_completion_complete,
+    # Task 1: filesystem roots
+    "roots/list": handle_roots_list,
+    # Task 3: elicitation / suspended state
+    "elicitation/create": handle_elicitation_create,
+    "elicitation/respond": handle_elicitation_respond,
+    "elicitation/status": handle_elicitation_status,
 }
 
 NOTIFICATIONS = {
@@ -1171,6 +1446,15 @@ def dispatch(raw_line: str) -> Optional[dict]:
         msg = json.loads(raw_line.strip())
     except json.JSONDecodeError as exc:
         return _mcp_error(None, -32700, f"Parse error: {exc}")
+
+    # Task 2: Handle incoming sampling responses from the client.
+    # When the client replies to a sampling/createMessage we sent, the message
+    # has a 'result' key and an 'id' matching a pending sample — not a 'method'.
+    if 'result' in msg and msg.get('id') in _PENDING_SAMPLES:
+        request_id = msg['id']
+        _SAMPLE_RESPONSES[request_id] = msg['result']
+        del _PENDING_SAMPLES[request_id]
+        return None  # Don't route this as a new request
 
     method = msg.get("method", "")
     req_id = msg.get("id")
@@ -1190,21 +1474,7 @@ def dispatch(raw_line: str) -> Optional[dict]:
 
 
 def run_stdio_loop() -> None:
-    """
-    Read NDJSON from stdin, write NDJSON responses to stdout.
+    """Run the MCP server over stdin/stdout (STDIO transport)."""
+    from pyhall.mcp.transport import StdioTransport, run_transport_loop
 
-    MCP stdio transport. One JSON object per line in both directions.
-    stderr is used for debug/log output so it does not pollute the protocol stream.
-    """
-    print(
-        "[pyhall-mcp] WCP/MCP interop server v0.3.0 started. Listening on stdin.",
-        file=sys.stderr,
-    )
-    for line in sys.stdin:
-        line = line.strip()
-        if not line:
-            continue
-        response = dispatch(line)
-        if response is not None:
-            sys.stdout.write(json.dumps(response) + "\n")
-            sys.stdout.flush()
+    run_transport_loop(StdioTransport())

@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "rss_worker config",
+  "type": "object",
+  "properties": {
+    "db_path": {
+      "type": "string",
+      "description": "Path to SQLite DB (default: ~/.local/share/pyhall/rss_worker.db)"
+    },
+    "default_fetch_limit": {
+      "type": "integer",
+      "default": 100
+    },
+    "env": {
+      "type": "string",
+      "enum": ["dev", "stage", "prod"]
+    }
+  },
+  "additionalProperties": false
+}

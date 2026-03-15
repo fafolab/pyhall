@@ -50,7 +50,7 @@ const worker = await hall.workers.register({
   capabilities: ['cap.data.read.v1', 'cap.report.generate.v1'],
   policyTier: 2,
 });
-console.log(worker.id);          // wrk_abc123
+console.log(worker.id);          // org.acme.my-worker.i-1
 console.log(worker.namespace);   // x.myagent
 
 // Make a routing decision before executing a capability
@@ -99,7 +99,7 @@ function governed(capability: string, workerId: string) {
 
 const fetchSensitiveData = governed(
   'cap.data.read.v1',
-  'wrk_abc123'
+  'org.acme.my-worker.i-1'
 )(async (query: string) => {
   // Only runs when pyhall says ALLOW
   return { rows: [] };
@@ -188,7 +188,7 @@ const resp = await fetch(`${serverUrl}/api/route`, {
   },
   body: JSON.stringify({
     capability_id: 'cap.data.read.v1',
-    worker_id: 'wrk_abc123',
+    worker_id: 'org.acme.my-worker.i-1',
     env: 'dev',
     data_label: 'PUBLIC',
     tenant_id: 'org.acme',
@@ -205,7 +205,7 @@ if (decision.denied) {
 ## Checking attestation
 
 ```typescript
-const attest = await hall.workers.attest('wrk_abc123');
+const attest = await hall.workers.attest('org.acme.my-worker.i-1');
 
 console.log(attest.status);        // "attested" | "pending" | "denied"
 console.log(attest.artifactHash);  // SHA-256 of attested worker package
